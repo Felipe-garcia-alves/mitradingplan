@@ -582,43 +582,62 @@ export default function App() {
           const riscoB3=+(bancaRealB3*0.01).toFixed(2),stopB3=+(bancaRealB3*0.03).toFixed(2),metaB3=+(bancaRealB3*0.02).toFixed(2);
           const riscoFx=+(bancaRealForex*0.01).toFixed(2),stopFx=+(bancaRealForex*0.03).toFixed(2),metaFx=+(bancaRealForex*0.02).toFixed(2);
           const hasData=Object.keys(entries).length>0;
+          const colB3="#00d4aa", colFx="#f59e0b", colStop="#ff4d4d";
+          const CardItem=({label,value,sub,color})=>(
+            <div style={{padding:"14px 16px",borderRadius:"12px",background:"rgba(255,255,255,0.02)",border:"1px solid "+color+"22",marginBottom:"10px"}}>
+              <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{label}</p>
+              <p style={{margin:"0 0 2px",color:color,fontSize:"20px",fontWeight:"700",fontFamily:"monospace"}}>{value}</p>
+              <p style={{margin:0,color:"#777",fontSize:"11px"}}>{sub}</p>
+            </div>
+          );
           return (
             <div>
               <h2 style={{margin:"0 0 4px",fontSize:"16px",color:"#aaa",fontWeight:"500"}}>Referencias de gestao</h2>
               <p style={{color:"#666",fontSize:"13px",marginBottom:"20px"}}>Limites calculados sobre a banca real atual.</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
-                {[
-                  {label:"Banca atual B3",value:"R$ "+bancaRealB3.toLocaleString("pt-BR",{minimumFractionDigits:2}),lucro:lucroB3,cur:"R$",color:"#00d4aa"},
-                  {label:"Banca atual Forex",value:"$ "+bancaRealForex.toLocaleString("pt-BR",{minimumFractionDigits:2}),lucro:lucroForex,cur:"$",color:"#f59e0b"},
-                ].map((item,i)=>(
-                  <div key={i} style={{padding:"18px",borderRadius:"14px",background:"rgba(255,255,255,0.04)",border:"1px solid "+item.color+"33",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+item.color+",transparent)"}}/>
-                    <p style={{margin:"0 0 6px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{item.label}</p>
-                    <p style={{margin:"0 0 4px",color:item.color,fontSize:"24px",fontWeight:"700",fontFamily:"monospace"}}>{item.value}</p>
-                    <p style={{margin:0,fontSize:"11px",color:item.lucro>=0?"#00d4aa88":"#ff4d4d88",fontFamily:"monospace"}}>
-                      {hasData?(item.lucro>=0?"+":"")+item.cur+" "+Math.abs(item.lucro).toFixed(2)+" vs inicial":"Sem registros ainda"}
+
+              {/* Layout lado a lado: B3 esquerda, Forex direita */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
+
+                {/* COLUNA B3 */}
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px",paddingBottom:"8px",borderBottom:"2px solid "+colB3+"44"}}>
+                    <span style={{fontSize:"16px"}}>🇧🇷</span>
+                    <span style={{color:colB3,fontWeight:"700",fontSize:"14px"}}>Mini Indice B3</span>
+                  </div>
+                  {/* Banca atual */}
+                  <div style={{padding:"16px",borderRadius:"14px",background:"rgba(0,212,170,0.06)",border:"1px solid "+colB3+"33",position:"relative",overflow:"hidden",marginBottom:"10px"}}>
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+colB3+",transparent)"}}/>
+                    <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Banca atual</p>
+                    <p style={{margin:"0 0 3px",color:colB3,fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{"R$ "+bancaRealB3.toLocaleString("pt-BR",{minimumFractionDigits:2})}</p>
+                    <p style={{margin:0,fontSize:"11px",color:lucroB3>=0?"#00d4aa88":"#ff4d4d88",fontFamily:"monospace"}}>
+                      {hasData?(lucroB3>=0?"+":"")+"R$ "+Math.abs(lucroB3).toFixed(2)+" vs inicial":"Sem registros ainda"}
                     </p>
                   </div>
-                ))}
-              </div>
-              <p style={{margin:"0 0 12px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",borderTop:"1px solid #1a1a1a",paddingTop:"16px"}}>
-                Limites do dia — {hasData?"calculados sobre a banca real":"baseados na banca inicial"}
-              </p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
-                {[
-                  {label:"Risco/op B3",value:"R$ "+riscoB3.toFixed(2),sub:"1% da banca",color:"#00d4aa"},
-                  {label:"Stop diario B3",value:"R$ "+stopB3.toFixed(2),sub:"3% — fecha o dia",color:"#ff4d4d"},
-                  {label:"Meta diaria B3",value:"R$ "+metaB3.toFixed(2),sub:"2% — pode encerrar",color:"#00d4aa"},
-                  {label:"Risco/op Forex",value:"$ "+riscoFx.toFixed(2),sub:"1% da banca",color:"#f59e0b"},
-                  {label:"Stop diario Forex",value:"$ "+stopFx.toFixed(2),sub:"3% — fecha o dia",color:"#ff4d4d"},
-                  {label:"Meta diaria Forex",value:"$ "+metaFx.toFixed(2),sub:"2% — pode encerrar",color:"#f59e0b"},
-                ].map((item,i)=>(
-                  <div key={i} style={{padding:"16px",borderRadius:"12px",background:"rgba(255,255,255,0.02)",border:"1px solid "+item.color+"18"}}>
-                    <p style={{margin:"0 0 4px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{item.label}</p>
-                    <p style={{margin:"0 0 2px",color:item.color,fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{item.value}</p>
-                    <p style={{margin:0,color:"#777",fontSize:"11px"}}>{item.sub}</p>
+                  <CardItem label="Risco por operacao" value={"R$ "+riscoB3.toFixed(2)} sub="1% da banca" color={colB3}/>
+                  <CardItem label="Meta diaria" value={"R$ "+metaB3.toFixed(2)} sub="2% — pode encerrar" color={colB3}/>
+                  <CardItem label="Stop diario" value={"R$ "+stopB3.toFixed(2)} sub="3% — fecha o dia" color={colStop}/>
+                </div>
+
+                {/* COLUNA FOREX */}
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px",paddingBottom:"8px",borderBottom:"2px solid "+colFx+"44"}}>
+                    <span style={{fontSize:"16px"}}>🌍</span>
+                    <span style={{color:colFx,fontWeight:"700",fontSize:"14px"}}>Forex</span>
                   </div>
-                ))}
+                  {/* Banca atual */}
+                  <div style={{padding:"16px",borderRadius:"14px",background:"rgba(245,158,11,0.06)",border:"1px solid "+colFx+"33",position:"relative",overflow:"hidden",marginBottom:"10px"}}>
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+colFx+",transparent)"}}/>
+                    <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Banca atual</p>
+                    <p style={{margin:"0 0 3px",color:colFx,fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{"$ "+bancaRealForex.toLocaleString("pt-BR",{minimumFractionDigits:2})}</p>
+                    <p style={{margin:0,fontSize:"11px",color:lucroForex>=0?"#00d4aa88":"#ff4d4d88",fontFamily:"monospace"}}>
+                      {hasData?(lucroForex>=0?"+":"")+"$ "+Math.abs(lucroForex).toFixed(2)+" vs inicial":"Sem registros ainda"}
+                    </p>
+                  </div>
+                  <CardItem label="Risco por operacao" value={"$ "+riscoFx.toFixed(2)} sub="1% da banca" color={colFx}/>
+                  <CardItem label="Meta diaria" value={"$ "+metaFx.toFixed(2)} sub="2% — pode encerrar" color={colFx}/>
+                  <CardItem label="Stop diario" value={"$ "+stopFx.toFixed(2)} sub="3% — fecha o dia" color={colStop}/>
+                </div>
+
               </div>
               {!hasData&&<p style={{margin:"16px 0 0",color:"#555",fontSize:"12px",textAlign:"center"}}>Registre operacoes no Diario para os limites se atualizarem automaticamente.</p>}
             </div>
