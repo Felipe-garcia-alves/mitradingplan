@@ -9,12 +9,14 @@ function getRulesB3(banca) {
   const perda = (banca * 0.03).toFixed(2);
   const meta = (banca * 0.02).toFixed(2);
   return [
-    { id: 1, icon: "🎯", title: "Maximo 3 operacoes/dia", desc: "Apos 3 entradas, feche a plataforma. Sem excecoes." },
-    { id: 2, icon: "🛑", title: "Stop loss obrigatorio", desc: "Nunca entre sem stop definido ANTES de clicar. Stop = R$ " + stop + " (1% da banca atual)." },
-    { id: 3, icon: "⛔", title: "Perda maxima diaria: R$ " + perda, desc: "3% da banca atual. Bateu R$ " + perda + " negativo no dia, encerra e fecha tudo." },
-    { id: 4, icon: "🏆", title: "Meta diaria: R$ " + meta, desc: "2% da banca atual. Bateu R$ " + meta + " positivo, pode encerrar ou operar com trailing stop." },
-    { id: 5, icon: "🔒", title: "Regra da vinganca", desc: "Tomou stop? Aguarde 15 minutos antes da proxima entrada. Sem excecoes." },
-    { id: 6, icon: "📵", title: "Horario proibido", desc: "Nao opere no primeiro candle de abertura nem nos 15 min antes do fechamento." },
+    { id: 1, icon: "🎯", title: "Maximo 5 operacoes/dia", desc: "Apos 5 entradas, feche a plataforma independente do resultado. Sem excecoes.", personal: false },
+    { id: 2, icon: "🛑", title: "Stop loss obrigatorio", desc: "Nunca entre sem stop definido ANTES de clicar. Stop = R$ " + stop + " (1% da banca atual).", personal: false },
+    { id: 3, icon: "⛔", title: "Perda maxima diaria: R$ " + perda, desc: "3% da banca atual. Bateu R$ " + perda + " negativo no dia, encerra e fecha tudo.", personal: false },
+    { id: 4, icon: "🏆", title: "Meta diaria: R$ " + meta, desc: "2% da banca atual. Bateu R$ " + meta + " positivo, pode encerrar ou operar com trailing stop.", personal: false },
+    { id: 5, icon: "🔒", title: "Regra da vinganca", desc: "Tomou stop? Aguarde 15 minutos antes da proxima entrada. Sem excecoes.", personal: false },
+    { id: 6, icon: "📵", title: "Horario proibido", desc: "Nao opere no primeiro candle de abertura nem nos 15 min antes do fechamento.", personal: false },
+    { id: 7, icon: "📝", title: "Anotar no diario apos cada operacao", desc: "Registre motivo, emocao e resultado imediatamente apos fechar o trade. Sem anotacao = operacao nao conta.", personal: true },
+    { id: 8, icon: "🚨", title: "3 stops seguidos = parar o dia", desc: "Tomou 3 stops consecutivos? Encerra imediatamente. Mercado nao esta no seu dia. Volte amanha.", personal: true },
   ];
 }
 
@@ -23,12 +25,14 @@ function getRulesForex(banca) {
   const perda = (banca * 0.03).toFixed(2);
   const meta = (banca * 0.02).toFixed(2);
   return [
-    { id: 1, icon: "🎯", title: "Maximo 2 operacoes/dia", desc: "Banca pequena exige disciplina maxima. 2 entradas e encerrou." },
-    { id: 2, icon: "🛑", title: "Risco por trade: $ " + stop + " (1%)", desc: "Com $ " + banca.toFixed(2) + ", cada stop representa no maximo $ " + stop + ". Calcule o lote antes." },
-    { id: 3, icon: "⛔", title: "Perda maxima diaria: $ " + perda, desc: "3% da banca ($ " + perda + "). Bateu esse numero, fecha MetaTrader e descansa." },
-    { id: 4, icon: "🏆", title: "Meta diaria: $ " + meta, desc: "2% da banca. Consistencia antes de ganancia." },
-    { id: 5, icon: "⏰", title: "Sessoes permitidas", desc: "Opere apenas Londres+NY overlap (13h-17h BRT). Maior liquidez, menos ruido." },
-    { id: 6, icon: "📐", title: "RR minimo 1:2", desc: "So entre se o alvo for pelo menos o dobro do stop. Sem RR 1:2, nao entra." },
+    { id: 1, icon: "🎯", title: "Maximo 5 operacoes/dia", desc: "Apos 5 entradas, feche a plataforma independente do resultado. Sem excecoes.", personal: false },
+    { id: 2, icon: "🛑", title: "Risco por trade: $ " + stop + " (1%)", desc: "Com $ " + banca.toFixed(2) + ", cada stop representa no maximo $ " + stop + ". Calcule o lote antes.", personal: false },
+    { id: 3, icon: "⛔", title: "Perda maxima diaria: $ " + perda, desc: "3% da banca ($ " + perda + "). Bateu esse numero, fecha MetaTrader e descansa.", personal: false },
+    { id: 4, icon: "🏆", title: "Meta diaria: $ " + meta, desc: "2% da banca. Consistencia antes de ganancia.", personal: false },
+    { id: 5, icon: "⏰", title: "Sessoes permitidas", desc: "Opere apenas Londres+NY overlap (13h-17h BRT). Maior liquidez, menos ruido.", personal: false },
+    { id: 6, icon: "📐", title: "RR minimo 1:2", desc: "So entre se o alvo for pelo menos o dobro do stop. Sem RR 1:2, nao entra.", personal: false },
+    { id: 7, icon: "📝", title: "Anotar no diario apos cada operacao", desc: "Registre motivo, emocao e resultado imediatamente apos fechar o trade. Sem anotacao = operacao nao conta.", personal: true },
+    { id: 8, icon: "🚨", title: "3 stops seguidos = parar o dia", desc: "Tomou 3 stops consecutivos? Encerra imediatamente. Mercado nao esta no seu dia. Volte amanha.", personal: true },
   ];
 }
 
@@ -63,6 +67,13 @@ function saveToStorage(data) {
 
 function loadFromStorage() {
   try { const r=localStorage.getItem("diario-v3"); return r?JSON.parse(r):{}; } catch(e) { return {}; }
+}
+
+function loadCompliance() {
+  try { const r=localStorage.getItem("compliance-v1"); return r?JSON.parse(r):{}; } catch(e) { return {}; }
+}
+function saveCompliance(data) {
+  try { localStorage.setItem("compliance-v1", JSON.stringify(data)); } catch(e) {}
 }
 
 function exportCSV(entries) {
@@ -113,14 +124,15 @@ function EvoChart({ entries, selMonth }) {
 
 function RuleCard({ rule, checked, onToggle }) {
   return (
-    <div onClick={onToggle} style={{background:checked?"rgba(0,212,170,0.08)":"rgba(255,255,255,0.03)",border:"1px solid "+(checked?"#00d4aa44":"#ffffff11"),borderRadius:"12px",padding:"14px 16px",cursor:"pointer",transition:"all 0.2s",display:"flex",gap:"12px",alignItems:"flex-start"}}>
-      <div style={{width:"22px",height:"22px",borderRadius:"6px",border:"2px solid "+(checked?"#00d4aa":"#555"),background:checked?"#00d4aa":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px",transition:"all 0.2s"}}>
+    <div onClick={onToggle} style={{background:checked?(rule.personal?"rgba(245,158,11,0.07)":"rgba(0,212,170,0.08)"):"rgba(255,255,255,0.03)",border:"1px solid "+(checked?(rule.personal?"#f59e0b44":"#00d4aa44"):"#ffffff11"),borderRadius:"12px",padding:"14px 16px",cursor:"pointer",transition:"all 0.2s",display:"flex",gap:"12px",alignItems:"flex-start"}}>
+      <div style={{width:"22px",height:"22px",borderRadius:"6px",border:"2px solid "+(checked?(rule.personal?"#f59e0b":"#00d4aa"):"#555"),background:checked?(rule.personal?"#f59e0b":"#00d4aa"):"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px",transition:"all 0.2s"}}>
         {checked&&<span style={{color:"#000",fontSize:"13px",fontWeight:"bold"}}>✓</span>}
       </div>
-      <div>
-        <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"4px"}}>
+      <div style={{flex:1}}>
+        <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"4px",flexWrap:"wrap"}}>
           <span style={{fontSize:"16px"}}>{rule.icon}</span>
           <span style={{color:"#f0f0f0",fontWeight:"600",fontSize:"14px"}}>{rule.title}</span>
+          {rule.personal&&<span style={{background:"rgba(245,158,11,0.15)",color:"#f59e0b",fontSize:"10px",fontWeight:"700",padding:"2px 7px",borderRadius:"20px",letterSpacing:"0.5px"}}>PESSOAL</span>}
         </div>
         <p style={{color:"#999",fontSize:"12.5px",margin:0,lineHeight:"1.5"}}>{rule.desc}</p>
       </div>
@@ -468,12 +480,18 @@ export default function App() {
   const [checked,setChecked]=useState({});
   const [entries,setEntries]=useState({});
 
+  const [compliance,setCompliance]=useState({});
+
   useEffect(()=>{
     const data=loadFromStorage();
     setEntries(data);
+    setCompliance(loadCompliance());
     const onStorage=(e)=>{
       if(e.key==="diario-v3"&&e.newValue){
         try{setEntries(JSON.parse(e.newValue));}catch(_){}
+      }
+      if(e.key==="compliance-v1"&&e.newValue){
+        try{setCompliance(JSON.parse(e.newValue));}catch(_){}
       }
     };
     window.addEventListener("storage",onStorage);
@@ -509,25 +527,125 @@ export default function App() {
 
       <div style={{maxWidth:"800px",margin:"0 auto"}}>
 
-        {tab==="regras"&&(
-          <div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}>
-              <h2 style={{margin:0,fontSize:"15px",color:"#888",fontWeight:"500"}}>Checklist — marque antes de abrir a plataforma</h2>
-              {allChecked&&<span style={{background:"rgba(0,212,170,0.15)",color:"#00d4aa",padding:"4px 12px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ Pronto para operar</span>}
+        {tab==="regras"&&(()=>{
+          const today=todayKey();
+          const todayComplied=compliance[today]===true;
+          const markToday=()=>{
+            const updated={...compliance,[today]:!todayComplied};
+            saveCompliance(updated);
+            setCompliance(updated);
+          };
+          // Calendar data for current month
+          const now=new Date();
+          const year=now.getFullYear(), month=now.getMonth();
+          const firstDay=new Date(year,month,1).getDay();
+          const daysInMonth=new Date(year,month+1,0).getDate();
+          const calKey=(d)=>year+"-"+String(month+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+          const totalDaysWithData=Object.keys(compliance).filter(k=>monthKey(k)===monthKey(today)&&compliance[k]!==undefined).length;
+          const compliedDays=Object.keys(compliance).filter(k=>monthKey(k)===monthKey(today)&&compliance[k]===true).length;
+          const pct=totalDaysWithData>0?Math.round((compliedDays/totalDaysWithData)*100):null;
+          return (
+            <div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}>
+                <div>
+                  <h2 style={{margin:0,fontSize:"15px",color:"#888",fontWeight:"500"}}>Checklist — marque antes de abrir a plataforma</h2>
+                  <p style={{margin:"4px 0 0",color:"#555",fontSize:"12px"}}>Regras em <span style={{color:"#f59e0b"}}>amarelo</span> sao suas regras pessoais</p>
+                </div>
+                {allChecked&&<span style={{background:"rgba(0,212,170,0.15)",color:"#00d4aa",padding:"4px 12px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ Pronto para operar</span>}
+              </div>
+              <div style={{padding:"10px 14px",borderRadius:"8px",background:"rgba(0,212,170,0.05)",border:"1px solid #00d4aa18",marginBottom:"14px",display:"flex",gap:"8px",alignItems:"center"}}>
+                <span>🔄</span>
+                <p style={{margin:0,color:"#00d4aa88",fontSize:"11.5px"}}>Valores calculados sobre a banca real atual: <strong style={{color:"#00d4aa"}}>{market==="b3"?"R$ "+bancaRealB3.toLocaleString("pt-BR",{minimumFractionDigits:2}):"$ "+bancaRealForex.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></p>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+                {rules.map(r=><RuleCard key={r.id} rule={r} checked={!!checked[market+"-"+r.id]} onToggle={()=>toggle(r.id)}/>)}
+              </div>
+              <div style={{marginTop:"24px",padding:"16px 20px",borderRadius:"12px",background:"rgba(255,77,77,0.05)",border:"1px solid rgba(255,77,77,0.15)",marginBottom:"28px"}}>
+                <p style={{margin:0,color:"#ff4d4d",fontWeight:"600",fontSize:"14px"}}>⚠️ Regra de ouro do overtrading</p>
+                <p style={{margin:"8px 0 0",color:"#888",fontSize:"13px",lineHeight:"1.6"}}><strong style={{color:"#ccc"}}>O problema nao e a tecnica — e o clique.</strong> Cada entrada extra fora do setup e uma aposta. Limite de operacoes e inegociavel.</p>
+              </div>
+
+              {/* COMPLIANCE SECTION */}
+              <div style={{borderTop:"1px solid #1a1a1a",paddingTop:"24px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",flexWrap:"wrap",gap:"12px"}}>
+                  <div>
+                    <h3 style={{margin:"0 0 4px",fontSize:"15px",color:"#f0f0f0",fontWeight:"600"}}>📅 Calendario de disciplina</h3>
+                    <p style={{margin:0,color:"#666",fontSize:"12px"}}>Registre se cumpriu todas as regras no dia</p>
+                  </div>
+                  {pct!==null&&(
+                    <div style={{textAlign:"right"}}>
+                      <p style={{margin:"0 0 2px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{MONTH_NAMES[month]} — cumprimento</p>
+                      <p style={{margin:0,color:pct>=80?"#00d4aa":pct>=50?"#f59e0b":"#ff4d4d",fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{pct}%</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mark today button */}
+                <div style={{marginBottom:"20px",display:"flex",gap:"10px",alignItems:"center",flexWrap:"wrap"}}>
+                  <button onClick={markToday} style={{
+                    background:todayComplied?"rgba(0,212,170,0.15)":"rgba(255,255,255,0.05)",
+                    border:"1px solid "+(todayComplied?"#00d4aa44":"#333"),
+                    borderRadius:"10px",padding:"12px 20px",cursor:"pointer",
+                    display:"flex",alignItems:"center",gap:"10px",transition:"all 0.2s"
+                  }}>
+                    <div style={{width:"20px",height:"20px",borderRadius:"5px",border:"2px solid "+(todayComplied?"#00d4aa":"#555"),background:todayComplied?"#00d4aa":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+                      {todayComplied&&<span style={{color:"#000",fontSize:"12px",fontWeight:"bold"}}>✓</span>}
+                    </div>
+                    <span style={{color:todayComplied?"#00d4aa":"#888",fontWeight:"600",fontSize:"13px"}}>
+                      {todayComplied?"✓ Cumpri todas as regras hoje":"Marcar: cumpri todas as regras hoje"}
+                    </span>
+                  </button>
+                  {todayComplied&&<span style={{color:"#00d4aa66",fontSize:"12px"}}>Registrado para {formatDateFull(today)}</span>}
+                </div>
+
+                {/* Calendar grid */}
+                <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid #ffffff08",borderRadius:"14px",padding:"16px"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"4px",marginBottom:"8px"}}>
+                    {["Dom","Seg","Ter","Qua","Qui","Sex","Sab"].map(d=>(
+                      <div key={d} style={{textAlign:"center",color:"#555",fontSize:"10px",fontWeight:"600",padding:"4px 0"}}>{d}</div>
+                    ))}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"4px"}}>
+                    {Array.from({length:firstDay}).map((_,i)=><div key={"e"+i}/>)}
+                    {Array.from({length:daysInMonth}).map((_,i)=>{
+                      const d=i+1;
+                      const k=calKey(d);
+                      const isToday=k===today;
+                      const future=k>today;
+                      const status=compliance[k];
+                      const bg=future?"transparent":status===true?"rgba(0,212,170,0.2)":status===false?"rgba(255,77,77,0.2)":"rgba(255,255,255,0.03)";
+                      const border=isToday?"2px solid #00d4aa44":"1px solid "+(status===true?"#00d4aa33":status===false?"#ff4d4d33":"#ffffff08");
+                      const color=future?"#333":status===true?"#00d4aa":status===false?"#ff4d4d":isToday?"#f0f0f0":"#666";
+                      return (
+                        <div key={d} onClick={()=>{
+                          if(future)return;
+                          const updated={...compliance,[k]:compliance[k]===true?false:compliance[k]===false?undefined:true};
+                          if(updated[k]===undefined) delete updated[k];
+                          saveCompliance(updated);
+                          setCompliance(updated);
+                        }} style={{
+                          aspectRatio:"1",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                          borderRadius:"8px",background:bg,border,cursor:future?"default":"pointer",
+                          transition:"all 0.15s",position:"relative"
+                        }}>
+                          <span style={{fontSize:"12px",fontWeight:isToday?"700":"500",color,lineHeight:1}}>{d}</span>
+                          {status===true&&<span style={{fontSize:"8px",marginTop:"1px"}}>✓</span>}
+                          {status===false&&<span style={{fontSize:"8px",marginTop:"1px",color:"#ff4d4d"}}>✗</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <p style={{margin:"10px 0 0",color:"#555",fontSize:"11px",textAlign:"center"}}>
+                  <span style={{color:"#00d4aa66"}}>■</span> Cumpriu &nbsp;
+                  <span style={{color:"#ff4d4d66"}}>■</span> Nao cumpriu &nbsp;
+                  <span style={{color:"#ffffff18"}}>■</span> Sem registro &nbsp;·&nbsp;
+                  Clique em qualquer dia passado para registrar
+                </p>
+              </div>
             </div>
-            <div style={{padding:"10px 14px",borderRadius:"8px",background:"rgba(0,212,170,0.05)",border:"1px solid #00d4aa18",marginBottom:"14px",display:"flex",gap:"8px",alignItems:"center"}}>
-              <span>🔄</span>
-              <p style={{margin:0,color:"#00d4aa88",fontSize:"11.5px"}}>Valores calculados sobre a banca real atual: <strong style={{color:"#00d4aa"}}>{market==="b3"?"R$ "+bancaRealB3.toLocaleString("pt-BR",{minimumFractionDigits:2}):"$ "+bancaRealForex.toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong></p>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-              {rules.map(r=><RuleCard key={r.id} rule={r} checked={!!checked[market+"-"+r.id]} onToggle={()=>toggle(r.id)}/>)}
-            </div>
-            <div style={{marginTop:"24px",padding:"16px 20px",borderRadius:"12px",background:"rgba(255,77,77,0.05)",border:"1px solid rgba(255,77,77,0.15)"}}>
-              <p style={{margin:0,color:"#ff4d4d",fontWeight:"600",fontSize:"14px"}}>⚠️ Regra de ouro do overtrading</p>
-              <p style={{margin:"8px 0 0",color:"#888",fontSize:"13px",lineHeight:"1.6"}}><strong style={{color:"#ccc"}}>O problema nao e a tecnica — e o clique.</strong> Cada entrada extra fora do setup e uma aposta. Limite de operacoes e inegociavel.</p>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {tab==="diario"&&(
           <div>
