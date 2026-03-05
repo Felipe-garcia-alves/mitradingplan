@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
-const BANCA_INICIAL_B3 = 3000;
-const BANCA_INICIAL_FOREX = 200;
+const DEFAULT_BANCA_B3 = 3000;
+const DEFAULT_BANCA_FOREX = 200;
 const CRESCIMENTO_MENSAL = 0.08;
 
 function getRulesB3(banca) {
@@ -74,6 +74,13 @@ function loadCompliance() {
 }
 function saveCompliance(data) {
   try { localStorage.setItem("compliance-v1", JSON.stringify(data)); } catch(e) {}
+}
+
+function loadConfig() {
+  try { const r=localStorage.getItem("config-v1"); return r?JSON.parse(r):{b3:DEFAULT_BANCA_B3,forex:DEFAULT_BANCA_FOREX}; } catch(e) { return {b3:DEFAULT_BANCA_B3,forex:DEFAULT_BANCA_FOREX}; }
+}
+function saveConfig(data) {
+  try { localStorage.setItem("config-v1", JSON.stringify(data)); } catch(e) {}
 }
 
 function exportCSV(entries) {
@@ -279,7 +286,7 @@ function DiarioTab({ entries, setEntries }) {
   );
 }
 
-function CrescimentoTab({ entries, bancaRealB3, bancaRealForex }) {
+function CrescimentoTab({ entries, bancaRealB3, bancaRealForex, bancaInicialB3, bancaInicialForex }) {
   const [viewMarket,setViewMarket]=useState("b3");
   const byMonth={};
   Object.entries(entries).forEach(([d,e])=>{
@@ -291,9 +298,9 @@ function CrescimentoTab({ entries, bancaRealB3, bancaRealForex }) {
   const projecao=gerarProjecao(bancaBase,12);
   const cur=viewMarket==="b3"?"R$":"$";
   const color=viewMarket==="b3"?"#00d4aa":"#f59e0b";
-  const iB=viewMarket==="b3"?BANCA_INICIAL_B3:BANCA_INICIAL_FOREX;
+  const iB=viewMarket==="b3"?(bancaInicialB3||DEFAULT_BANCA_B3):(bancaInicialForex||DEFAULT_BANCA_FOREX);
   const mesesComDados=Object.keys(byMonth).sort();
-  let accB3=BANCA_INICIAL_B3,accFx=BANCA_INICIAL_FOREX;
+  let accB3=bancaInicialB3,accFx=bancaInicialForex;
   const realRows=mesesComDados.map((mk)=>{
     accB3+=byMonth[mk].b3; accFx+=byMonth[mk].forex;
     return{mk,label:formatMonthLabel(mk),bancaB3:parseFloat(accB3.toFixed(2)),bancaForex:parseFloat(accFx.toFixed(2)),lucroB3:parseFloat(byMonth[mk].b3.toFixed(2)),lucroForex:parseFloat(byMonth[mk].forex.toFixed(2))};
@@ -368,10 +375,10 @@ function CrescimentoTab({ entries, bancaRealB3, bancaRealForex }) {
   );
 }
 
-function PatrimonioChart({ entries, bancaRealB3, bancaRealForex }) {
+function PatrimonioChart({ entries, bancaRealB3, bancaRealForex, bancaInicialB3, bancaInicialForex }) {
   const [market,setMarket]=useState("b3");
   const [tooltip,setTooltip]=useState(null);
-  const iB=market==="b3"?BANCA_INICIAL_B3:BANCA_INICIAL_FOREX;
+  const iB=market==="b3"?(bancaInicialB3||DEFAULT_BANCA_B3):(bancaInicialForex||DEFAULT_BANCA_FOREX);
   const cur=market==="b3"?"R$":"$";
   const color=market==="b3"?"#00d4aa":"#f59e0b";
   const bancaAtual=market==="b3"?bancaRealB3:bancaRealForex;
@@ -479,13 +486,14 @@ export default function App() {
   const [market,setMarket]=useState("b3");
   const [checked,setChecked]=useState({});
   const [entries,setEntries]=useState({});
-
   const [compliance,setCompliance]=useState({});
+  const [config,setConfig]=useState({b3:DEFAULT_BANCA_B3,forex:DEFAULT_BANCA_FOREX});
 
   useEffect(()=>{
     const data=loadFromStorage();
     setEntries(data);
     setCompliance(loadCompliance());
+    setConfig(loadConfig());
     const onStorage=(e)=>{
       if(e.key==="diario-v3"&&e.newValue){
         try{setEntries(JSON.parse(e.newValue));}catch(_){}
@@ -498,8 +506,10 @@ export default function App() {
     return ()=>window.removeEventListener("storage",onStorage);
   },[]);
 
-  const bancaRealB3=Object.values(entries).reduce((s,e)=>s+(e.b3||0),BANCA_INICIAL_B3);
-  const bancaRealForex=Object.values(entries).reduce((s,e)=>s+(e.forex||0),BANCA_INICIAL_FOREX);
+  const bancaInicialB3=config.b3||DEFAULT_BANCA_B3;
+  const bancaInicialForex=config.forex||DEFAULT_BANCA_FOREX;
+  const bancaRealB3=Object.values(entries).reduce((s,e)=>s+(e.b3||0),bancaInicialB3);
+  const bancaRealForex=Object.values(entries).reduce((s,e)=>s+(e.forex||0),bancaInicialForex);
   const rules=market==="b3"?getRulesB3(bancaRealB3):getRulesForex(bancaRealForex);
   const toggle=(id)=>setChecked(c=>({...c,[market+"-"+id]:!c[market+"-"+id]}));
   const allChecked=rules.every(r=>checked[market+"-"+r.id]);
@@ -560,9 +570,14 @@ export default function App() {
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                 {rules.map(r=><RuleCard key={r.id} rule={r} checked={!!checked[market+"-"+r.id]} onToggle={()=>toggle(r.id)}/>)}
               </div>
-              <div style={{marginTop:"24px",padding:"16px 20px",borderRadius:"12px",background:"rgba(255,77,77,0.05)",border:"1px solid rgba(255,77,77,0.15)",marginBottom:"28px"}}>
+              <div style={{marginTop:"24px",padding:"16px 20px",borderRadius:"12px",background:"rgba(255,77,77,0.05)",border:"1px solid rgba(255,77,77,0.15)"}}>
                 <p style={{margin:0,color:"#ff4d4d",fontWeight:"600",fontSize:"14px"}}>⚠️ Regra de ouro do overtrading</p>
                 <p style={{margin:"8px 0 0",color:"#888",fontSize:"13px",lineHeight:"1.6"}}><strong style={{color:"#ccc"}}>O problema nao e a tecnica — e o clique.</strong> Cada entrada extra fora do setup e uma aposta. Limite de operacoes e inegociavel.</p>
+              </div>
+              <div style={{marginTop:"14px",marginBottom:"28px",padding:"20px 24px",borderRadius:"12px",background:"linear-gradient(135deg,rgba(0,212,170,0.07),rgba(0,153,255,0.05))",border:"1px solid rgba(0,212,170,0.2)",textAlign:"center"}}>
+                <p style={{margin:0,color:"#f0f0f0",fontWeight:"700",fontSize:"17px",letterSpacing:"0.5px",lineHeight:"1.5"}}>
+                  O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO TÉCNICA.
+                </p>
               </div>
 
               {/* COMPLIANCE SECTION */}
@@ -695,8 +710,8 @@ export default function App() {
         })()}
 
         {tab==="banca"&&(()=>{
-          const lucroB3=bancaRealB3-BANCA_INICIAL_B3;
-          const lucroForex=bancaRealForex-BANCA_INICIAL_FOREX;
+          const lucroB3=bancaRealB3-bancaInicialB3;
+          const lucroForex=bancaRealForex-bancaInicialForex;
           const riscoB3=+(bancaRealB3*0.01).toFixed(2),stopB3=+(bancaRealB3*0.03).toFixed(2),metaB3=+(bancaRealB3*0.02).toFixed(2);
           const riscoFx=+(bancaRealForex*0.01).toFixed(2),stopFx=+(bancaRealForex*0.03).toFixed(2),metaFx=+(bancaRealForex*0.02).toFixed(2);
           const hasData=Object.keys(entries).length>0;
@@ -708,10 +723,49 @@ export default function App() {
               <p style={{margin:0,color:"#777",fontSize:"11px"}}>{sub}</p>
             </div>
           );
+          const [editando,setEditando]=useState(false);
+          const [inputB3,setInputB3]=useState(String(bancaInicialB3));
+          const [inputFx,setInputFx]=useState(String(bancaInicialForex));
+          const salvarConfig=()=>{
+            const b3=parseFloat(inputB3)||DEFAULT_BANCA_B3;
+            const forex=parseFloat(inputFx)||DEFAULT_BANCA_FOREX;
+            const nova={b3,forex};
+            saveConfig(nova);
+            setConfig(nova);
+            setEditando(false);
+          };
+          const inputStyle={width:"100%",background:"rgba(255,255,255,0.07)",border:"1px solid #444",borderRadius:"8px",padding:"9px 12px",color:"#fff",fontSize:"15px",fontWeight:"700",outline:"none",boxSizing:"border-box",fontFamily:"monospace"};
           return (
             <div>
-              <h2 style={{margin:"0 0 4px",fontSize:"16px",color:"#aaa",fontWeight:"500"}}>Referencias de gestao</h2>
-              <p style={{color:"#666",fontSize:"13px",marginBottom:"20px"}}>Limites calculados sobre a banca real atual.</p>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
+                <h2 style={{margin:0,fontSize:"16px",color:"#aaa",fontWeight:"500"}}>Referencias de gestao</h2>
+                <button onClick={()=>{setInputB3(String(bancaInicialB3));setInputFx(String(bancaInicialForex));setEditando(!editando);}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #333",borderRadius:"8px",padding:"6px 14px",color:"#888",fontSize:"12px",fontWeight:"600",cursor:"pointer"}}>
+                  {editando?"✕ Cancelar":"✏️ Editar banca inicial"}
+                </button>
+              </div>
+              <p style={{color:"#666",fontSize:"13px",marginBottom:editando?"0":"20px"}}>Limites calculados sobre a banca real atual.</p>
+
+              {editando&&(
+                <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid #f59e0b33",borderRadius:"14px",padding:"18px",margin:"14px 0 20px"}}>
+                  <p style={{margin:"0 0 14px",color:"#f59e0b",fontSize:"12px",fontWeight:"600",textTransform:"uppercase",letterSpacing:"1px"}}>⚙️ Configurar banca inicial</p>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}}>
+                    <div>
+                      <label style={{color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"5px"}}>🇧🇷 Banca inicial B3 (R$)</label>
+                      <input type="number" value={inputB3} onChange={e=>setInputB3(e.target.value)} style={inputStyle} placeholder="Ex: 3000"/>
+                    </div>
+                    <div>
+                      <label style={{color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"5px"}}>🌍 Banca inicial Forex ($)</label>
+                      <input type="number" value={inputFx} onChange={e=>setInputFx(e.target.value)} style={inputStyle} placeholder="Ex: 200"/>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
+                    <button onClick={salvarConfig} style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
+                      💾 Salvar banca inicial
+                    </button>
+                    <p style={{margin:0,color:"#555",fontSize:"11px"}}>Todos os calculos e graficos atualizam automaticamente</p>
+                  </div>
+                </div>
+              )}
 
               {/* Layout lado a lado: B3 esquerda, Forex direita */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
@@ -768,7 +822,7 @@ export default function App() {
               <h2 style={{margin:"0 0 4px",fontSize:"16px",color:"#f0f0f0",fontWeight:"600"}}>Crescimento — Real vs Projetado</h2>
               <p style={{margin:0,color:"#666",fontSize:"13px"}}>Projecao recalculada a partir da banca real atual</p>
             </div>
-            <CrescimentoTab entries={entries} bancaRealB3={bancaRealB3} bancaRealForex={bancaRealForex}/>
+            <CrescimentoTab entries={entries} bancaRealB3={bancaRealB3} bancaRealForex={bancaRealForex} bancaInicialB3={bancaInicialB3} bancaInicialForex={bancaInicialForex}/>
           </div>
         )}
 
@@ -778,7 +832,7 @@ export default function App() {
               <h2 style={{margin:"0 0 4px",fontSize:"16px",color:"#f0f0f0",fontWeight:"600"}}>Evolucao do Patrimonio</h2>
               <p style={{margin:0,color:"#666",fontSize:"13px"}}>Curva real dia a dia vs projecao — passe o mouse nos pontos</p>
             </div>
-            <PatrimonioChart entries={entries} bancaRealB3={bancaRealB3} bancaRealForex={bancaRealForex}/>
+            <PatrimonioChart entries={entries} bancaRealB3={bancaRealB3} bancaRealForex={bancaRealForex} bancaInicialB3={bancaInicialB3} bancaInicialForex={bancaInicialForex}/>
           </div>
         )}
 
