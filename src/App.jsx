@@ -375,6 +375,103 @@ function CrescimentoTab({ entries, bancaRealB3, bancaRealForex, bancaInicialB3, 
   );
 }
 
+function BancaTab({ bancaRealB3, bancaRealForex, bancaInicialB3, bancaInicialForex, entries, setConfig }) {
+  const [editando,setEditando]=useState(false);
+  const [inputB3,setInputB3]=useState(String(bancaInicialB3));
+  const [inputFx,setInputFx]=useState(String(bancaInicialForex));
+  const lucroB3=bancaRealB3-bancaInicialB3;
+  const lucroForex=bancaRealForex-bancaInicialForex;
+  const riscoB3=+(bancaRealB3*0.01).toFixed(2),stopB3=+(bancaRealB3*0.03).toFixed(2),metaB3=+(bancaRealB3*0.02).toFixed(2);
+  const riscoFx=+(bancaRealForex*0.01).toFixed(2),stopFx=+(bancaRealForex*0.03).toFixed(2),metaFx=+(bancaRealForex*0.02).toFixed(2);
+  const hasData=Object.keys(entries).length>0;
+  const colB3="#00d4aa",colFx="#f59e0b",colStop="#ff4d4d";
+  const salvarConfig=()=>{
+    const b3=parseFloat(inputB3)||DEFAULT_BANCA_B3;
+    const forex=parseFloat(inputFx)||DEFAULT_BANCA_FOREX;
+    const nova={b3,forex};
+    saveConfig(nova);
+    setConfig(nova);
+    setEditando(false);
+  };
+  const inputStyle={width:"100%",background:"rgba(255,255,255,0.07)",border:"1px solid #444",borderRadius:"8px",padding:"9px 12px",color:"#fff",fontSize:"15px",fontWeight:"700",outline:"none",boxSizing:"border-box",fontFamily:"monospace"};
+  const CardItem=({label,value,sub,color})=>(
+    <div style={{padding:"14px 16px",borderRadius:"12px",background:"rgba(255,255,255,0.02)",border:"1px solid "+color+"22",marginBottom:"10px"}}>
+      <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{label}</p>
+      <p style={{margin:"0 0 2px",color:color,fontSize:"20px",fontWeight:"700",fontFamily:"monospace"}}>{value}</p>
+      <p style={{margin:0,color:"#777",fontSize:"11px"}}>{sub}</p>
+    </div>
+  );
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
+        <h2 style={{margin:0,fontSize:"16px",color:"#aaa",fontWeight:"500"}}>Referencias de gestao</h2>
+        <button onClick={()=>{setInputB3(String(bancaInicialB3));setInputFx(String(bancaInicialForex));setEditando(!editando);}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #333",borderRadius:"8px",padding:"6px 14px",color:"#888",fontSize:"12px",fontWeight:"600",cursor:"pointer"}}>
+          {editando?"✕ Cancelar":"✏️ Editar banca inicial"}
+        </button>
+      </div>
+      <p style={{color:"#666",fontSize:"13px",marginBottom:editando?"0":"20px"}}>Limites calculados sobre a banca real atual.</p>
+      {editando&&(
+        <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid #f59e0b33",borderRadius:"14px",padding:"18px",margin:"14px 0 20px"}}>
+          <p style={{margin:"0 0 14px",color:"#f59e0b",fontSize:"12px",fontWeight:"600",textTransform:"uppercase",letterSpacing:"1px"}}>⚙️ Configurar banca inicial</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}}>
+            <div>
+              <label style={{color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"5px"}}>🇧🇷 Banca inicial B3 (R$)</label>
+              <input type="number" value={inputB3} onChange={e=>setInputB3(e.target.value)} style={inputStyle} placeholder="Ex: 3000"/>
+            </div>
+            <div>
+              <label style={{color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"5px"}}>🌍 Banca inicial Forex ($)</label>
+              <input type="number" value={inputFx} onChange={e=>setInputFx(e.target.value)} style={inputStyle} placeholder="Ex: 200"/>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
+            <button onClick={salvarConfig} style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
+              💾 Salvar banca inicial
+            </button>
+            <p style={{margin:0,color:"#555",fontSize:"11px"}}>Todos os calculos e graficos atualizam automaticamente</p>
+          </div>
+        </div>
+      )}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px",paddingBottom:"8px",borderBottom:"2px solid "+colB3+"44"}}>
+            <span style={{fontSize:"16px"}}>🇧🇷</span>
+            <span style={{color:colB3,fontWeight:"700",fontSize:"14px"}}>Mini Indice B3</span>
+          </div>
+          <div style={{padding:"16px",borderRadius:"14px",background:"rgba(0,212,170,0.06)",border:"1px solid "+colB3+"33",position:"relative",overflow:"hidden",marginBottom:"10px"}}>
+            <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+colB3+",transparent)"}}/>
+            <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Banca atual</p>
+            <p style={{margin:"0 0 3px",color:colB3,fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{"R$ "+bancaRealB3.toLocaleString("pt-BR",{minimumFractionDigits:2})}</p>
+            <p style={{margin:0,fontSize:"11px",color:lucroB3>=0?"#00d4aa88":"#ff4d4d88",fontFamily:"monospace"}}>
+              {hasData?(lucroB3>=0?"+":"")+"R$ "+Math.abs(lucroB3).toFixed(2)+" vs inicial":"Sem registros ainda"}
+            </p>
+          </div>
+          <CardItem label="Risco por operacao" value={"R$ "+riscoB3.toFixed(2)} sub="1% da banca" color={colB3}/>
+          <CardItem label="Meta diaria" value={"R$ "+metaB3.toFixed(2)} sub="2% — pode encerrar" color={colB3}/>
+          <CardItem label="Stop diario" value={"R$ "+stopB3.toFixed(2)} sub="3% — fecha o dia" color={colStop}/>
+        </div>
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px",paddingBottom:"8px",borderBottom:"2px solid "+colFx+"44"}}>
+            <span style={{fontSize:"16px"}}>🌍</span>
+            <span style={{color:colFx,fontWeight:"700",fontSize:"14px"}}>Forex</span>
+          </div>
+          <div style={{padding:"16px",borderRadius:"14px",background:"rgba(245,158,11,0.06)",border:"1px solid "+colFx+"33",position:"relative",overflow:"hidden",marginBottom:"10px"}}>
+            <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+colFx+",transparent)"}}/>
+            <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Banca atual</p>
+            <p style={{margin:"0 0 3px",color:colFx,fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{"$ "+bancaRealForex.toLocaleString("pt-BR",{minimumFractionDigits:2})}</p>
+            <p style={{margin:0,fontSize:"11px",color:lucroForex>=0?"#00d4aa88":"#ff4d4d88",fontFamily:"monospace"}}>
+              {hasData?(lucroForex>=0?"+":"")+"$ "+Math.abs(lucroForex).toFixed(2)+" vs inicial":"Sem registros ainda"}
+            </p>
+          </div>
+          <CardItem label="Risco por operacao" value={"$ "+riscoFx.toFixed(2)} sub="1% da banca" color={colFx}/>
+          <CardItem label="Meta diaria" value={"$ "+metaFx.toFixed(2)} sub="2% — pode encerrar" color={colFx}/>
+          <CardItem label="Stop diario" value={"$ "+stopFx.toFixed(2)} sub="3% — fecha o dia" color={colStop}/>
+        </div>
+      </div>
+      {!hasData&&<p style={{margin:"16px 0 0",color:"#555",fontSize:"12px",textAlign:"center"}}>Registre operacoes no Diario para os limites se atualizarem automaticamente.</p>}
+    </div>
+  );
+}
+
 function PatrimonioChart({ entries, bancaRealB3, bancaRealForex, bancaInicialB3, bancaInicialForex }) {
   const [market,setMarket]=useState("b3");
   const [tooltip,setTooltip]=useState(null);
@@ -709,112 +806,16 @@ export default function App() {
           );
         })()}
 
-        {tab==="banca"&&(()=>{
-          const lucroB3=bancaRealB3-bancaInicialB3;
-          const lucroForex=bancaRealForex-bancaInicialForex;
-          const riscoB3=+(bancaRealB3*0.01).toFixed(2),stopB3=+(bancaRealB3*0.03).toFixed(2),metaB3=+(bancaRealB3*0.02).toFixed(2);
-          const riscoFx=+(bancaRealForex*0.01).toFixed(2),stopFx=+(bancaRealForex*0.03).toFixed(2),metaFx=+(bancaRealForex*0.02).toFixed(2);
-          const hasData=Object.keys(entries).length>0;
-          const colB3="#00d4aa", colFx="#f59e0b", colStop="#ff4d4d";
-          const CardItem=({label,value,sub,color})=>(
-            <div style={{padding:"14px 16px",borderRadius:"12px",background:"rgba(255,255,255,0.02)",border:"1px solid "+color+"22",marginBottom:"10px"}}>
-              <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{label}</p>
-              <p style={{margin:"0 0 2px",color:color,fontSize:"20px",fontWeight:"700",fontFamily:"monospace"}}>{value}</p>
-              <p style={{margin:0,color:"#777",fontSize:"11px"}}>{sub}</p>
-            </div>
-          );
-          const [editando,setEditando]=useState(false);
-          const [inputB3,setInputB3]=useState(String(bancaInicialB3));
-          const [inputFx,setInputFx]=useState(String(bancaInicialForex));
-          const salvarConfig=()=>{
-            const b3=parseFloat(inputB3)||DEFAULT_BANCA_B3;
-            const forex=parseFloat(inputFx)||DEFAULT_BANCA_FOREX;
-            const nova={b3,forex};
-            saveConfig(nova);
-            setConfig(nova);
-            setEditando(false);
-          };
-          const inputStyle={width:"100%",background:"rgba(255,255,255,0.07)",border:"1px solid #444",borderRadius:"8px",padding:"9px 12px",color:"#fff",fontSize:"15px",fontWeight:"700",outline:"none",boxSizing:"border-box",fontFamily:"monospace"};
-          return (
-            <div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
-                <h2 style={{margin:0,fontSize:"16px",color:"#aaa",fontWeight:"500"}}>Referencias de gestao</h2>
-                <button onClick={()=>{setInputB3(String(bancaInicialB3));setInputFx(String(bancaInicialForex));setEditando(!editando);}} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #333",borderRadius:"8px",padding:"6px 14px",color:"#888",fontSize:"12px",fontWeight:"600",cursor:"pointer"}}>
-                  {editando?"✕ Cancelar":"✏️ Editar banca inicial"}
-                </button>
-              </div>
-              <p style={{color:"#666",fontSize:"13px",marginBottom:editando?"0":"20px"}}>Limites calculados sobre a banca real atual.</p>
-
-              {editando&&(
-                <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid #f59e0b33",borderRadius:"14px",padding:"18px",margin:"14px 0 20px"}}>
-                  <p style={{margin:"0 0 14px",color:"#f59e0b",fontSize:"12px",fontWeight:"600",textTransform:"uppercase",letterSpacing:"1px"}}>⚙️ Configurar banca inicial</p>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}}>
-                    <div>
-                      <label style={{color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"5px"}}>🇧🇷 Banca inicial B3 (R$)</label>
-                      <input type="number" value={inputB3} onChange={e=>setInputB3(e.target.value)} style={inputStyle} placeholder="Ex: 3000"/>
-                    </div>
-                    <div>
-                      <label style={{color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"5px"}}>🌍 Banca inicial Forex ($)</label>
-                      <input type="number" value={inputFx} onChange={e=>setInputFx(e.target.value)} style={inputStyle} placeholder="Ex: 200"/>
-                    </div>
-                  </div>
-                  <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
-                    <button onClick={salvarConfig} style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
-                      💾 Salvar banca inicial
-                    </button>
-                    <p style={{margin:0,color:"#555",fontSize:"11px"}}>Todos os calculos e graficos atualizam automaticamente</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Layout lado a lado: B3 esquerda, Forex direita */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
-
-                {/* COLUNA B3 */}
-                <div>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px",paddingBottom:"8px",borderBottom:"2px solid "+colB3+"44"}}>
-                    <span style={{fontSize:"16px"}}>🇧🇷</span>
-                    <span style={{color:colB3,fontWeight:"700",fontSize:"14px"}}>Mini Indice B3</span>
-                  </div>
-                  {/* Banca atual */}
-                  <div style={{padding:"16px",borderRadius:"14px",background:"rgba(0,212,170,0.06)",border:"1px solid "+colB3+"33",position:"relative",overflow:"hidden",marginBottom:"10px"}}>
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+colB3+",transparent)"}}/>
-                    <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Banca atual</p>
-                    <p style={{margin:"0 0 3px",color:colB3,fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{"R$ "+bancaRealB3.toLocaleString("pt-BR",{minimumFractionDigits:2})}</p>
-                    <p style={{margin:0,fontSize:"11px",color:lucroB3>=0?"#00d4aa88":"#ff4d4d88",fontFamily:"monospace"}}>
-                      {hasData?(lucroB3>=0?"+":"")+"R$ "+Math.abs(lucroB3).toFixed(2)+" vs inicial":"Sem registros ainda"}
-                    </p>
-                  </div>
-                  <CardItem label="Risco por operacao" value={"R$ "+riscoB3.toFixed(2)} sub="1% da banca" color={colB3}/>
-                  <CardItem label="Meta diaria" value={"R$ "+metaB3.toFixed(2)} sub="2% — pode encerrar" color={colB3}/>
-                  <CardItem label="Stop diario" value={"R$ "+stopB3.toFixed(2)} sub="3% — fecha o dia" color={colStop}/>
-                </div>
-
-                {/* COLUNA FOREX */}
-                <div>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px",paddingBottom:"8px",borderBottom:"2px solid "+colFx+"44"}}>
-                    <span style={{fontSize:"16px"}}>🌍</span>
-                    <span style={{color:colFx,fontWeight:"700",fontSize:"14px"}}>Forex</span>
-                  </div>
-                  {/* Banca atual */}
-                  <div style={{padding:"16px",borderRadius:"14px",background:"rgba(245,158,11,0.06)",border:"1px solid "+colFx+"33",position:"relative",overflow:"hidden",marginBottom:"10px"}}>
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+colFx+",transparent)"}}/>
-                    <p style={{margin:"0 0 3px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Banca atual</p>
-                    <p style={{margin:"0 0 3px",color:colFx,fontSize:"22px",fontWeight:"700",fontFamily:"monospace"}}>{"$ "+bancaRealForex.toLocaleString("pt-BR",{minimumFractionDigits:2})}</p>
-                    <p style={{margin:0,fontSize:"11px",color:lucroForex>=0?"#00d4aa88":"#ff4d4d88",fontFamily:"monospace"}}>
-                      {hasData?(lucroForex>=0?"+":"")+"$ "+Math.abs(lucroForex).toFixed(2)+" vs inicial":"Sem registros ainda"}
-                    </p>
-                  </div>
-                  <CardItem label="Risco por operacao" value={"$ "+riscoFx.toFixed(2)} sub="1% da banca" color={colFx}/>
-                  <CardItem label="Meta diaria" value={"$ "+metaFx.toFixed(2)} sub="2% — pode encerrar" color={colFx}/>
-                  <CardItem label="Stop diario" value={"$ "+stopFx.toFixed(2)} sub="3% — fecha o dia" color={colStop}/>
-                </div>
-
-              </div>
-              {!hasData&&<p style={{margin:"16px 0 0",color:"#555",fontSize:"12px",textAlign:"center"}}>Registre operacoes no Diario para os limites se atualizarem automaticamente.</p>}
-            </div>
-          );
-        })()}
+        {tab==="banca"&&(
+          <BancaTab
+            bancaRealB3={bancaRealB3}
+            bancaRealForex={bancaRealForex}
+            bancaInicialB3={bancaInicialB3}
+            bancaInicialForex={bancaInicialForex}
+            entries={entries}
+            setConfig={setConfig}
+          />
+        )}
 
         {tab==="crescimento"&&(
           <div>
