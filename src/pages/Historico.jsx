@@ -57,14 +57,14 @@ export default function Historico({ entries }) {
 
       {/* Calendar */}
       <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px",marginBottom:"20px"}}>
-        <div style={{display:"grid",gridTemplateColumns:"40px repeat(7,1fr)",gap:"4px",marginBottom:"8px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"36px repeat(7,1fr)",gap:"6px",marginBottom:"10px"}}>
           <div/>
           {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
             <div key={d} style={{textAlign:"center",color:"#666",fontSize:"11px",fontWeight:"600",padding:"4px 0"}}>{d}</div>
           ))}
         </div>
         {weeks.map((w,wi)=>(
-          <div key={wi} style={{display:"grid",gridTemplateColumns:"40px repeat(7,1fr)",gap:"4px",marginBottom:"4px",alignItems:"center"}}>
+          <div key={wi} style={{display:"grid",gridTemplateColumns:"36px repeat(7,1fr)",gap:"6px",marginBottom:"6px",alignItems:"start"}}>
             <div style={{fontSize:"10px",color:"#2a2a3a",textAlign:"center",paddingRight:"4px"}}>
               {w.wins>0&&<span style={{color:"#00d4aa44",fontSize:"9px",display:"block"}}>{w.wins>0?"+"+w.wins:""}</span>}
               {w.losses>0&&<span style={{color:"#ff4d4d44",fontSize:"9px",display:"block"}}>{w.losses>0?"-"+w.losses:""}</span>}
@@ -78,12 +78,14 @@ export default function Historico({ entries }) {
               const bg = hasTrades ? (tot>=0?"rgba(0,212,170,0.12)":"rgba(255,77,77,0.12)") : "rgba(255,255,255,0.02)";
               const border = isToday?"2px solid #00d4aa44":hasTrades?(tot>=0?"1px solid #00d4aa22":"1px solid #ff4d4d22"):"1px solid #1a1a2e";
               return (
-                <div key={ci} onClick={()=>hasTrades&&setSel(sel===k?null:k)} style={{borderRadius:"10px",background:bg,border,padding:"8px 6px",cursor:hasTrades?"pointer":"default",transition:"all 0.15s",minHeight:"60px"}}>
-                  <p style={{margin:"0 0 4px",color:isToday?"#00d4aa":hasTrades?"#ccc":"#888",fontSize:"13px",fontWeight:isToday?"800":"500",textAlign:"center"}}>{d}</p>
+                <div key={ci} onClick={()=>hasTrades&&setSel(sel===k?null:k)} style={{borderRadius:"12px",background:bg,border,padding:"10px 6px",cursor:hasTrades?"pointer":"default",transition:"all 0.15s",minHeight:"90px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",gap:"3px"}}>
+                  <p style={{margin:0,color:isToday?"#00d4aa":hasTrades?"#f0f0f0":"#555",fontSize:"15px",fontWeight:isToday?"800":"600",textAlign:"center"}}>{d}</p>
                   {hasTrades && (
-                    <div style={{textAlign:"center"}}>
-                      {e.numTrades>0&&<p style={{margin:"0 0 1px",color:"#999",fontSize:"9px"}}>{e.numTrades}t</p>}
-                      {tot!==null&&<p style={{margin:0,color:tot>=0?"#00d4aa":"#ff4d4d",fontSize:"10px",fontWeight:"700",fontFamily:"monospace"}}>{tot>=0?"+":""}R${Math.abs(tot)<1000?tot.toFixed(0):(tot/1000).toFixed(1)+"k"}</p>}
+                    <div style={{textAlign:"center",width:"100%"}}>
+                      {e.numTrades>0&&<p style={{margin:"2px 0 1px",color:"#777",fontSize:"10px"}}>{e.numTrades} trade{e.numTrades!==1?"s":""}</p>}
+                      {e.winRate!==undefined&&<p style={{margin:"0 0 1px",color:e.winRate>=60?"#00d4aa":e.winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"10px",fontWeight:"700"}}>{e.winRate}%</p>}
+                      {tot!==null&&<p style={{margin:0,color:tot>=0?"#00d4aa":"#ff4d4d",fontSize:"12px",fontWeight:"800",fontFamily:"monospace"}}>{tot>=0?"+":""}R${Math.abs(tot)<1000?tot.toFixed(0):(tot/1000).toFixed(1)+"k"}</p>}
+                      {e.emocoes?.length>0&&<p style={{margin:"2px 0 0",color:"#555",fontSize:"9px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"90%"}}>{e.emocoes[0]}</p>}
                     </div>
                   )}
                 </div>

@@ -57,22 +57,31 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     if (trades.length === 0 && !observacao.trim()) {
       setMsg("Adicione ao menos um trade ou observação."); return;
     }
-    const totalB3    = trades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalForex = trades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalPts   = trades.reduce((s,t)=>s+(t.pontos||0),0);
-    const wins       = trades.filter(t=>t.tipo==="WIN").length;
-    const winRate    = trades.length > 0 ? Math.round((wins/trades.length)*100) : null;
-
-    const data = {
-      trades: trades.map(t => {
+    // Merge with existing trades for today
+    const existingTrades = todayEntry?.trades || [];
+    const allTrades = [
+      ...existingTrades,
+      ...trades.map(t => {
         const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||""};
         if (t.resultado !== null) tr.resultado = t.resultado;
         if (t.pontos    !== null) tr.pontos    = t.pontos;
         return tr;
-      }),
-      emocoes,
-      observacao: observacao || "",
-      numTrades:  trades.length,
+      })
+    ];
+    const mergedEmocoes = [...new Set([...(todayEntry?.emocoes||[]), ...emocoes])];
+    const mergedObs = observacao.trim() || todayEntry?.observacao || "";
+
+    const totalB3    = allTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalForex = allTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalPts   = allTrades.reduce((s,t)=>s+(t.pontos||0),0);
+    const wins       = allTrades.filter(t=>t.tipo==="WIN").length;
+    const winRate    = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
+
+    const data = {
+      trades: allTrades,
+      emocoes: mergedEmocoes,
+      observacao: mergedObs,
+      numTrades: allTrades.length,
       totalPts,
       ts: new Date().toISOString()
     };
@@ -81,7 +90,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     if (winRate    !== null) data.winRate = winRate;
 
     await saveEntry(today, data);
-    setMsg("✓ Salvo!"); setTimeout(()=>setMsg(""),2500);
+    setMsg("✓ Salvo! "+allTrades.length+" trades hoje"); setTimeout(()=>setMsg(""),2500);
     setTrades([]); setEmocoes([]); setObservacao("");
   }
 

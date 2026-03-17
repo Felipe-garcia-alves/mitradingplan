@@ -76,10 +76,13 @@ export default function Evolucao({ entries }) {
 
   // Curva de capital
   let acc = 0;
-  const capitalPoints = filtered.map(([d,e]) => {
-    acc += (e.totalB3||0)+(e.totalForex||0);
-    return { d, val: parseFloat(acc.toFixed(2)) };
-  });
+  const capitalPoints = [
+    { d:"inicio", val: 0 },
+    ...filtered.map(([d,e]) => {
+      acc += (e.totalB3||0)+(e.totalForex||0);
+      return { d, val: parseFloat(acc.toFixed(2)) };
+    })
+  ];
 
   // Resultado diario (barras)
   const dailyBars = filtered.map(([d,e]) => ({
@@ -116,7 +119,7 @@ export default function Evolucao({ entries }) {
 
   // Chart helpers
   function LineChart({ points, color="#00d4aa" }) {
-    if (points.length < 2) return <div style={{height:"120px",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#666",fontSize:"12px"}}>Registre operações para ver o gráfico</p></div>;
+    if (points.length < 2) return <div style={{height:"120px",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#444",fontSize:"12px"}}>Registre operações para ver o gráfico</p></div>;
     const W=600,H=120,PL=8,PR=8,PT=8,PB=8;
     const vals=points.map(p=>p.val), minV=Math.min(0,...vals), maxV=Math.max(0,...vals), rng=maxV-minV||1;
     const x=(i)=>PL+(i/(points.length-1||1))*(W-PL-PR);
@@ -139,21 +142,24 @@ export default function Evolucao({ entries }) {
   }
 
   function BarChart({ bars }) {
-    if (bars.length === 0) return <div style={{height:"100px",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#666",fontSize:"12px"}}>Sem dados no período</p></div>;
-    const W=600,H=120,PL=4,PR=4,PT=8,PB=8;
-    const vals=bars.map(b=>b.val);
-    const maxAbs=Math.max(1,...vals.map(Math.abs));
-    const innerH=H-PT-PB;
-    const midY=PT+innerH/2;
-    const bw=Math.max(4,Math.floor((W-PL-PR)/Math.max(bars.length,1))-2);
+    if (bars.length === 0) return <div style={{height:"120px",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#666",fontSize:"12px"}}>Sem dados no período</p></div>;
+    const W=580, H=120, PT=8, PB=8, PL=8, PR=8;
+    const innerH = H-PT-PB;
+    const midY   = PT + innerH/2;
+    const maxAbs = Math.max(1, ...bars.map(b=>Math.abs(b.val)));
+    const n      = bars.length;
+    const gap    = 3;
+    const bw     = Math.max(4, Math.min(20, Math.floor((W-PL-PR-(n-1)*gap)/n)));
+    const totalW = n*bw + (n-1)*gap;
+    const startX = PL + (W-PL-PR-totalW)/2;
     return (
-      <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",height:"auto",display:"block"}} preserveAspectRatio="none">
-        <line x1={PL} y1={midY} x2={W-PR} y2={midY} stroke="#ffffff15" strokeWidth="1"/>
+      <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",height:"auto",display:"block"}}>
+        <line x1={PL} y1={midY} x2={W-PR} y2={midY} stroke="#ffffff18" strokeWidth="1"/>
         {bars.map((b,i)=>{
-          const x=PL+i*(bw+2);
-          const barH=Math.max(2,(Math.abs(b.val)/maxAbs)*(innerH/2));
-          const col=b.val>=0?"#00d4aa":"#ff4d4d";
-          const barY=b.val>=0?midY-barH:midY;
+          const x    = startX + i*(bw+gap);
+          const barH = Math.max(2, (Math.abs(b.val)/maxAbs)*(innerH/2-2));
+          const col  = b.val>=0 ? "#00d4aa" : "#ff4d4d";
+          const barY = b.val>=0 ? midY-barH : midY;
           return <rect key={i} x={x} y={barY} width={bw} height={barH} fill={col} rx="2" opacity="0.9"/>;
         })}
       </svg>
