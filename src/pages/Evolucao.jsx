@@ -15,13 +15,13 @@ function DateFilter({ inicio, fim, onChange }) {
 
   return (
     <div style={{position:"relative"}}>
-      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",padding:"8px 14px",color:"#aaa",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"20px",padding:"8px 16px",color:"#aaa",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.2s"}}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         {fmt(inicio)} até {fmt(fim)}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"12px",padding:"16px",zIndex:100,minWidth:"280px",boxShadow:"0 20px 40px rgba(0,0,0,0.5)"}}>
+        <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#0d0d14",border:"1px solid #2a2a3a",borderRadius:"16px",padding:"16px",zIndex:100,minWidth:"280px",boxShadow:"0 20px 40px rgba(0,0,0,0.5)"}}>
           <p style={{margin:"0 0 12px",color:"#999",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Período</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"12px"}}>
             <div>
@@ -140,19 +140,21 @@ export default function Evolucao({ entries }) {
 
   function BarChart({ bars }) {
     if (bars.length === 0) return <div style={{height:"100px",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#666",fontSize:"12px"}}>Sem dados no período</p></div>;
-    const W=600,H=100,PL=4,PR=4,PT=8,PB=16;
-    const vals=bars.map(b=>b.val), maxAbs=Math.max(1,...vals.map(Math.abs));
-    const bw=Math.max(2,(W-PL-PR)/bars.length-2);
-    const midY=PT+(H-PT-PB)/2;
+    const W=600,H=120,PL=4,PR=4,PT=8,PB=8;
+    const vals=bars.map(b=>b.val);
+    const maxAbs=Math.max(1,...vals.map(Math.abs));
+    const innerH=H-PT-PB;
+    const midY=PT+innerH/2;
+    const bw=Math.max(4,Math.floor((W-PL-PR)/Math.max(bars.length,1))-2);
     return (
       <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",height:"auto",display:"block"}} preserveAspectRatio="none">
-        <line x1={PL} y1={midY} x2={W-PR} y2={midY} stroke="#ffffff08" strokeWidth="1"/>
+        <line x1={PL} y1={midY} x2={W-PR} y2={midY} stroke="#ffffff15" strokeWidth="1"/>
         {bars.map((b,i)=>{
-          const cx=PL+(i/(bars.length-1||1))*(W-PL-PR);
-          const h=Math.max(2,(Math.abs(b.val)/maxAbs)*((H-PT-PB)/2));
+          const x=PL+i*(bw+2);
+          const barH=Math.max(2,(Math.abs(b.val)/maxAbs)*(innerH/2));
           const col=b.val>=0?"#00d4aa":"#ff4d4d";
-          const barY=b.val>=0?midY-h:midY;
-          return <rect key={i} x={cx-bw/2} y={barY} width={bw} height={h} fill={col} rx="2" opacity="0.85"/>;
+          const barY=b.val>=0?midY-barH:midY;
+          return <rect key={i} x={x} y={barY} width={bw} height={barH} fill={col} rx="2" opacity="0.9"/>;
         })}
       </svg>
     );

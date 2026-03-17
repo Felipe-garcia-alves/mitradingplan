@@ -136,7 +136,7 @@ function AppInterno() {
   const renderPage = () => {
     switch(pagina){
       case "evolucao":    return <Evolucao entries={entries}/>;
-      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry}/>;
+      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
       case "historico":   return <Historico entries={entries}/>;
       case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
       case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig}/></Suspense>;
@@ -184,7 +184,6 @@ function AppInterno() {
 
 function Root() {
   const { user } = useAuth();
-  console.log("USER STATE:", user?.uid);
   return user ? <AppInterno/> : <Login/>;
 }
 
