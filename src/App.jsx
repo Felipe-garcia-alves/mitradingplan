@@ -137,15 +137,15 @@ function AppInterno() {
   }
   async function saveConfig(newConfig) {
     setConfigState(newConfig);
-    await updateDoc(doc(db,"usuarios",uid),{config:newConfig});
+    await setDoc(doc(db,"usuarios",uid),{config:newConfig},{merge:true});
   }
   async function saveComplianceData(updated) {
     setCompliance(updated);
-    await updateDoc(doc(db,"usuarios",uid),{compliance:updated});
+    await setDoc(doc(db,"usuarios",uid),{compliance:updated},{merge:true});
   }
   async function saveRegras(novas) {
     setRegras(novas);
-    await updateDoc(doc(db,"usuarios",uid),{regras:novas});
+    await setDoc(doc(db,"usuarios",uid),{regras:novas},{merge:true});
   }
   async function saveEstrategia(id, data) {
     if (id) {
