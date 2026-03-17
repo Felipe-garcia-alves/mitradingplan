@@ -1,3 +1,4 @@
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut } from "firebase/auth";
 import { useState } from "react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -11,32 +12,45 @@ export default function Login() {
   const [erro, setErro]       = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit() {
-    setErro(""); setLoading(true);
-    try {
-      if (modo === "login") {
-        await signInWithEmailAndPassword(auth, email, senha);
-      } else {
-        if (!nome.trim()) { setErro("Digite seu nome."); setLoading(false); return; }
-        const cred = await createUserWithEmailAndPassword(auth, email, senha);
-        await setDoc(doc(db, "usuarios", cred.user.uid), {
-          nome, email,
-          criadoEm: new Date().toISOString(),
-          config: { bancaB3: 3000, bancaForex: 200 }
-        });
+async function handleSubmit() {
+  setErro(""); setLoading(true);
+  try {
+    if (modo === "login") {
+      const cred = await signInWithEmailAndPassword(auth, email, senha);
+      if (!cred.user.emailVerified) {
+        await signOut(auth);
+        setErro("Email nao verificado. Verifique sua caixa de entrada.");
+        setLoading(false);
+        return;
       }
-    } catch(e) {
-      const msgs = {
-        "auth/user-not-found":       "Email nao encontrado.",
-        "auth/wrong-password":       "Senha incorreta.",
-        "auth/email-already-in-use": "Email ja cadastrado.",
-        "auth/weak-password":        "Senha deve ter ao menos 6 caracteres.",
-        "auth/invalid-email":        "Email invalido.",
-        "auth/invalid-credential":   "Email ou senha incorretos."
-      };
-      setErro(msgs[e.code] || "Erro ao autenticar. Tente novamente.");
+    } else {
+      if (!nome.trim()) { setErro("Digite seu nome."); setLoading(false); return; }
+      const cred = await createUserWithEmailAndPassword(auth, email, senha);
+      await sendEmailVerification(cred.user);
+      await setDoc(doc(db, "usuarios", cred.user.uid), {
+        nome, email,
+        criadoEm: new Date().toISOString(),
+        config: { bancaB3: 3000, bancaForex: 200 }
+      });
+      await signOut(auth);
+      setModo("login");
+      setErro("✅ Conta criada! Verifique seu email antes de entrar.");
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+  } catch(e) {
+    const msgs = {
+      "auth/user-not-found":       "Email nao encontrado.",
+      "auth/wrong-password":       "Senha incorreta.",
+      "auth/email-already-in-use": "Email ja cadastrado.",
+      "auth/weak-password":        "Senha deve ter ao menos 6 caracteres.",
+      "auth/invalid-email":        "Email invalido.",
+      "auth/invalid-credential":   "Email ou senha incorretos."
+    };
+    setErro(msgs[e.code] || "Erro ao autenticar. Tente novamente.");
+  }
+  setLoading(false);
+}
   }
 
   const inp = { width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid #2a2a3a", borderRadius:"10px", padding:"12px 14px", color:"#f0f0f0", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"Inter,sans-serif" };
@@ -89,4 +103,4 @@ export default function Login() {
       </div>
     </div>
   );
-}
+  }
