@@ -164,41 +164,37 @@ export default function Evolucao({ entries }) {
 
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
-      {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"24px",flexWrap:"wrap",gap:"12px"}}>
-        <div>
-          <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Evolução</h1>
-          <p style={{margin:0,color:"#888",fontSize:"13px"}}>Visão consolidada do período</p>
-        </div>
+      {/* Filter row */}
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:"24px"}}>
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
       {/* Top 3 cards */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
         {/* Resultado Total */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px",position:"relative",overflow:"hidden"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
-          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"28px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
+          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"34px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
             {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
           </p>
           <p style={{margin:0,color:"#888",fontSize:"12px",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
         </div>
         {/* Win Rate */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px",position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#0099ff,transparent)"}}/>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+(winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d")+",transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
-          <p style={{margin:"0 0 4px",color:winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>
+          <p style={{margin:"0 0 4px",color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"34px",fontWeight:"800",fontFamily:"monospace"}}>
             {winRate !== null ? winRate+"%" : "—"}
           </p>
           <p style={{margin:0,color:"#888",fontSize:"12px"}}>{wins} de {allTrades.length} trades</p>
         </div>
         {/* Dias Operados */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px",position:"relative",overflow:"hidden"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#f59e0b,transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
           <p style={{margin:"0 0 4px",color:"#f0f0f0",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
-          <p style={{margin:0,color:"#888",fontSize:"12px"}}>{filtered.length} dias no período</p>
+          <p style={{margin:0,color:"#888",fontSize:"13px"}}>{filtered.length} dias no período</p>
         </div>
       </div>
 
@@ -303,7 +299,7 @@ export default function Evolucao({ entries }) {
                   <p style={{margin:"0 0 8px",color:"#999",fontSize:"12px",fontFamily:"monospace"}}>{s.pontos>=0?"+":""}{s.pontos.toFixed(1)} pts</p>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px"}}>
                     <span style={{color:"#888"}}>Assertividade</span>
-                    <span style={{color:ass>=60?"#00d4aa":ass>=40?"#f59e0b":"#ff4d4d",fontWeight:"700"}}>{ass}%</span>
+                    <span style={{color:s.resultado<0?"#ff4d4d":ass>=60?"#00d4aa":ass>=40?"#f59e0b":"#ff4d4d",fontWeight:"700"}}>{ass}%</span>
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px",marginTop:"3px"}}>
                     <span style={{color:"#888"}}>{s.total} operações</span>

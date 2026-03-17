@@ -38,7 +38,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
           {MENU.map(item => {
             const active = pagina === item.id;
             return (
-              <button key={item.id} onClick={()=>{setPagina(item.id);if(onClose)onClose();}} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",cursor:"pointer",marginBottom:"3px",transition:"all 0.15s",background:active?"rgba(0,212,170,0.12)":"transparent",color:active?"#00d4aa":"#aaa",fontWeight:active?"700":"500",fontSize:"15px",textAlign:"left",fontFamily:"Inter,sans-serif",letterSpacing:"0.1px"}}>
+              <button key={item.id} onClick={()=>{setPagina(item.id);if(onClose)onClose();}} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"13px 14px",borderRadius:"10px",border:"none",cursor:"pointer",marginBottom:"4px",transition:"all 0.15s",background:active?"rgba(0,212,170,0.12)":"transparent",color:active?"#00d4aa":"#aaa",fontWeight:active?"700":"500",fontSize:"16px",textAlign:"left",fontFamily:"Inter,sans-serif",letterSpacing:"0.1px"}}>
                 <span style={{flexShrink:0,opacity:active?1:0.7}}>{item.icon}</span>
                 {item.label}
               </button>
@@ -48,7 +48,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
 
         {/* Logout */}
         <div style={{padding:"12px 10px",borderTop:"1px solid #1a1a2e"}}>
-          <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",cursor:"pointer",background:"transparent",color:"#666",fontWeight:"500",fontSize:"15px",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}
+          <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",cursor:"pointer",background:"transparent",color:"#666",fontWeight:"500",fontSize:"16px",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}
             onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,77,77,0.08)";e.currentTarget.style.color="#ff6b6b";}}
             onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#666";}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>

@@ -93,10 +93,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
 
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
-      <div style={{marginBottom:"28px"}}>
-        <h1 style={{margin:"0 0 4px",fontSize:"24px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Diário</h1>
-        <p style={{margin:0,color:"#888",fontSize:"14px"}}>Registre suas operações e emoções do dia</p>
-      </div>
+      
 
       {/* Form */}
       <div style={{background:"#0d0d14",border:"1px solid "+(todayEntry?"#00d4aa22":"#1a1a2e"),borderRadius:"16px",padding:"24px",marginBottom:"24px"}}>
