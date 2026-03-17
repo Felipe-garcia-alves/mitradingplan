@@ -21,8 +21,8 @@ export default function Crescimento({ entries, config }) {
 
   const bancaInicialB3    = config?.bancaB3    || 3000;
   const bancaInicialForex = config?.bancaForex || 200;
-  const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.b3||0),    bancaInicialB3);
-  const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.forex||0), bancaInicialForex);
+  const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.totalB3||0),    bancaInicialB3);
+  const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.totalForex||0), bancaInicialForex);
 
   const cur     = market==="b3" ? "R$" : "$";
   const color   = market==="b3" ? "#00d4aa" : "#f59e0b";
@@ -34,7 +34,7 @@ export default function Crescimento({ entries, config }) {
   Object.entries(entries).forEach(([d,e])=>{
     const mk=monthKey(d);
     if(!byMonth[mk]) byMonth[mk]={b3:0,forex:0};
-    byMonth[mk].b3+=e.b3||0; byMonth[mk].forex+=e.forex||0;
+    byMonth[mk].b3+=e.totalB3||0; byMonth[mk].forex+=e.totalForex||0;
   });
   let accB3=bancaInicialB3, accFx=bancaInicialForex;
   const realRows=Object.keys(byMonth).sort().map(mk=>{

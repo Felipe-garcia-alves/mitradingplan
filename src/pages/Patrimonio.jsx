@@ -17,8 +17,8 @@ export default function Patrimonio({ entries, config }) {
 
   const bancaInicialB3    = config?.bancaB3    || 3000;
   const bancaInicialForex = config?.bancaForex || 200;
-  const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.b3||0),    bancaInicialB3);
-  const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.forex||0), bancaInicialForex);
+  const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.totalB3||0),    bancaInicialB3);
+  const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.totalForex||0), bancaInicialForex);
 
   const cur     = market==="b3" ? "R$" : "$";
   const color   = market==="b3" ? "#00d4aa" : "#f59e0b";
@@ -30,7 +30,7 @@ export default function Patrimonio({ entries, config }) {
   const realPoints = [
     {d:"Inicio",val:bancaIn,label:"Inicio"},
     ...sortedDays.map(([d,e])=>{
-      acc += market==="b3" ? (e.b3||0) : (e.forex||0);
+      acc += market==="b3" ? (e.totalB3||0) : (e.totalForex||0);
       return {d, val:parseFloat(acc.toFixed(2)), label:formatDateFull(d)};
     })
   ];
@@ -53,8 +53,8 @@ export default function Patrimonio({ entries, config }) {
   const xLabels=["Hoje","M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M11","M12"];
 
   // Operacoes perdedoras
-  const perdedoras = sortedDays.filter(([,e])=>(market==="b3"?(e.b3||0):(e.forex||0))<0)
-    .map(([d,e])=>({d,val:market==="b3"?e.b3:e.forex}))
+  const perdedoras = sortedDays.filter(([,e])=>(market==="b3"?(e.totalB3||0):(e.totalForex||0))<0)
+    .map(([d,e])=>({d,val:market==="b3"?e.totalB3:e.totalForex}))
     .sort((a,b)=>a.val-b.val).slice(0,5);
 
   return (

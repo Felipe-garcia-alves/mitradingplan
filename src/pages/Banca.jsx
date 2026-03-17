@@ -3,8 +3,8 @@ import { useState } from "react";
 export default function Banca({ entries, config, saveConfig }) {
   const bancaInicialB3    = config?.bancaB3    || 3000;
   const bancaInicialForex = config?.bancaForex || 200;
-  const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.b3||0),    bancaInicialB3);
-  const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.forex||0), bancaInicialForex);
+  const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.totalB3||0),    bancaInicialB3);
+  const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.totalForex||0), bancaInicialForex);
   const lucroB3           = bancaRealB3 - bancaInicialB3;
   const lucroForex        = bancaRealForex - bancaInicialForex;
   const hasData           = Object.keys(entries).length > 0;
