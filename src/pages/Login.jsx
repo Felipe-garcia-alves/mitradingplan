@@ -9,13 +9,20 @@ export default function Login() {
   const [senha, setSenha]     = useState("");
   const [nome, setNome]       = useState("");
   const [erro, setErro]       = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading,   setLoading]   = useState(false);
+  const [resetMsg,  setResetMsg]  = useState("");
+  const [reseting,  setReseting]  = useState(false);
 
   async function handleSubmit() {
     setErro(""); setLoading(true);
     try {
       if (modo === "login") {
         const cred = await signInWithEmailAndPassword(auth, email, senha);
+        if (!cred.user.emailVerified) {
+          await signOut(auth);
+          setErro("Email não verificado. Verifique sua caixa de entrada.");
+          setLoading(false); return;
+        }
       } else {
         if (!nome.trim()) { setErro("Digite seu nome."); setLoading(false); return; }
         const cred = await createUserWithEmailAndPassword(auth, email, senha);
@@ -41,6 +48,19 @@ export default function Login() {
       setErro(msgs[e.code] || "Erro ao autenticar.");
     }
     setLoading(false);
+  }
+
+  async function handleReset() {
+    if (!email.trim()) { setErro("Digite seu email primeiro."); return; }
+    setReseting(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetMsg("✓ Email de recuperação enviado! Verifique sua caixa de entrada.");
+      setErro("");
+    } catch(e) {
+      setErro("Email não encontrado ou inválido.");
+    }
+    setReseting(false);
   }
 
   const inp = { width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid #2a2a3a", borderRadius:"10px", padding:"13px 14px", color:"#f0f0f0", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"Inter,sans-serif", transition:"border 0.2s" };
