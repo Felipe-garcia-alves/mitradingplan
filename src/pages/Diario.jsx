@@ -18,12 +18,29 @@ export default function Diario({ entries, saveEntry, deleteEntry }) {
   const [expanded, setExpanded] = useState(null);
   const [msg, setMsg]           = useState("");
 
-  async function handleSave() {
-    const b3Val    = form.b3    !== "" ? parseFloat(form.b3)    : undefined;
-    const fxVal    = form.forex !== "" ? parseFloat(form.forex) : undefined;
-    if (b3Val === undefined && fxVal === undefined) { setMsg("❌ Informe ao menos um resultado."); return; }
-    await saveEntry(today, { b3:b3Val, forex:fxVal, motivo:form.motivo, nota:form.nota });
-    setMsg("✓ Salvo!"); setTimeout(()=>setMsg(""),2500);
+async function handleSave() {
+  const b3Val    = form.b3    !== "" ? parseFloat(form.b3)    : null;
+  const fxVal    = form.forex !== "" ? parseFloat(form.forex) : null;
+  if (b3Val === null && fxVal === null) { setMsg("❌ Informe ao menos um resultado."); return; }
+  
+  const data = { 
+    motivo: form.motivo || "", 
+    nota: form.nota || "",
+    ts: new Date().toISOString()
+  };
+  if (b3Val !== null) data.b3 = b3Val;
+  if (fxVal !== null) data.forex = fxVal;
+  
+  await saveEntry(today, data);
+  setMsg("✓ Salvo!"); setTimeout(()=>setMsg(""),2500);
+}
+```
+
+Salva (**Ctrl+S**) depois no terminal:
+```
+git add .
+git commit -m "fix diario undefined"
+git push
   }
 
   function exportCSV() {
