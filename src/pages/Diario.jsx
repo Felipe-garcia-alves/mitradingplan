@@ -26,7 +26,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
   const [emocoes,    setEmocoes]    = useState([]);
   const [observacao, setObservacao] = useState("");
   const [trades,     setTrades]     = useState([]);
-  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN"});
+  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:""});
   const [showEstSug, setShowEstSug] = useState(false);
 
   const todayEntry = entries[today];
@@ -45,9 +45,10 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
       pontos: novoTrade.pontos !== "" ? parseFloat(novoTrade.pontos) : null,
       estrategia: novoTrade.estrategia,
       tipo: novoTrade.tipo,
+      observacao: novoTrade.observacao,
     };
     setTrades(prev => [...prev, t]);
-    setNovoTrade({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN"});
+    setNovoTrade({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:""});
     setShowEstSug(false);
   }
 
@@ -62,7 +63,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     const allTrades = [
       ...existingTrades,
       ...trades.map(t => {
-        const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||""};
+        const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||""};
         if (t.resultado !== null) tr.resultado = t.resultado;
         if (t.pontos    !== null) tr.pontos    = t.pontos;
         return tr;
@@ -161,6 +162,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
             </div>
             <button onClick={addTrade} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer",whiteSpace:"nowrap"}}>+ Add</button>
           </div>
+          <input style={{...inp,width:"100%",boxSizing:"border-box",marginTop:"8px"}} type="text" placeholder="Observação desta operação (opcional)" value={novoTrade.observacao} onChange={e=>setNovoTrade(p=>({...p,observacao:e.target.value}))}/>
         </div>
 
         {/* Lista trades */}
@@ -173,6 +175,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
                 {t.pontos    !== null && <span style={{color:"#f0f0f0",fontSize:"14px",fontWeight:"600",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
                 {t.resultado !== null && <span style={{color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"600",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$ ":"$ "}{t.resultado?.toFixed(2)}</span>}
                 {t.estrategia && <span style={{color:"#888",fontSize:"13px",background:"rgba(255,255,255,0.05)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
+                {t.observacao && <span style={{color:"#666",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                 <button onClick={()=>removeTrade(t.id)} style={{marginLeft:"auto",background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"15px",padding:"2px 6px"}}>✕</button>
               </div>
             ))}
@@ -181,7 +184,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
 
         {/* Observacao */}
         <div style={{marginBottom:"20px"}}>
-          <label style={{color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"10px"}}>Observações do dia</label>
+          <label style={{color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"10px"}}>Observação geral do dia</label>
           <textarea style={{...inp,width:"100%",resize:"vertical",lineHeight:"1.6",minHeight:"80px",boxSizing:"border-box",fontSize:"14px"}} placeholder="Como foi o dia? Setup, erros, aprendizados..." value={observacao} onChange={e=>setObservacao(e.target.value)} rows={3}/>
         </div>
 
@@ -241,6 +244,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
                           {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
                           {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
                           {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
+                          {t.observacao&&<p style={{margin:"5px 0 0",color:"#777",fontSize:"12px",fontStyle:"italic",paddingLeft:"4px"}}>"{t.observacao}"</p>}
                         </div>
                       ))}
                     </div>
