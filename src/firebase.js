@@ -2,13 +2,15 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+// ⚠️ SUBSTITUA com suas credenciais do Firebase Console
+// Veja o guia FIREBASE_SETUP.md incluido no projeto
 const firebaseConfig = {
-  apiKey: "AIzaSyAw4ch3ezT_2wPa7TidnXRWRsuF4ojRv3Y",
-  authDomain: "mitrandinplan.firebaseapp.com",
-  projectId: "mitrandinplan",
-  storageBucket: "mitrandinplan.firebasestorage.app",
-  messagingSenderId: "1090271175226",
-  appId: "1:1090271175226:web:c8c51435f5f9e3732a0b03"
+  apiKey:            "COLE_AQUI",
+  authDomain:        "COLE_AQUI",
+  projectId:         "COLE_AQUI",
+  storageBucket:     "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId:             "COLE_AQUI"
 };
 
 const app = initializeApp(firebaseConfig);

@@ -30,7 +30,7 @@ export default function Banca({ entries, config, saveConfig }) {
       <div style={{ padding:"14px 16px", borderRadius:"12px", background:"rgba(255,255,255,0.02)", border:"1px solid "+color+"22", marginBottom:"10px" }}>
         <p style={{ margin:"0 0 3px", color:"#777", fontSize:"10px", textTransform:"uppercase", letterSpacing:"1px" }}>{label}</p>
         <p style={{ margin:"0 0 2px", color:color, fontSize:"20px", fontWeight:"700", fontFamily:"JetBrains Mono,monospace" }}>{value}</p>
-        <p style={{ margin:0, color:"#555", fontSize:"11px" }}>{sub}</p>
+        <p style={{ margin:0, color:"#999", fontSize:"11px" }}>{sub}</p>
       </div>
     );
   }
@@ -40,7 +40,7 @@ export default function Banca({ entries, config, saveConfig }) {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"24px", flexWrap:"wrap", gap:"10px" }}>
         <div>
           <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.5px" }}>Gestao de Banca</h1>
-          <p style={{ margin:0, color:"#555", fontSize:"13px" }}>Referencias de risco calculadas sobre sua banca real</p>
+          <p style={{ margin:0, color:"#999", fontSize:"13px" }}>Referencias de risco calculadas sobre sua banca real</p>
         </div>
         <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
           {msg && <span style={{ color:"#00d4aa", fontSize:"13px", fontWeight:"600" }}>{msg}</span>}
@@ -68,7 +68,7 @@ export default function Banca({ entries, config, saveConfig }) {
             <button onClick={salvar} style={{ background:"linear-gradient(135deg,#f59e0b,#d97706)", color:"#000", border:"none", borderRadius:"10px", padding:"11px 22px", fontWeight:"700", fontSize:"13px", cursor:"pointer" }}>
               💾 Salvar banca inicial
             </button>
-            <p style={{ margin:0, color:"#555", fontSize:"12px" }}>Todos os calculos atualizam automaticamente.</p>
+            <p style={{ margin:0, color:"#999", fontSize:"12px" }}>Todos os calculos atualizam automaticamente.</p>
           </div>
         </div>
       )}
@@ -115,7 +115,7 @@ export default function Banca({ entries, config, saveConfig }) {
         </div>
       </div>
 
-      {!hasData && <p style={{ margin:"20px 0 0", color:"#444", fontSize:"12px", textAlign:"center" }}>Registre operacoes no Diario para os valores atualizarem automaticamente.</p>}
+      {!hasData && <p style={{ margin:"20px 0 0", color:"#888", fontSize:"12px", textAlign:"center" }}>Registre operacoes no Diario para os valores atualizarem automaticamente.</p>}
     </div>
   );
 }

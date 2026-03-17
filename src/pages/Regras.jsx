@@ -193,11 +193,11 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
 
       <div style={{padding:"16px 20px",borderRadius:"12px",background:"rgba(255,77,77,0.05)",border:"1px solid rgba(255,77,77,0.15)",marginBottom:"14px"}}>
         <p style={{margin:"0 0 6px",color:"#ff4d4d",fontWeight:"700",fontSize:"14px"}}>⚠️ Regra de ouro do overtrading</p>
-        <p style={{margin:0,color:"#888",fontSize:"13px",lineHeight:"1.6"}}><strong style={{color:"#ccc"}}>O problema nao e a tecnica — e o clique.</strong> Cada entrada extra fora do setup e uma aposta.</p>
+        <p style={{margin:0,color:"#888",fontSize:"13px",lineHeight:"1.6"}}><strong style={{color:"#ccc"}}>O problema não é a técnica — é o clique.</strong> Cada entrada extra fora do setup e uma aposta.</p>
       </div>
 
       <div style={{padding:"18px 24px",borderRadius:"12px",background:"linear-gradient(135deg,rgba(0,212,170,0.07),rgba(0,153,255,0.05))",border:"1px solid rgba(0,212,170,0.2)",textAlign:"center",marginBottom:"28px"}}>
-        <p style={{margin:0,color:"#f0f0f0",fontWeight:"800",fontSize:"17px",letterSpacing:"0.5px",lineHeight:"1.5"}}>O QUE GERA RESULTADO E COMPORTAMENTO,<br/>NAO TECNICA.</p>
+        <p style={{margin:0,color:"#f0f0f0",fontWeight:"800",fontSize:"17px",letterSpacing:"0.5px",lineHeight:"1.5"}}>O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO A TÉCNICA.</p>
       </div>
 
       <div style={{borderTop:"1px solid #1a1a2e",paddingTop:"24px"}}>
