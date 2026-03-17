@@ -16,11 +16,6 @@ export default function Login() {
     try {
       if (modo === "login") {
         const cred = await signInWithEmailAndPassword(auth, email, senha);
-        if (!cred.user.emailVerified) {
-          await signOut(auth);
-          setErro("Email não verificado. Verifique sua caixa de entrada.");
-          setLoading(false); return;
-        }
       } else {
         if (!nome.trim()) { setErro("Digite seu nome."); setLoading(false); return; }
         const cred = await createUserWithEmailAndPassword(auth, email, senha);

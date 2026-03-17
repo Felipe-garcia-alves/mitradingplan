@@ -184,6 +184,7 @@ function AppInterno() {
 
 function Root() {
   const { user } = useAuth();
+  console.log("USER STATE:", user?.uid);
   return user ? <AppInterno/> : <Login/>;
 }
 
