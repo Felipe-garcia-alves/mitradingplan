@@ -399,14 +399,12 @@ function DiagnosticoIA({ trades, entries, totalResult, winRate, mediaVenc, media
     const estratResumo = Object.entries(estratStats).map(([n,s]) => {
       const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
       return `${n}: ${s.total} trades, ${ass}% acerto, R$ ${s.resultado.toFixed(2)}`;
-    }).join("
-");
+    }).join("\n");
 
     const emocaoResumo = Object.entries(emocaoStats).map(([em,s]) => {
       const media = (s.resultado/s.dias).toFixed(2);
       return `${em}: ${s.dias} dias, resultado médio R$ ${media}`;
-    }).join("
-");
+    }).join("\n");
 
     const prompt = `Você é um coach especialista em trading brasileiro. Analise os dados abaixo e gere um diagnóstico personalizado, direto e útil em português. Seja específico, use os números reais, aponte padrões, forças e fraquezas. Máximo 300 palavras.
 
