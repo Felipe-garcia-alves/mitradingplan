@@ -87,7 +87,7 @@ export default function Login() {
             {loading?"Aguarde...":modo==="login"?"Entrar":"Criar conta"}
           </button>
 
-          <p style={{textAlign:"center",color:"#333",fontSize:"12px",marginTop:"20px",lineHeight:"1.6"}}>
+          <p style={{textAlign:"center",color:"#888",fontSize:"12px",marginTop:"20px",lineHeight:"1.6"}}>
             Seus dados são privados e protegidos.<br/>Cada usuário vê apenas suas próprias operações.
           </p>
         </div>
