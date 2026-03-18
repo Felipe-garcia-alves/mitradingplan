@@ -446,9 +446,9 @@ Gere um diagnóstico com:
       const texto = data?.choices?.[0]?.message?.content;
       if (texto) setDiagnostico(texto);
       else setErro("Não foi possível gerar o diagnóstico. Tente novamente.");
-    } catch(e) {
-      setErro("Erro de conexão. Verifique sua internet.");
-    }
+  } catch(e) {
+  setErro("Erro: " + e.message);
+}
     setLoading(false);
   }
 
