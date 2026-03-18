@@ -16,40 +16,37 @@ function DateFilter({ inicio, fim, onChange }) {
   return (
     <div style={{position:"relative"}}>
       {open && <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:99}}/>}
-      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(0,212,170,0.1)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#00d4aa44":"#2a2a3a"),borderRadius:"20px",padding:"8px 16px",color:open?"#00d4aa":"#aaa",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.2s"}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        {fmt(inicio)} → {fmt(fim)}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><polyline points="6 9 12 15 18 9"/></svg>
+      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(0,212,170,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#00d4aa44":"#2a2a3a"),borderRadius:"20px",padding:"8px 16px",color:open?"#00d4aa":"#aaa",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.2s"}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        {fmt(inicio)} até {fmt(fim)}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0d0d14",border:"1px solid #2a2a3a",borderRadius:"20px",padding:"20px",zIndex:100,minWidth:"300px",boxShadow:"0 24px 48px rgba(0,0,0,0.6)"}}>
-          <p style={{margin:"0 0 14px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Selecionar período</p>
-          <div style={{display:"flex",gap:"6px",marginBottom:"16px",flexWrap:"wrap"}}>
+        <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#0d0d14",border:"1px solid #2a2a3a",borderRadius:"16px",padding:"16px",zIndex:100,minWidth:"280px",boxShadow:"0 20px 40px rgba(0,0,0,0.5)"}}>
+          <p style={{margin:"0 0 12px",color:"#999",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Período</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"12px"}}>
+            <div>
+              <label style={{color:"#999",fontSize:"11px",display:"block",marginBottom:"5px"}}>Início</label>
+              <input type="date" value={editInicio} onChange={e=>setEditInicio(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"8px",padding:"8px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"Inter,sans-serif"}}/>
+            </div>
+            <div>
+              <label style={{color:"#999",fontSize:"11px",display:"block",marginBottom:"5px"}}>Fim</label>
+              <input type="date" value={editFim} onChange={e=>setEditFim(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"8px",padding:"8px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"Inter,sans-serif"}}/>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:"8px"}}>
             {[["7d","7 dias"],["1m","Este mês"],["3m","3 meses"],["1a","1 ano"]].map(([k,l])=>(
               <button key={k} onClick={()=>{
-                const fim2=new Date(); const ini=new Date();
-                if(k==="7d") ini.setDate(fim2.getDate()-7);
+                const fim = new Date(); const ini = new Date();
+                if(k==="7d") ini.setDate(fim.getDate()-7);
                 else if(k==="1m") ini.setDate(1);
-                else if(k==="3m") ini.setMonth(fim2.getMonth()-3);
-                else ini.setFullYear(fim2.getFullYear()-1);
-                setEditInicio(dayKey(ini)); setEditFim(dayKey(fim2));
-              }} style={{padding:"6px 14px",borderRadius:"20px",border:"1px solid #2a2a3a",background:"rgba(255,255,255,0.03)",color:"#aaa",fontSize:"12px",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:"500",transition:"all 0.15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background="rgba(0,212,170,0.1)";e.currentTarget.style.color="#00d4aa";e.currentTarget.style.borderColor="#00d4aa44";}}
-              onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.03)";e.currentTarget.style.color="#aaa";e.currentTarget.style.borderColor="#2a2a3a";}}
-              >{l}</button>
+                else if(k==="3m") ini.setMonth(fim.getMonth()-3);
+                else ini.setFullYear(fim.getFullYear()-1);
+                setEditInicio(dayKey(ini)); setEditFim(dayKey(fim));
+              }} style={{flex:1,padding:"6px",borderRadius:"6px",border:"1px solid #2a2a3a",background:"transparent",color:"#999",fontSize:"11px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{l}</button>
             ))}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}}>
-            <div>
-              <label style={{color:"#666",fontSize:"11px",display:"block",marginBottom:"6px",letterSpacing:"0.5px"}}>De</label>
-              <input type="date" value={editInicio} onChange={e=>setEditInicio(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"10px",padding:"9px 10px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"Inter,sans-serif"}}/>
-            </div>
-            <div>
-              <label style={{color:"#666",fontSize:"11px",display:"block",marginBottom:"6px",letterSpacing:"0.5px"}}>Até</label>
-              <input type="date" value={editFim} onChange={e=>setEditFim(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"10px",padding:"9px 10px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"Inter,sans-serif"}}/>
-            </div>
-          </div>
-          <button onClick={()=>{ onChange(editInicio,editFim); setOpen(false); }} style={{width:"100%",background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"12px",padding:"11px",fontWeight:"700",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Aplicar</button>
+          <button onClick={()=>{ onChange(editInicio,editFim); setOpen(false); }} style={{width:"100%",marginTop:"10px",background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"8px",padding:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>Aplicar</button>
         </div>
       )}
     </div>
@@ -187,20 +184,26 @@ export default function Evolucao({ entries, compliance }) {
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
-      {/* Disciplina - linha própria centralizada */}
-      <div style={{display:"flex",justifyContent:"flex-start",alignItems:"center",gap:"16px",marginBottom:"28px"}}>
-        <div style={{background:"#0d0d14",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),borderRadius:"50%",width:"88px",height:"88px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
-          {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
-          <div style={{position:"absolute",inset:"8px",background:"#0d0d14",borderRadius:"50%"}}/>
-          <div style={{position:"relative",textAlign:"center"}}>
-            <p style={{margin:"0 0 1px",color:compliancePct===null?"#444":complianceColor,fontSize:"22px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
-            <p style={{margin:0,color:"#555",fontSize:"9px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Disciplina</p>
+      {/* Disciplina + Alertas — mesma linha */}
+      <div style={{display:"flex",alignItems:"center",gap:"16px",marginBottom:"28px",flexWrap:"wrap"}}>
+        {/* Card circular disciplina */}
+        <div style={{display:"flex",alignItems:"center",gap:"14px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"14px 20px"}}>
+          <div style={{background:"#0d0d14",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),borderRadius:"50%",width:"72px",height:"72px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
+            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
+            <div style={{position:"absolute",inset:"7px",background:"#0d0d14",borderRadius:"50%"}}/>
+            <div style={{position:"relative",textAlign:"center"}}>
+              <p style={{margin:0,color:compliancePct===null?"#444":complianceColor,fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
+              <p style={{margin:0,color:"#555",fontSize:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Disciplina</p>
+            </div>
+          </div>
+          <div>
+            <p style={{margin:"0 0 2px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
+            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{compliedDays} de {daysThisMonth.length} dias este mês</p>
           </div>
         </div>
-        <div>
-          <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"14px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina este mês":"Sem dados de disciplina"}</p>
-          <p style={{margin:0,color:"#555",fontSize:"12px"}}>{compliedDays} de {daysThisMonth.length} dias seguindo as regras</p>
-        </div>
+
+        {/* Alertas inteligentes */}
+        <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
       </div>
 
       {/* Top 3 cards */}
@@ -209,7 +212,7 @@ export default function Evolucao({ entries, compliance }) {
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
-          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"22px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
+          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"34px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
             {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
           </p>
           <p style={{margin:0,color:"#888",fontSize:"12px",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
@@ -218,7 +221,7 @@ export default function Evolucao({ entries, compliance }) {
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+(winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d")+",transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
-          <p style={{margin:"0 0 4px",color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"22px",fontWeight:"800",fontFamily:"monospace"}}>
+          <p style={{margin:"0 0 4px",color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"34px",fontWeight:"800",fontFamily:"monospace"}}>
             {winRate !== null ? winRate+"%" : "—"}
           </p>
           <p style={{margin:0,color:"#888",fontSize:"12px"}}>{wins} de {allTrades.length} trades</p>
@@ -227,7 +230,7 @@ export default function Evolucao({ entries, compliance }) {
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#f59e0b,transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
-          <p style={{margin:"0 0 4px",color:"#f0f0f0",fontSize:"22px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
+          <p style={{margin:"0 0 4px",color:"#f0f0f0",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
           <p style={{margin:0,color:"#888",fontSize:"13px"}}>{filtered.length} dias no período</p>
         </div>
       </div>
@@ -346,23 +349,23 @@ export default function Evolucao({ entries, compliance }) {
         </div>
       )}
 
-      {/* Médias — linha única minimalista */}
+      {/* Médias */}
       {allTrades.length > 0 && (
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 24px",display:"flex",alignItems:"center",justifyContent:"space-around",flexWrap:"wrap",gap:"16px",marginTop:"4px"}}>
-          <div style={{textAlign:"center"}}>
-            <p style={{margin:"0 0 4px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Média Vencedora</p>
-            <p style={{margin:0,color:"#00d4aa",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>R$ {mediaVenc.toFixed(2)}</p>
-          </div>
-          <div style={{width:"1px",height:"36px",background:"#1a1a2e",flexShrink:0}}/>
-          <div style={{textAlign:"center"}}>
-            <p style={{margin:"0 0 4px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Média Perdedora</p>
-            <p style={{margin:0,color:"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>R$ {mediaPerd.toFixed(2)}</p>
-          </div>
-          <div style={{width:"1px",height:"36px",background:"#1a1a2e",flexShrink:0}}/>
-          <div style={{textAlign:"center"}}>
-            <p style={{margin:"0 0 4px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Risco × Retorno</p>
-            <p style={{margin:0,color:parseFloat(rr)>=1.5?"#00d4aa":parseFloat(rr)>=1?"#f59e0b":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{rr}:1</p>
-          </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px"}}>
+          {[
+            {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),color:"#00d4aa",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
+            {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),color:"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
+            {label:"Risco × Retorno",sub:"razão média",val:rr+":1",color:parseFloat(rr)>=1.5?"#00d4aa":parseFloat(rr)>=1?"#f59e0b":"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>},
+          ].map((s,i)=>(
+            <div key={i} style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"12px",padding:"16px",display:"flex",alignItems:"center",gap:"14px"}}>
+              <div style={{width:"36px",height:"36px",borderRadius:"8px",background:s.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:s.color}}>{s.icon}</div>
+              <div>
+                <p style={{margin:"0 0 2px",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{s.label}</p>
+                <p style={{margin:"0 0 1px",color:s.color,fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{s.val}</p>
+                <p style={{margin:0,color:"#666",fontSize:"11px"}}>{s.sub}</p>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -378,6 +381,81 @@ export default function Evolucao({ entries, compliance }) {
     </div>
   );
 }
+
+function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
+  if (!trades || trades.length < 3) return null;
+
+  const alertas = [];
+
+  // 1. Muitos trades no dia
+  const tradesHoje = entries.filter(([d])=>d===new Date().toISOString().slice(0,10)).flatMap(([,e])=>e.trades||[]);
+  if (tradesHoje.length >= 4) {
+    alertas.push({ tipo:"aviso", msg:"Você já fez "+tradesHoje.length+" trades hoje — seu histórico mostra queda após o 3º." });
+  }
+
+  // 2. Win rate baixo
+  if (winRate !== null && winRate < 40 && trades.length >= 5) {
+    alertas.push({ tipo:"critico", msg:"Win rate em "+winRate+"% — abaixo do ideal. Revise sua estratégia." });
+  }
+
+  // 3. Estratégia com muitas perdas
+  const estStats = {};
+  trades.forEach(t => {
+    const n = t.estrategia||"Sem nome";
+    if (!estStats[n]) estStats[n] = {wins:0,total:0};
+    estStats[n].total++;
+    if (t.tipo==="WIN") estStats[n].wins++;
+  });
+  Object.entries(estStats).forEach(([n,s]) => {
+    if (s.total >= 3) {
+      const ass = Math.round((s.wins/s.total)*100);
+      if (ass < 35) alertas.push({ tipo:"critico", msg:n+" com apenas "+ass+"% de acerto — considere pausar essa estratégia." });
+    }
+  });
+
+  // 4. Dias consecutivos negativos
+  const sortedDays = [...entries].sort(([a],[b])=>b.localeCompare(a)).slice(0,5);
+  let negStreak = 0;
+  for (const [,e] of sortedDays) {
+    const tot = (e.totalB3||0)+(e.totalForex||0);
+    if (tot < 0) negStreak++; else break;
+  }
+  if (negStreak >= 2) {
+    alertas.push({ tipo:"aviso", msg:negStreak+" dias negativos consecutivos — considere reduzir o tamanho das posições." });
+  }
+
+  // 5. Emoção de risco
+  const emocaoRisco = ["Ansioso","Frustrado","Revanche","Impaciente","Eufórico"];
+  const ultimoDia = entries.sort(([a],[b])=>b.localeCompare(a))[0];
+  if (ultimoDia) {
+    const emocoesRuim = (ultimoDia[1].emocoes||[]).filter(e=>emocaoRisco.includes(e));
+    if (emocoesRuim.length > 0) {
+      alertas.push({ tipo:"aviso", msg:"Você registrou '"+emocoesRuim[0]+"' — cuidado com decisões impulsivas." });
+    }
+  }
+
+  if (alertas.length === 0) {
+    alertas.push({ tipo:"ok", msg:"Nenhum alerta no momento. Continue operando com disciplina! 🎯" });
+  }
+
+  const cores = { critico:"#ff4d4d", aviso:"#f59e0b", ok:"#00d4aa" };
+  const icons = { critico:"⚠️", aviso:"🔔", ok:"✅" };
+
+  return (
+    <div style={{flex:1,background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"14px 18px",minWidth:"240px"}}>
+      <p style={{margin:"0 0 10px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
+      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+        {alertas.slice(0,3).map((a,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"8px 10px",borderRadius:"8px",background:cores[a.tipo]+"0d",border:"1px solid "+cores[a.tipo]+"33"}}>
+            <span style={{fontSize:"12px",flexShrink:0}}>{icons[a.tipo]}</span>
+            <p style={{margin:0,color:cores[a.tipo]==="ok"?"#aaa":"#ccc",fontSize:"12px",lineHeight:"1.5"}}>{a.msg}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 const GROQ_KEY = import.meta.env.VITE_GROQ_KEY;
 
