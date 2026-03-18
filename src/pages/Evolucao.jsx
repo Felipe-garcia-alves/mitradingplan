@@ -183,19 +183,24 @@ export default function Evolucao({ entries, compliance }) {
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
-      {/* Top cards: Disciplina + Resultado + WinRate + Dias */}
-      <div style={{display:"grid",gridTemplateColumns:"auto 1fr 1fr 1fr",gap:"20px",marginBottom:"28px",alignItems:"stretch"}}>
-        {/* Disciplina - circular */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{background:"#0d0d14",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),borderRadius:"50%",width:"88px",height:"88px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
-            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
-            <div style={{position:"absolute",inset:"8px",background:"#0d0d14",borderRadius:"50%"}}/>
-            <div style={{position:"relative",textAlign:"center"}}>
-              <p style={{margin:"0 0 1px",color:compliancePct===null?"#444":complianceColor,fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
-              <p style={{margin:0,color:"#555",fontSize:"9px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Disciplina</p>
-            </div>
+      {/* Disciplina - linha própria centralizada */}
+      <div style={{display:"flex",justifyContent:"flex-start",alignItems:"center",gap:"16px",marginBottom:"28px"}}>
+        <div style={{background:"#0d0d14",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),borderRadius:"50%",width:"88px",height:"88px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
+          {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
+          <div style={{position:"absolute",inset:"8px",background:"#0d0d14",borderRadius:"50%"}}/>
+          <div style={{position:"relative",textAlign:"center"}}>
+            <p style={{margin:"0 0 1px",color:compliancePct===null?"#444":complianceColor,fontSize:"22px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
+            <p style={{margin:0,color:"#555",fontSize:"9px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Disciplina</p>
           </div>
         </div>
+        <div>
+          <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"14px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina este mês":"Sem dados de disciplina"}</p>
+          <p style={{margin:0,color:"#555",fontSize:"12px"}}>{compliedDays} de {daysThisMonth.length} dias seguindo as regras</p>
+        </div>
+      </div>
+
+      {/* Top 3 cards */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px",marginBottom:"28px"}}>
         {/* Resultado Total */}
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
