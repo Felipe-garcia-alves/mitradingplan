@@ -375,7 +375,7 @@ export default function Evolucao({ entries, compliance }) {
   );
 }
 
-const GROQ_KEY = "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";
+const GROQ_KEY = import.meta.env.VITE_GROQ_KEY;
 
 function DiagnosticoIA({ trades, entries, totalResult, winRate, mediaVenc, mediaPerd, rr, estratStats, diasOp }) {
   const [loading, setLoading] = useState(false);
