@@ -30,28 +30,54 @@ function UserHeader({ nomeUsuario, entries }) {
   const todayEntry = entries[today];
   const total = todayEntry ? (todayEntry.totalB3||0)+(todayEntry.totalForex||0) : null;
   const inicial = nomeUsuario ? nomeUsuario[0].toUpperCase() : "U";
+
+  // Weekly stats
+  const last7 = Object.entries(entries).filter(([d])=>d<=today).sort(([a],[b])=>b.localeCompare(a)).slice(0,7);
+  const weekResult = last7.reduce((s,[,e])=>s+(e.totalB3||0)+(e.totalForex||0),0);
+  const weekTrades = last7.reduce((s,[,e])=>s+(e.numTrades||0),0);
+  const weekWins   = last7.reduce((s,[,e])=>s+(e.trades||[]).filter(t=>t.tipo==="WIN").length,0);
+  const weekWR     = weekTrades>0 ? Math.round((weekWins/weekTrades)*100) : null;
+
   return (
     <div style={{position:"relative"}}>
-      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"10px",padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+      {open && <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:299}}/>}
+      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(0,212,170,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#00d4aa44":"#1e1e2e"),borderRadius:"10px",padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.2s"}}>
         <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,#00d4aa22,#0099ff22)",border:"1px solid #00d4aa44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:"700",color:"#00d4aa",flexShrink:0}}>{inicial}</div>
         <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{nomeUsuario||"Trader"}</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <>
-          <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:299}}/>
-          <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"14px",padding:"16px",zIndex:300,minWidth:"240px",boxShadow:"0 20px 40px rgba(0,0,0,0.6)"}}>
-            <p style={{margin:"0 0 12px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resumo de Hoje</p>
-            {total !== null ? (
-              <div>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}><span style={{color:"#888",fontSize:"13px"}}>Resultado</span><span style={{color:total>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>{total>=0?"+":""}R$ {Math.abs(total).toFixed(2)}</span></div>
-                {todayEntry.totalPts!==undefined&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}><span style={{color:"#888",fontSize:"13px"}}>Pontos</span><span style={{color:todayEntry.totalPts>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>{todayEntry.totalPts>=0?"+":""}{todayEntry.totalPts} pts</span></div>}
-                {todayEntry.winRate!==undefined&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}><span style={{color:"#888",fontSize:"13px"}}>Win Rate</span><span style={{color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>{todayEntry.winRate}%</span></div>}
-                {todayEntry.numTrades&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}><span style={{color:"#888",fontSize:"13px"}}>Trades</span><span style={{color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>{todayEntry.numTrades}</span></div>}
-              </div>
-            ) : <p style={{color:"#444",fontSize:"13px",margin:0}}>Nenhum registro hoje ainda.</p>}
+        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"18px",padding:"20px",zIndex:300,minWidth:"260px",boxShadow:"0 24px 48px rgba(0,0,0,0.7)"}}>
+          {/* User info */}
+          <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px",paddingBottom:"16px",borderBottom:"1px solid #1a1a2e"}}>
+            <div style={{width:"36px",height:"36px",borderRadius:"50%",background:"linear-gradient(135deg,#00d4aa33,#0099ff33)",border:"1px solid #00d4aa44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"800",color:"#00d4aa"}}>{inicial}</div>
+            <div>
+              <p style={{margin:"0 0 2px",color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>{nomeUsuario||"Trader"}</p>
+              <p style={{margin:0,color:"#00d4aa",fontSize:"11px",fontWeight:"600"}}>● Online</p>
+            </div>
           </div>
-        </>
+
+          {/* Hoje */}
+          <p style={{margin:"0 0 10px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Hoje</p>
+          {total !== null ? (
+            <div style={{marginBottom:"16px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Resultado</span><span style={{color:total>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>{total>=0?"+":""}R$ {Math.abs(total).toFixed(2)}</span></div>
+              {todayEntry.totalPts!==undefined&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Pontos</span><span style={{color:todayEntry.totalPts>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontWeight:"700",fontFamily:"monospace"}}>{todayEntry.totalPts>=0?"+":""}{todayEntry.totalPts} pts</span></div>}
+              {todayEntry.winRate!==undefined&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Win Rate</span><span style={{color:todayEntry.winRate>=60?"#00d4aa":todayEntry.winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"13px",fontWeight:"700"}}>{todayEntry.winRate}%</span></div>}
+              {todayEntry.numTrades&&<div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#888",fontSize:"13px"}}>Trades</span><span style={{color:"#ccc",fontSize:"13px",fontWeight:"700"}}>{todayEntry.numTrades}</span></div>}
+            </div>
+          ) : <p style={{color:"#333",fontSize:"13px",margin:"0 0 16px"}}>Nenhum registro hoje ainda.</p>}
+
+          {/* Últimos 7 dias */}
+          {weekTrades>0&&(
+            <div style={{paddingTop:"14px",borderTop:"1px solid #1a1a2e"}}>
+              <p style={{margin:"0 0 10px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Últimos 7 dias</p>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Resultado</span><span style={{color:weekResult>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontWeight:"700",fontFamily:"monospace"}}>{weekResult>=0?"+":""}R$ {Math.abs(weekResult).toFixed(2)}</span></div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Trades</span><span style={{color:"#ccc",fontSize:"13px",fontWeight:"700"}}>{weekTrades}</span></div>
+              {weekWR!==null&&<div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#888",fontSize:"13px"}}>Win Rate</span><span style={{color:weekWR>=60?"#00d4aa":weekWR>=40?"#f59e0b":"#ff4d4d",fontSize:"13px",fontWeight:"700"}}>{weekWR}%</span></div>}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
