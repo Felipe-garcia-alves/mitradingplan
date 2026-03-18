@@ -52,7 +52,7 @@ function DateFilter({ inicio, fim, onChange }) {
   );
 }
 
-export default function Evolucao({ entries }) {
+export default function Evolucao({ entries, compliance }) {
   const now     = new Date();
   const ini1m   = new Date(now.getFullYear(), now.getMonth(), 1);
   const [inicio, setInicio] = useState(dayKey(ini1m));
@@ -61,6 +61,14 @@ export default function Evolucao({ entries }) {
   const filtered = useMemo(() => {
     return Object.entries(entries).filter(([d]) => d >= inicio && d <= fim).sort(([a],[b])=>a.localeCompare(b));
   }, [entries, inicio, fim]);
+
+  // Compliance (regras do mês atual)
+  const now2 = new Date();
+  const ym = now2.getFullYear()+"-"+String(now2.getMonth()+1).padStart(2,"0");
+  const daysThisMonth  = Object.keys(compliance||{}).filter(k=>k.startsWith(ym));
+  const compliedDays   = daysThisMonth.filter(k=>(compliance||{})[k]===true).length;
+  const compliancePct  = daysThisMonth.length>0 ? Math.round((compliedDays/daysThisMonth.length)*100) : null;
+  const complianceColor= compliancePct===null?"#666":compliancePct>=80?"#00d4aa":compliancePct>=50?"#f59e0b":"#ff4d4d";
 
   // Aggregates
   const totalB3    = filtered.reduce((s,[,e])=>s+(e.totalB3||0), 0);
@@ -176,7 +184,7 @@ export default function Evolucao({ entries }) {
       </div>
 
       {/* Top 3 cards */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px",marginBottom:"28px"}}>
         {/* Resultado Total */}
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
@@ -204,8 +212,23 @@ export default function Evolucao({ entries }) {
         </div>
       </div>
 
+      {/* Compliance card */}
+      {compliancePct !== null && (
+        <div style={{display:"flex",justifyContent:"center",marginBottom:"28px"}}>
+          <div style={{background:"#0d0d14",border:"2px solid "+complianceColor+"44",borderRadius:"50%",width:"160px",height:"160px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
+            <div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.2}}/>
+            <div style={{position:"absolute",inset:"10px",background:"#0d0d14",borderRadius:"50%"}}/>
+            <div style={{position:"relative",textAlign:"center"}}>
+              <p style={{margin:"0 0 2px",color:complianceColor,fontSize:"36px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>{compliancePct}%</p>
+              <p style={{margin:"0 0 2px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Disciplina</p>
+              <p style={{margin:0,color:"#444",fontSize:"10px"}}>{compliedDays}/{daysThisMonth.length} dias</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Curva de Capital + Resultado Diário */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"28px"}}>
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px"}}>
           <p style={{margin:"0 0 4px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Curva de Capital</p>
           <p style={{margin:"0 0 14px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"18px",fontWeight:"700",fontFamily:"monospace"}}>
@@ -222,7 +245,7 @@ export default function Evolucao({ entries }) {
 
       {/* Origem ganhos e perdas */}
       {allTrades.length > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"28px"}}>
           {/* Ganhos */}
           <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
@@ -284,9 +307,9 @@ export default function Evolucao({ entries }) {
 
       {/* Métricas por estratégia */}
       {Object.keys(estratStats).length > 0 && (
-        <div style={{marginBottom:"16px"}}>
-          <p style={{margin:"0 0 12px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Métricas por Estratégia</p>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+        <div style={{marginBottom:"28px"}}>
+          <p style={{margin:"0 0 16px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Métricas por Estratégia</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"20px"}}>
             {Object.entries(estratStats).map(([n,s],i)=>{
               const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
               const cor = colors[i%colors.length];
@@ -305,7 +328,7 @@ export default function Evolucao({ entries }) {
                   <p style={{margin:"0 0 8px",color:"#999",fontSize:"12px",fontFamily:"monospace"}}>{s.pontos>=0?"+":""}{s.pontos.toFixed(1)} pts</p>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px"}}>
                     <span style={{color:"#888"}}>Assertividade</span>
-                    <span style={{color:s.resultado<0?"#ff4d4d":ass>=60?"#00d4aa":ass>=40?"#f59e0b":"#ff4d4d",fontWeight:"700"}}>{ass}%</span>
+                    <span style={{color:ass>=60?"#00d4aa":ass>=40?"#f59e0b":"#ff4d4d",fontWeight:"700"}}>{ass}%</span>
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px",marginTop:"3px"}}>
                     <span style={{color:"#888"}}>{s.total} operações</span>
@@ -320,7 +343,7 @@ export default function Evolucao({ entries }) {
 
       {/* Médias */}
       {allTrades.length > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"12px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px"}}>
           {[
             {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),color:"#00d4aa",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
             {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),color:"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},

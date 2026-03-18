@@ -122,7 +122,7 @@ export default function Historico({ entries, saveEntry, deleteEntry }) {
         </div>
         {/* Weeks */}
         {weeks.map((w,wi)=>(
-          <div key={wi} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"8px",marginBottom:"8px"}}>
+          <div key={wi} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"10px",marginBottom:"10px"}}>
             {w.days.map((cell,ci)=>{
               if (!cell) return <div key={ci} style={{minHeight:"110px"}}/>;
               const {d,k,e} = cell;
@@ -133,15 +133,15 @@ export default function Historico({ entries, saveEntry, deleteEntry }) {
               const bg = isSel ? (tot>=0?"rgba(0,212,170,0.2)":"rgba(255,77,77,0.2)") : hasTrades ? (tot>=0?"rgba(0,212,170,0.08)":"rgba(255,77,77,0.08)") : "rgba(255,255,255,0.01)";
               const border = isSel ? (tot>=0?"2px solid #00d4aa":"2px solid #ff4d4d") : isToday?"2px solid #00d4aa44":hasTrades?(tot>=0?"1px solid #00d4aa22":"1px solid #ff4d4d22"):"1px solid #1a1a2e";
               return (
-                <div key={ci} onClick={()=>{ setSel(isSel?null:k); setEditMode(false); }} style={{borderRadius:"12px",background:bg,border,padding:"12px 8px",cursor:hasTrades?"pointer":"default",transition:"all 0.15s",minHeight:"110px",display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
-                  <p style={{margin:0,color:isToday?"#00d4aa":hasTrades?"#f0f0f0":"#444",fontSize:"16px",fontWeight:isToday?"800":"600",textAlign:"center"}}>{d}</p>
+                <div key={ci} onClick={()=>{ setSel(isSel?null:k); setEditMode(false); }} style={{borderRadius:"12px",background:bg,border,padding:"14px 10px",cursor:hasTrades?"pointer":"default",transition:"all 0.15s",minHeight:"130px",display:"flex",flexDirection:"column",alignItems:"center",gap:"6px"}}>
+                  <p style={{margin:0,color:isToday?"#00d4aa":hasTrades?"#f0f0f0":"#555",fontSize:"18px",fontWeight:isToday?"800":"700",textAlign:"center"}}>{d}</p>
                   {hasTrades && (
-                    <div style={{textAlign:"center",width:"100%",display:"flex",flexDirection:"column",gap:"3px"}}>
-                      <p style={{margin:0,color:"#666",fontSize:"10px"}}>{e.numTrades} trade{e.numTrades!==1?"s":""}</p>
-                      {e.winRate!==undefined&&<p style={{margin:0,color:e.winRate>=60?"#00d4aa":e.winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"11px",fontWeight:"700"}}>{e.winRate}% acerto</p>}
-                      {tot!==null&&<p style={{margin:0,color:tot>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontWeight:"800",fontFamily:"monospace"}}>{tot>=0?"+":""}R${Math.abs(tot)<1000?tot.toFixed(0):(tot/1000).toFixed(1)+"k"}</p>}
-                      {e.totalPts!==undefined&&<p style={{margin:0,color:"#666",fontSize:"10px",fontFamily:"monospace"}}>{e.totalPts>=0?"+":""}{e.totalPts}pts</p>}
-                      {e.emocoes?.length>0&&<p style={{margin:0,color:EMOCAO_COLORS[e.emocoes[0]]||"#666",fontSize:"10px"}}>{e.emocoes[0]}</p>}
+                    <div style={{textAlign:"center",width:"100%",display:"flex",flexDirection:"column",gap:"6px"}}>
+                      <p style={{margin:0,color:"#888",fontSize:"11px",fontWeight:"500"}}>{e.numTrades} trade{e.numTrades!==1?"s":""}</p>
+                      {e.winRate!==undefined&&<p style={{margin:0,color:e.winRate>=60?"#00d4aa":e.winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"12px",fontWeight:"800"}}>{e.winRate}% acerto</p>}
+                      {tot!==null&&<p style={{margin:0,color:tot>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"800",fontFamily:"monospace"}}>{tot>=0?"+":""}R${Math.abs(tot)<1000?tot.toFixed(0):(tot/1000).toFixed(1)+"k"}</p>}
+                      {e.totalPts!==undefined&&<p style={{margin:0,color:"#888",fontSize:"11px",fontFamily:"monospace"}}>{e.totalPts>=0?"+":""}{e.totalPts}pts</p>}
+                      {e.emocoes?.length>0&&<p style={{margin:0,color:EMOCAO_COLORS[e.emocoes[0]]||"#777",fontSize:"11px"}}>{e.emocoes[0]}</p>}
                     </div>
                   )}
                 </div>
