@@ -1,5 +1,4 @@
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
 
 const MENU = [
   { id:"evolucao",    label:"Evolução",      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
@@ -24,17 +23,17 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
   return (
     <>
       {mobile && <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:199}}/>}
-      <div style={{width:"240px",minHeight:"100vh",background:theme.sidebar,borderRight:"1px solid "+theme.border,display:"flex",flexDirection:"column",position:"fixed",left:0,top:0,zIndex:200,fontFamily:"Inter,sans-serif"}}>
+      <div style={{width:"240px",minHeight:"100vh",background:"#0d0d14",borderRight:"1px solid #1a1a2e",display:"flex",flexDirection:"column",position:"fixed",left:0,top:0,zIndex:200,fontFamily:"Inter,sans-serif"}}>
 
         {/* Logo - bigger */}
-        <div style={{padding:"24px 20px 20px",borderBottom:"1px solid "+theme.border}}>
+        <div style={{padding:"24px 20px 20px",borderBottom:"1px solid #1a1a2e"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             <div style={{width:"42px",height:"42px",borderRadius:"10px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <div>
               <p style={{margin:0,color:"#f0f0f0",fontWeight:"800",fontSize:"16px",letterSpacing:"-0.3px"}}>Mi Trading Plan</p>
-              <p style={{margin:0,color:theme.textMuted,fontSize:"11px"}}>Pro Trader</p>
+              <p style={{margin:0,color:"#555",fontSize:"11px"}}>Pro Trader</p>
             </div>
           </div>
         </div>
@@ -44,7 +43,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
           {MENU.map(item => {
             const active = pagina === item.id;
             return (
-              <button key={item.id} onClick={()=>{setPagina(item.id);if(onClose)onClose();}} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"13px 14px",borderRadius:"10px",border:"none",cursor:"pointer",marginBottom:"4px",transition:"all 0.15s",background:active?theme.accent+"1a":"transparent",color:active?"#00d4aa":"#aaa",fontWeight:active?"700":"500",fontSize:"16px",textAlign:"left",fontFamily:"Inter,sans-serif",letterSpacing:"0.1px"}}>
+              <button key={item.id} onClick={()=>{setPagina(item.id);if(onClose)onClose();}} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"13px 14px",borderRadius:"10px",border:"none",cursor:"pointer",marginBottom:"4px",transition:"all 0.15s",background:active?"rgba(0,212,170,0.12)":"transparent",color:active?"#00d4aa":"#aaa",fontWeight:active?"700":"500",fontSize:"16px",textAlign:"left",fontFamily:"Inter,sans-serif",letterSpacing:"0.1px"}}>
                 <span style={{flexShrink:0,opacity:active?1:0.7}}>{item.icon}</span>
                 {item.label}
               </button>
@@ -54,7 +53,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
 
         {/* Logout */}
         <div style={{padding:"12px 10px",borderTop:"1px solid #1a1a2e"}}>
-          <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",cursor:"pointer",background:"transparent",color:theme.textMuted,fontWeight:"500",fontSize:"16px",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}
+          <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",cursor:"pointer",background:"transparent",color:"#666",fontWeight:"500",fontSize:"16px",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}
             onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,77,77,0.08)";e.currentTarget.style.color="#ff6b6b";}}
             onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#666";}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
