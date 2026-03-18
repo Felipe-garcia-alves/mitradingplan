@@ -368,6 +368,132 @@ export default function Evolucao({ entries, compliance }) {
           <p style={{color:"#222",fontSize:"12px",margin:"6px 0 0"}}>Registre operações no Diário para ver as métricas.</p>
         </div>
       )}
+
+      {/* Diagnóstico IA */}
+      {allTrades.length >= 3 && <DiagnosticoIA trades={allTrades} entries={filtered} totalResult={totalResult} winRate={winRate} mediaVenc={mediaVenc} mediaPerd={mediaPerd} rr={rr} estratStats={estratStats} diasOp={diasOp}/>}
+    </div>
+  );
+}
+
+const GEMINI_KEY = "AIzaSyC3-T9Yvo-kuZ8DHKbnsTk60BQeCf_oCR8";
+
+function DiagnosticoIA({ trades, entries, totalResult, winRate, mediaVenc, mediaPerd, rr, estratStats, diasOp }) {
+  const [loading, setLoading] = useState(false);
+  const [diagnostico, setDiagnostico] = useState("");
+  const [erro, setErro] = useState("");
+
+  async function gerarDiagnostico() {
+    setLoading(true); setErro(""); setDiagnostico("");
+
+    // Build data summary
+    const emocaoStats = {};
+    entries.forEach(([,e]) => {
+      const tot = (e.totalB3||0)+(e.totalForex||0);
+      (e.emocoes||[]).forEach(em => {
+        if (!emocaoStats[em]) emocaoStats[em] = { dias:0, resultado:0 };
+        emocaoStats[em].dias++;
+        emocaoStats[em].resultado += tot;
+      });
+    });
+
+    const estratResumo = Object.entries(estratStats).map(([n,s]) => {
+      const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
+      return `${n}: ${s.total} trades, ${ass}% acerto, R$ ${s.resultado.toFixed(2)}`;
+    }).join("
+");
+
+    const emocaoResumo = Object.entries(emocaoStats).map(([em,s]) => {
+      const media = (s.resultado/s.dias).toFixed(2);
+      return `${em}: ${s.dias} dias, resultado médio R$ ${media}`;
+    }).join("
+");
+
+    const prompt = `Você é um coach especialista em trading brasileiro. Analise os dados abaixo e gere um diagnóstico personalizado, direto e útil em português. Seja específico, use os números reais, aponte padrões, forças e fraquezas. Máximo 300 palavras.
+
+DADOS DO PERÍODO:
+- Total de trades: ${trades.length}
+- Dias operados: ${diasOp}
+- Resultado total: R$ ${totalResult.toFixed(2)}
+- Win Rate: ${winRate}%
+- Média vencedora: R$ ${mediaVenc.toFixed(2)}
+- Média perdedora: R$ ${mediaPerd.toFixed(2)}
+- Risco/Retorno: ${rr}:1
+
+DESEMPENHO POR ESTRATÉGIA:
+${estratResumo}
+
+EMOÇÕES vs RESULTADO:
+${emocaoResumo}
+
+Gere um diagnóstico com:
+1. Ponto forte principal
+2. Principal problema a corrigir
+3. Recomendação prática e específica`;
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+          })
+        }
+      );
+      const data = await res.json();
+      const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (texto) setDiagnostico(texto);
+      else setErro("Não foi possível gerar o diagnóstico. Tente novamente.");
+    } catch(e) {
+      setErro("Erro de conexão. Verifique sua internet.");
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{marginTop:"28px",background:"linear-gradient(135deg,rgba(0,212,170,0.05),rgba(0,153,255,0.05))",border:"1px solid #00d4aa33",borderRadius:"16px",padding:"24px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"12px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+          <div style={{width:"40px",height:"40px",borderRadius:"10px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div>
+            <p style={{margin:"0 0 2px",color:"#f0f0f0",fontSize:"16px",fontWeight:"700"}}>Diagnóstico IA</p>
+            <p style={{margin:0,color:"#666",fontSize:"12px"}}>Análise personalizada dos seus dados por IA</p>
+          </div>
+        </div>
+        <button onClick={gerarDiagnostico} disabled={loading} style={{background:loading?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#00d4aa,#00b894)",color:loading?"#555":"#000",border:"none",borderRadius:"10px",padding:"10px 20px",fontWeight:"700",fontSize:"13px",cursor:loading?"not-allowed":"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",gap:"8px",transition:"all 0.2s"}}>
+          {loading ? (
+            <>
+              <div style={{width:"14px",height:"14px",border:"2px solid #555",borderTop:"2px solid #00d4aa",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+              Analisando...
+            </>
+          ) : (
+            <>✨ {diagnostico?"Gerar novamente":"Gerar diagnóstico"}</>
+          )}
+        </button>
+      </div>
+
+      {!diagnostico && !erro && !loading && (
+        <div style={{textAlign:"center",padding:"32px 20px",color:"#444",fontSize:"13px"}}>
+          <p style={{margin:"0 0 6px",fontSize:"15px"}}>🧠</p>
+          <p style={{margin:0}}>Clique em "Gerar diagnóstico" para receber uma análise personalizada dos seus trades, emoções e estratégias.</p>
+        </div>
+      )}
+
+      {erro && (
+        <div style={{padding:"14px",borderRadius:"10px",background:"rgba(255,77,77,0.08)",border:"1px solid #ff4d4d22",color:"#ff6b6b",fontSize:"13px"}}>
+          {erro}
+        </div>
+      )}
+
+      {diagnostico && (
+        <div style={{padding:"20px",borderRadius:"12px",background:"rgba(0,0,0,0.3)",border:"1px solid #1a1a2e"}}>
+          <p style={{margin:0,color:"#ddd",fontSize:"14px",lineHeight:"1.8",whiteSpace:"pre-wrap"}}>{diagnostico}</p>
+        </div>
+      )}
     </div>
   );
 }
