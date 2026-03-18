@@ -111,7 +111,7 @@ function AppInterno() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768);
   const uid = user.uid;
-  const { theme } = useTheme();
+  const { theme = { bg:"#080810", header:"rgba(8,8,16,0.95)", border:"#1a1a2e", sidebar:"#0d0d14", accent:"#00d4aa", text:"#f0f0f0", textSub:"#888", textMuted:"#555", name:"dark" } } = useTheme() || {};
 
   useEffect(()=>{
     const fn = ()=>setIsMobile(window.innerWidth<768);
