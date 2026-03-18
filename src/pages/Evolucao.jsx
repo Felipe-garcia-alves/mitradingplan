@@ -429,11 +429,13 @@ Gere um diagnóstico com:
 3. Recomendação prática e específica`;
 
     try {
+      const key = GROQ_KEY;
+      if (!key) { setErro("Chave API não configurada no Vercel."); setLoading(false); return; }
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_KEY}`
+          "Authorization": "Bearer " + key
         },
         body: JSON.stringify({
           model: "llama3-8b-8192",
@@ -442,13 +444,18 @@ Gere um diagnóstico com:
           max_tokens: 600
         })
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(()=>({}));
+        setErro("Erro " + res.status + ": " + (errData?.error?.message || "Tente novamente."));
+        setLoading(false); return;
+      }
       const data = await res.json();
       const texto = data?.choices?.[0]?.message?.content;
       if (texto) setDiagnostico(texto);
-      else setErro("Não foi possível gerar o diagnóstico. Tente novamente.");
-  } catch(e) {
-  setErro("Erro: " + e.message);
-}
+      else setErro("Resposta vazia. Tente novamente.");
+    } catch(e) {
+      setErro("Erro: " + e.message);
+    }
     setLoading(false);
   }
 
