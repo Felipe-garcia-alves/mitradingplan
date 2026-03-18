@@ -1,3 +1,4 @@
+// Mi Trading Plan - Evolucao
 import { useState, useMemo } from "react";
 
 const MONTH_NAMES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];

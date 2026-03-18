@@ -1,3 +1,4 @@
+// Mi Trading Plan - App Principal
 import { useState, useEffect, lazy, Suspense } from "react";
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
