@@ -183,8 +183,19 @@ export default function Evolucao({ entries, compliance }) {
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
-      {/* Top 3 cards */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px",marginBottom:"28px"}}>
+      {/* Top cards: Disciplina + Resultado + WinRate + Dias */}
+      <div style={{display:"grid",gridTemplateColumns:"auto 1fr 1fr 1fr",gap:"20px",marginBottom:"28px",alignItems:"stretch"}}>
+        {/* Disciplina - circular */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:"#0d0d14",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),borderRadius:"50%",width:"88px",height:"88px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
+            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
+            <div style={{position:"absolute",inset:"8px",background:"#0d0d14",borderRadius:"50%"}}/>
+            <div style={{position:"relative",textAlign:"center"}}>
+              <p style={{margin:"0 0 1px",color:compliancePct===null?"#444":complianceColor,fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
+              <p style={{margin:0,color:"#555",fontSize:"9px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Disciplina</p>
+            </div>
+          </div>
+        </div>
         {/* Resultado Total */}
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
@@ -211,21 +222,6 @@ export default function Evolucao({ entries, compliance }) {
           <p style={{margin:0,color:"#888",fontSize:"13px"}}>{filtered.length} dias no período</p>
         </div>
       </div>
-
-      {/* Compliance card */}
-      {compliancePct !== null && (
-        <div style={{display:"flex",justifyContent:"center",marginBottom:"28px"}}>
-          <div style={{background:"#0d0d14",border:"2px solid "+complianceColor+"44",borderRadius:"50%",width:"160px",height:"160px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
-            <div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.2}}/>
-            <div style={{position:"absolute",inset:"10px",background:"#0d0d14",borderRadius:"50%"}}/>
-            <div style={{position:"relative",textAlign:"center"}}>
-              <p style={{margin:"0 0 2px",color:complianceColor,fontSize:"36px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>{compliancePct}%</p>
-              <p style={{margin:"0 0 2px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Disciplina</p>
-              <p style={{margin:0,color:"#444",fontSize:"10px"}}>{compliedDays}/{daysThisMonth.length} dias</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Curva de Capital + Resultado Diário */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"28px"}}>
