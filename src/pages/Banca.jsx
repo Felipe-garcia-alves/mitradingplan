@@ -37,10 +37,10 @@ export default function Banca({ entries, config, saveConfig }) {
 
   return (
     <div style={{ fontFamily:"Inter,sans-serif" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"24px", flexWrap:"wrap", gap:"10px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"28px", flexWrap:"wrap", gap:"10px" }}>
         <div>
-          <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.5px" }}>Gestao de Banca</h1>
-          <p style={{ margin:0, color:"#999", fontSize:"13px" }}>Referencias de risco calculadas sobre sua banca real</p>
+          <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Gestão de Banca</h1>
+          <p style={{ margin:"4px 0 0", color:"#666", fontSize:"13px" }}>Referências de risco calculadas sobre sua banca real</p>
         </div>
         <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
           {msg && <span style={{ color:"#00d4aa", fontSize:"13px", fontWeight:"600" }}>{msg}</span>}

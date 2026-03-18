@@ -45,8 +45,8 @@ export default function Crescimento({ entries, config }) {
   return (
     <div style={{ fontFamily:"Inter,sans-serif" }}>
       <div style={{ marginBottom:"24px" }}>
-        <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.5px" }}>Crescimento Projetado</h1>
-        <p style={{ margin:0, color:"#555", fontSize:"13px" }}>Real vs projetado — projecao calculada a partir da banca atual</p>
+        <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Crescimento</h1>
+        <p style={{ margin:"4px 0 0", color:"#666", fontSize:"13px" }}>Real vs projetado — calculado a partir da banca atual</p>
       </div>
 
       <div style={{ display:"flex", gap:"10px", marginBottom:"16px", alignItems:"center", flexWrap:"wrap" }}>

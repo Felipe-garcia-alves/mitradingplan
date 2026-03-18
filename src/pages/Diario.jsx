@@ -106,8 +106,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
       
 
       {/* Form */}
-      <div style={{background:"#0d0d14",border:"1px solid "+(todayEntry?"#00d4aa22":"#1a1a2e"),borderRadius:"16px",padding:"24px",marginBottom:"24px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"22px"}}>
+      <div style={{background:"#0d0d14",border:"1px solid "+(todayEntry?"#00d4aa22":"#1a1a2e"),borderRadius:"16px",padding:"28px",marginBottom:"24px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
           <div>
             <p style={{margin:"0 0 4px",color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar hoje</p>
             <p style={{margin:0,color:"#f0f0f0",fontSize:"18px",fontWeight:"700"}}>{formatDateLong(today)}</p>
@@ -116,8 +116,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
         </div>
 
         {/* Emocoes */}
-        <div style={{marginBottom:"22px"}}>
-          <label style={{color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"12px"}}>Emoções do dia</label>
+        <div style={{marginBottom:"28px"}}>
+          <label style={{color:"#888",fontSize:"13px",textTransform:"uppercase",letterSpacing:"1.5px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Emoções do dia</label>
           <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
             {EMOCOES.map(em => {
               const sel = emocoes.includes(em);
@@ -128,8 +128,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
         </div>
 
         {/* Adicionar trade */}
-        <div style={{marginBottom:"18px"}}>
-          <label style={{color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"12px"}}>Adicionar operação</label>
+        <div style={{marginBottom:"24px"}}>
+          <label style={{color:"#888",fontSize:"13px",textTransform:"uppercase",letterSpacing:"1.5px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Adicionar operação</label>
           <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
             <select value={novoTrade.tipo} onChange={e=>setNovoTrade(p=>({...p,tipo:e.target.value}))} style={{...inp,width:"85px"}}>
               <option value="WIN">WIN</option>

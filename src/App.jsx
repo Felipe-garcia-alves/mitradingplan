@@ -161,7 +161,7 @@ function AppInterno() {
 
   return (
     <div style={{display:"flex",minHeight:"100vh",background:"#080810",fontFamily:"Inter,sans-serif"}}>
-      {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)}/>}
+      {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance}/>}
       <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
         <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(8,8,16,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #1a1a2e",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>

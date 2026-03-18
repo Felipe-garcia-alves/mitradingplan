@@ -39,7 +39,11 @@ export default function Historico({ entries }) {
 
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
-      <div style={{marginBottom:"24px"}}>
+      <div style={{marginBottom:"28px"}}>
+        <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Histórico</h1>
+        <p style={{margin:"4px 0 0",color:"#666",fontSize:"13px"}}>Clique em um dia para ver os detalhes</p>
+      </div>
+      <div style={{marginBottom:"28px",display:"none"}}>
         <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Histórico</h1>
         <p style={{margin:0,color:"#888",fontSize:"13px"}}>Clique em um dia para ver os detalhes</p>
       </div>

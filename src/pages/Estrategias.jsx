@@ -74,10 +74,10 @@ export default function Estrategias({ estrategias, saveEstrategia, deleteEstrate
 
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"24px",flexWrap:"wrap",gap:"10px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"28px",flexWrap:"wrap",gap:"10px"}}>
         <div>
-          <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Estratégias</h1>
-          <p style={{margin:0,color:"#444",fontSize:"13px"}}>Documente e organize seus setups operacionais</p>
+          <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Estratégias</h1>
+          <p style={{margin:"4px 0 0",color:"#666",fontSize:"13px"}}>Documente e organize seus setups operacionais</p>
         </div>
         <button onClick={novaForm} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
           + Nova estratégia

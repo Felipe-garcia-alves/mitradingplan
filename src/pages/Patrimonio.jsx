@@ -60,8 +60,8 @@ export default function Patrimonio({ entries, config }) {
   return (
     <div style={{ fontFamily:"Inter,sans-serif" }}>
       <div style={{ marginBottom:"24px" }}>
-        <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.5px" }}>Curva de Patrimonio</h1>
-        <p style={{ margin:0, color:"#555", fontSize:"13px" }}>Evolucao real dia a dia vs projecao — passe o mouse nos pontos</p>
+        <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Patrimônio</h1>
+        <p style={{ margin:"4px 0 0", color:"#666", fontSize:"13px" }}>Evolução real dia a dia vs projeção</p>
       </div>
 
       <div style={{ display:"flex", gap:"8px", marginBottom:"16px" }}>

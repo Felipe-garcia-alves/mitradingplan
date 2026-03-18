@@ -148,8 +148,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
     <div style={{fontFamily:"Inter,sans-serif"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"8px",flexWrap:"wrap",gap:"10px"}}>
         <div>
-          <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Regras & Checklist</h1>
-          <p style={{margin:0,color:"#555",fontSize:"13px"}}>Suas regras — marque antes de operar · <span style={{color:"#f59e0b"}}>Amarelo</span> = pessoal</p>
+          <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Regras</h1>
         </div>
         <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
           {msg && <span style={{color:"#00d4aa",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
@@ -158,10 +157,6 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
         </div>
       </div>
 
-      <div style={{padding:"10px 14px",borderRadius:"8px",background:"rgba(0,212,170,0.05)",border:"1px solid #00d4aa18",marginBottom:"16px",display:"flex",gap:"8px",alignItems:"center"}}>
-        <span>💡</span>
-        <p style={{margin:0,color:"#00d4aa88",fontSize:"12px"}}>Clique para marcar · setas para reordenar · ✏️ para editar · ✕ para excluir</p>
-      </div>
 
       <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"24px"}}>
         {regrasList.map((rule,idx) => {
