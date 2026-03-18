@@ -1,9 +1,7 @@
-// Mi Trading Plan - App Principal
 import { useState, useEffect, lazy, Suspense } from "react";
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { ThemeProvider, useTheme, DARK } from "./context/ThemeContext";
 import Login       from "./pages/Login";
 import Evolucao    from "./pages/Evolucao";
 import Diario      from "./pages/Diario";
@@ -23,20 +21,6 @@ function Spinner() {
       <div style={{width:"28px",height:"28px",border:"3px solid #1a1a2e",borderTop:"3px solid #00d4aa",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
       <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
     </div>
-  );
-}
-
-function ThemeToggle() {
-  const { theme, toggle } = useTheme();
-  const isDark = theme.name === "dark";
-  return (
-    <button onClick={toggle} title={isDark?"Modo claro":"Modo escuro"} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"10px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.2s",flexShrink:0}}>
-      {isDark ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      )}
-    </button>
   );
 }
 
@@ -112,7 +96,6 @@ function AppInterno() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768);
   const uid = user.uid;
-  const { theme = { bg:"#080810", header:"rgba(8,8,16,0.95)", border:"#1a1a2e", sidebar:"#0d0d14", accent:"#00d4aa", text:"#f0f0f0", textSub:"#888", textMuted:"#555", name:"dark" } } = useTheme() || {};
 
   useEffect(()=>{
     const fn = ()=>setIsMobile(window.innerWidth<768);
@@ -203,10 +186,10 @@ function AppInterno() {
   );
 
   return (
-    <div style={{display:"flex",minHeight:"100vh",background:theme.bg,fontFamily:"Inter,sans-serif"}}>
+    <div style={{display:"flex",minHeight:"100vh",background:"#080810",fontFamily:"Inter,sans-serif"}}>
       {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance}/>}
-      <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column",background:theme.bg,transition:"background 0.3s"}}>
-        <div style={{position:"sticky",top:0,zIndex:100,background:theme.header,backdropFilter:"blur(10px)",borderBottom:"1px solid "+theme.border,padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+      <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(8,8,16,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #1a1a2e",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
             <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"rgba(0,212,170,0.1)",border:"1px solid #00d4aa33",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -214,10 +197,7 @@ function AppInterno() {
             </div>
             <h2 style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{TITLES[pagina]||pagina}</h2>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <ThemeToggle/>
-            <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
-          </div>
+          <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
         </div>
         <div style={{flex:1,padding:"28px 24px",maxWidth:"1000px",width:"100%",boxSizing:"border-box"}}>
           {renderPage()}
@@ -234,5 +214,5 @@ function Root() {
 }
 
 export default function App() {
-  return <ThemeProvider><AuthProvider><Root/></AuthProvider></ThemeProvider>;
+  return <AuthProvider><Root/></AuthProvider>;
 }
