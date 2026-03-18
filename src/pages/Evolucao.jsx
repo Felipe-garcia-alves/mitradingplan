@@ -375,7 +375,7 @@ export default function Evolucao({ entries, compliance }) {
   );
 }
 
-const GEMINI_KEY = "AIzaSyC3-T9Yvo-kuZ8DHKbnsTk60BQeCf_oCR8";
+const GROQ_KEY = "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";
 
 function DiagnosticoIA({ trades, entries, totalResult, winRate, mediaVenc, mediaPerd, rr, estratStats, diasOp }) {
   const [loading, setLoading] = useState(false);
@@ -429,19 +429,21 @@ Gere um diagnóstico com:
 3. Recomendação prática e específica`;
 
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
-          })
-        }
-      );
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GROQ_KEY}`
+        },
+        body: JSON.stringify({
+          model: "llama3-8b-8192",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          max_tokens: 600
+        })
+      });
       const data = await res.json();
-      const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const texto = data?.choices?.[0]?.message?.content;
       if (texto) setDiagnostico(texto);
       else setErro("Não foi possível gerar o diagnóstico. Tente novamente.");
     } catch(e) {
