@@ -25,7 +25,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
       <div style={{width:"240px",minHeight:"100vh",background:"#0a0a0f",borderRight:"1px solid #1a1a2e",display:"flex",flexDirection:"column",position:"fixed",left:0,top:0,zIndex:200,fontFamily:"Inter,sans-serif"}}>
 
         {/* Logo - bigger */}
-        <div style={{padding:"24px 20px 20px",borderBottom:"1px solid #1a1a2e"}}>
+        <div style={{padding:"24px 20px 20px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             <div style={{width:"42px",height:"42px",borderRadius:"10px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
