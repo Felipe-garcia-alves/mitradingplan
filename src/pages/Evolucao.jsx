@@ -214,7 +214,7 @@ export default function Evolucao({ entries, compliance }) {
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
-          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"34px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
+          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
             {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
           </p>
           <p style={{margin:0,color:"#888",fontSize:"12px",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
@@ -223,7 +223,7 @@ export default function Evolucao({ entries, compliance }) {
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+(winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d")+",transparent)"}}/>
           <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
-          <p style={{margin:"0 0 4px",color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"34px",fontWeight:"800",fontFamily:"monospace"}}>
+          <p style={{margin:"0 0 4px",color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace"}}>
             {winRate !== null ? winRate+"%" : "—"}
           </p>
           <p style={{margin:0,color:"#888",fontSize:"12px"}}>{wins} de {allTrades.length} trades</p>
