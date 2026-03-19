@@ -29,7 +29,7 @@ function UserHeader({ nomeUsuario, entries }) {
   const ref = useRef(null);
   const today = new Date().toISOString().slice(0,10);
   const todayEntry = entries[today];
-  const total = todayEntry ? (todayEntry.totalB3||0)+(todayEntry.totalForex||0) : null;
+  const totalHoje = todayEntry ? (todayEntry.totalB3||0)+(todayEntry.totalForex||0) : null;
   const inicial = nomeUsuario ? nomeUsuario[0].toUpperCase() : "U";
 
   useEffect(() => {
@@ -40,12 +40,21 @@ function UserHeader({ nomeUsuario, entries }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  // Weekly stats
-  const last7 = Object.entries(entries).filter(([d])=>d<=today).sort(([a],[b])=>b.localeCompare(a)).slice(0,7);
-  const weekResult = last7.reduce((s,[,e])=>s+(e.totalB3||0)+(e.totalForex||0),0);
-  const weekTrades = last7.reduce((s,[,e])=>s+(e.numTrades||0),0);
-  const weekWins   = last7.reduce((s,[,e])=>s+(e.trades||[]).filter(t=>t.tipo==="WIN").length,0);
-  const weekWR     = weekTrades>0 ? Math.round((weekWins/weekTrades)*100) : null;
+  const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+
+  const trades = todayEntry?.trades || [];
+  const wins = trades.filter(t=>t.tipo==="WIN").length;
+  const execPct = trades.length>0 ? Math.round((wins/trades.length)*100) : null;
+  const totalPts = todayEntry?.totalPts ?? null;
+
+  // Estratégias usadas hoje
+  const estratUsadas = [...new Set(trades.map(t=>t.estrategia).filter(Boolean))];
+  // Contagem por estratégia
+  const estratCount = {};
+  trades.forEach(t=>{ if(t.estrategia){ estratCount[t.estrategia]=(estratCount[t.estrategia]||0)+1; }});
+
+  // Emoção predominante (primeira registrada)
+  const emocaoPred = todayEntry?.emocoes?.[0] || null;
 
   return (
     <div ref={ref} style={{position:"relative"}}>
@@ -55,34 +64,103 @@ function UserHeader({ nomeUsuario, entries }) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"18px",padding:"20px",zIndex:300,minWidth:"260px",boxShadow:"0 24px 48px rgba(0,0,0,0.7)"}}>
-          {/* User info */}
-          <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px",paddingBottom:"16px",borderBottom:"1px solid #1a1a2e"}}>
-            <div style={{width:"36px",height:"36px",borderRadius:"50%",background:"linear-gradient(135deg,#00d4aa33,#0099ff33)",border:"1px solid #00d4aa44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"800",color:"#00d4aa"}}>{inicial}</div>
-            <div>
-              <p style={{margin:"0 0 2px",color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>{nomeUsuario||"Trader"}</p>
-              <p style={{margin:0,color:"#00d4aa",fontSize:"11px",fontWeight:"600"}}>● Online</p>
+        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0f0f18",border:"1px solid #1e1e2e",borderRadius:"20px",padding:"0",zIndex:300,width:"300px",boxShadow:"0 24px 60px rgba(0,0,0,0.8)",overflow:"hidden"}}>
+          
+          {/* Header */}
+          <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #1a1a2e"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{today.split("-").reverse().join(" de ").replace(/(\d+) de (\d+) de (\d+)/,(_,d,m,y)=>{const meses=["","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];return `${d} de ${meses[parseInt(m)]}, ${["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][new Date(today).getDay()]}`})}</p>
+              <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:"18px",padding:"0",lineHeight:1}}>×</button>
             </div>
+
+            {/* Stats topo */}
+            {todayEntry ? (
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"}}>
+                <div style={{background:"#1a1a2e",borderRadius:"10px",padding:"12px"}}>
+                  <p style={{margin:"0 0 2px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos do dia</p>
+                  <p style={{margin:0,color:totalPts>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
+                </div>
+                <div style={{background:"#1a1a2e",borderRadius:"10px",padding:"12px"}}>
+                  <p style={{margin:"0 0 2px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado R$</p>
+                  <p style={{margin:0,color:totalHoje>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Trades + exec */}
+            {todayEntry && (
+              <div style={{display:"flex",gap:"8px"}}>
+                <span style={{background:"#1a1a2e",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#aaa",fontWeight:"600"}}>{trades.length} trades</span>
+                {execPct!==null&&wins===trades.length&&<span style={{background:"rgba(0,212,170,0.1)",border:"1px solid #00d4aa33",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#00d4aa",fontWeight:"600"}}>WIN ({wins})</span>}
+                {execPct!==null&&<span style={{background:"rgba(0,212,170,0.08)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#00d4aa",fontWeight:"600"}}>● {execPct}% exec.</span>}
+              </div>
+            )}
           </div>
 
-          {/* Hoje */}
-          <p style={{margin:"0 0 10px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Hoje</p>
-          {total !== null ? (
-            <div style={{marginBottom:"16px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Resultado</span><span style={{color:total>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>{total>=0?"+":""}R$ {Math.abs(total).toFixed(2)}</span></div>
-              {todayEntry.totalPts!==undefined&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Pontos</span><span style={{color:todayEntry.totalPts>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontWeight:"700",fontFamily:"monospace"}}>{todayEntry.totalPts>=0?"+":""}{todayEntry.totalPts} pts</span></div>}
-              {todayEntry.winRate!==undefined&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Win Rate</span><span style={{color:todayEntry.winRate>=60?"#00d4aa":todayEntry.winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"13px",fontWeight:"700"}}>{todayEntry.winRate}%</span></div>}
-              {todayEntry.numTrades&&<div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#888",fontSize:"13px"}}>Trades</span><span style={{color:"#ccc",fontSize:"13px",fontWeight:"700"}}>{todayEntry.numTrades}</span></div>}
+          {/* Emoção predominante */}
+          {emocaoPred && (
+            <div style={{padding:"14px 20px",borderBottom:"1px solid #1a1a2e"}}>
+              <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoção Predominante</p>
+              <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:"10px",padding:"10px 14px",display:"flex",alignItems:"center",gap:"10px"}}>
+                <span style={{fontSize:"18px"}}>🎯</span>
+                <span style={{color:"#c4b5fd",fontSize:"14px",fontWeight:"700"}}>{emocaoPred}</span>
+              </div>
             </div>
-          ) : <p style={{color:"#333",fontSize:"13px",margin:"0 0 16px"}}>Nenhum registro hoje ainda.</p>}
+          )}
 
-          {/* Últimos 7 dias */}
-          {weekTrades>0&&(
-            <div style={{paddingTop:"14px",borderTop:"1px solid #1a1a2e"}}>
-              <p style={{margin:"0 0 10px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px"}}>Últimos 7 dias</p>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Resultado</span><span style={{color:weekResult>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontWeight:"700",fontFamily:"monospace"}}>{weekResult>=0?"+":""}R$ {Math.abs(weekResult).toFixed(2)}</span></div>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:"#888",fontSize:"13px"}}>Trades</span><span style={{color:"#ccc",fontSize:"13px",fontWeight:"700"}}>{weekTrades}</span></div>
-              {weekWR!==null&&<div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#888",fontSize:"13px"}}>Win Rate</span><span style={{color:weekWR>=60?"#00d4aa":weekWR>=40?"#f59e0b":"#ff4d4d",fontSize:"13px",fontWeight:"700"}}>{weekWR}%</span></div>}
+          {/* Estratégias */}
+          {estratUsadas.length > 0 && (
+            <div style={{padding:"14px 20px",borderBottom:"1px solid #1a1a2e"}}>
+              <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Estratégias Utilizadas</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                {estratUsadas.map(e=>(
+                  <div key={e} style={{background:"#1a1a2e",borderRadius:"8px",padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{e.slice(0,2).toUpperCase()} — {e}</span>
+                    <span style={{color:"#555",fontSize:"12px"}}>({estratCount[e]})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Emoções */}
+          {todayEntry?.emocoes?.length > 0 && (
+            <div style={{padding:"14px 20px",borderBottom:"1px solid #1a1a2e"}}>
+              <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções Registradas</p>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
+                {todayEntry.emocoes.map(em=>(
+                  <span key={em} style={{padding:"4px 10px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"#888")+"18",color:EMOCAO_COLORS[em]||"#888",fontSize:"12px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"#888")+"33"}}>{em}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Operações */}
+          {trades.length > 0 && (
+            <div style={{padding:"14px 20px"}}>
+              <p style={{margin:"0 0 10px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações ({trades.length})</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"6px",maxHeight:"200px",overflowY:"auto"}}>
+                {trades.map((t,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#1a1a2e",borderRadius:"8px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                      <span style={{color:"#666",fontSize:"11px"}}>#{i+1}</span>
+                      <span style={{padding:"2px 6px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
+                      {t.estrategia&&<span style={{padding:"2px 7px",borderRadius:"4px",background:"rgba(0,153,255,0.15)",color:"#0099ff",fontSize:"11px",fontWeight:"600"}}>{t.estrategia.slice(0,2).toUpperCase()}</span>}
+                      {t.mercado&&<span style={{color:"#555",fontSize:"11px"}}>{t.mercado==="B3"?"Venda":"Forex"}</span>}
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"12px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
+                      {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"12px",fontFamily:"monospace",fontWeight:"700"}}>R$ {t.resultado>=0?"+":""}{t.resultado}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!todayEntry && (
+            <div style={{padding:"30px 20px",textAlign:"center",color:"#333",fontSize:"13px"}}>
+              Nenhum registro hoje ainda.
             </div>
           )}
         </div>

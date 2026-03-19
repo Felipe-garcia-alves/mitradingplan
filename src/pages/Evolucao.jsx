@@ -186,6 +186,10 @@ export default function Evolucao({ entries, compliance }) {
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
+      <div style={{display:"grid",gridTemplateColumns:allTrades.length>=3?"1fr 300px":"1fr",gap:"24px",alignItems:"start"}}>
+      {/* LEFT COLUMN */}
+      <div>
+
       {/* Disciplina + Alertas — mesma linha */}
       <div style={{display:"flex",alignItems:"center",gap:"16px",marginBottom:"28px",flexWrap:"wrap"}}>
         {/* Card circular disciplina */}
@@ -353,31 +357,37 @@ export default function Evolucao({ entries, compliance }) {
       {/* Métricas por estratégia */}
       {Object.keys(estratStats).length > 0 && (
         <div style={{marginBottom:"28px"}}>
-          <p style={{margin:"0 0 16px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Métricas por Estratégia</p>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"20px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+            <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Métricas por Estratégia</p>
+            <span style={{color:"#444",fontSize:"11px"}}>Clique para filtrar</span>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             {Object.entries(estratStats).map(([n,s],i)=>{
               const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
               const cor = colors[i%colors.length];
+              const mediaPts = s.total>0 ? (s.pontos/s.total).toFixed(1) : "0.0";
               return (
-                <div key={n} style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"12px",padding:"16px",position:"relative",overflow:"hidden"}}>
-                  <div style={{position:"absolute",top:0,left:0,width:"3px",bottom:0,background:cor}}/>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px"}}>
-                    <div style={{width:"24px",height:"24px",borderRadius:"6px",background:cor+"22",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      <span style={{color:cor,fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
+                <div key={n} style={{background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"14px",padding:"18px",overflow:"hidden",cursor:"pointer",transition:"border-color 0.2s"}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=cor+"55"}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor="#1e1e2e"}>
+                  <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
+                    <div style={{padding:"4px 8px",borderRadius:"6px",background:cor+"22",border:"1px solid "+cor+"44"}}>
+                      <span style={{color:cor,fontSize:"11px",fontWeight:"800",letterSpacing:"0.5px"}}>{n.slice(0,3).toUpperCase()}</span>
                     </div>
-                    <span style={{color:"#ccc",fontSize:"13px",fontWeight:"700"}}>{n}</span>
+                    <span style={{color:"#aaa",fontSize:"13px",fontWeight:"600",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{n}</span>
                   </div>
-                  <p style={{margin:"0 0 2px",color:s.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>
-                    {s.resultado>=0?"+":""}R$ {Math.abs(s.resultado).toFixed(2)}
+                  <p style={{margin:"0 0 3px",color:"#00d4aa",fontSize:"22px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
+                    {s.pontos>=0?"+":""}{s.pontos.toFixed(1)} pts
                   </p>
-                  <p style={{margin:"0 0 8px",color:"#999",fontSize:"12px",fontFamily:"monospace"}}>{s.pontos>=0?"+":""}{s.pontos.toFixed(1)} pts</p>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px"}}>
-                    <span style={{color:"#888"}}>Assertividade</span>
-                    <span style={{color:ass>=60?"#00d4aa":ass>=40?"#f59e0b":"#ff4d4d",fontWeight:"700"}}>{ass}%</span>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px",marginTop:"3px"}}>
-                    <span style={{color:"#888"}}>{s.total} operações</span>
-                    <span style={{color:"#999"}}>{s.wins}W / {s.total-s.wins}L</span>
+                  <p style={{margin:"0 0 14px",color:s.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>
+                    {s.resultado>=0?"+":""}R$ {Math.abs(s.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+                  </p>
+                  <div style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"12px",color:"#555",flexWrap:"wrap"}}>
+                    <span>Assertividade <span style={{color:ass>=60?"#00d4aa":ass>=40?"#f59e0b":"#ff4d4d",fontWeight:"700"}}>{ass}%</span></span>
+                    <span style={{color:"#2a2a3a"}}>·</span>
+                    <span>{s.total} ops</span>
+                    <span style={{color:"#2a2a3a"}}>·</span>
+                    <span>{parseFloat(mediaPts)>=0?"+":""}{mediaPts} /op</span>
                   </div>
                 </div>
               );
@@ -413,8 +423,16 @@ export default function Evolucao({ entries, compliance }) {
         </div>
       )}
 
-      {/* Diagnóstico IA */}
-      {allTrades.length >= 3 && <DiagnosticoIA trades={allTrades} entries={filtered} totalResult={totalResult} winRate={winRate} mediaVenc={mediaVenc} mediaPerd={mediaPerd} rr={rr} estratStats={estratStats} diasOp={diasOp}/>}
+      </div>{/* end left column */}
+
+      {/* RIGHT COLUMN: Diagnóstico IA */}
+      {allTrades.length >= 3 && (
+        <div style={{position:"sticky",top:"24px"}}>
+          <DiagnosticoIA trades={allTrades} entries={filtered} totalResult={totalResult} winRate={winRate} mediaVenc={mediaVenc} mediaPerd={mediaPerd} rr={rr} estratStats={estratStats} diasOp={diasOp}/>
+        </div>
+      )}
+
+      </div>{/* end two-column grid */}
     </div>
   );
 }

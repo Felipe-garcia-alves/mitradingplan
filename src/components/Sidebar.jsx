@@ -42,8 +42,8 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
           {MENU.map(item => {
             const active = pagina === item.id;
             return (
-              <button key={item.id} onClick={()=>{setPagina(item.id);if(onClose)onClose();}} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"13px 14px",borderRadius:"10px",border:"none",cursor:"pointer",marginBottom:"4px",transition:"all 0.15s",background:active?"#00d4aa1a":"transparent",color:active?"#00d4aa":"#aaa",fontWeight:active?"700":"500",fontSize:"16px",textAlign:"left",fontFamily:"Inter,sans-serif",letterSpacing:"0.1px"}}>
-                <span style={{flexShrink:0,opacity:active?1:0.7}}>{item.icon}</span>
+              <button key={item.id} onClick={()=>{setPagina(item.id);if(onClose)onClose();}} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"13px 14px",borderRadius:"12px",border:active?"1px solid #00d4aa33":"1px solid transparent",cursor:"pointer",marginBottom:"4px",transition:"all 0.15s",background:active?"rgba(0,212,170,0.08)":"transparent",color:active?"#00d4aa":"#aaa",fontWeight:active?"700":"500",fontSize:"16px",textAlign:"left",fontFamily:"Inter,sans-serif",letterSpacing:"0.1px"}}>
+                <span style={{flexShrink:0,opacity:active?1:0.6}}>{item.icon}</span>
                 {item.label}
               </button>
             );
