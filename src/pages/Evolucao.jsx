@@ -186,7 +186,7 @@ export default function Evolucao({ entries, compliance }) {
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:allTrades.length>=3?"1fr 300px":"1fr",gap:"24px",alignItems:"start"}}>
+      <div style={{display:"grid",gridTemplateColumns:allTrades.length>=3?"1fr 360px":"1fr",gap:"28px",alignItems:"start"}}>
       {/* LEFT COLUMN */}
       <div>
 
@@ -213,27 +213,27 @@ export default function Evolucao({ entries, compliance }) {
       </div>
 
       {/* Top 3 cards */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"14px",marginBottom:"22px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",marginBottom:"24px"}}>
         {/* Resultado Total */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px 18px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"80px"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px 24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"100px"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
-          <p style={{margin:"0 0 auto",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"12px"}}>
-            <p style={{margin:0,color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
+          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"16px"}}>
+            <p style={{margin:0,color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"24px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
               {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
             </p>
             <p style={{margin:0,color:"#555",fontSize:"11px",fontFamily:"monospace",paddingBottom:"1px"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
           </div>
         </div>
         {/* Win Rate */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px 18px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"80px"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px 24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"100px"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+(winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d")+",transparent)"}}/>
-          <p style={{margin:"0 0 auto",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"12px"}}>
-            <p style={{margin:0,color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>
+          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"16px"}}>
+            <p style={{margin:0,color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"24px",fontWeight:"800",fontFamily:"monospace"}}>
               {winRate !== null ? winRate+"%" : "—"}
             </p>
-            <p style={{margin:0,color:"#555",fontSize:"11px",paddingBottom:"1px"}}>{wins} de {allTrades.length} trades</p>
+            <p style={{margin:0,color:"#555",fontSize:"12px",paddingBottom:"1px"}}>{wins} de {allTrades.length} trades</p>
           </div>
         </div>
         {/* Dias Operados */}
@@ -251,21 +251,21 @@ export default function Evolucao({ entries, compliance }) {
           const semanas = [];
           for(let i=0;i<celulas.length;i+=7) semanas.push(celulas.slice(i,i+7));
           return (
-            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px 18px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"80px"}}>
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px 24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"100px"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#f59e0b,transparent)"}}/>
-              <p style={{margin:"0 0 auto",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"12px"}}>
-                <p style={{margin:0,color:"#f0f0f0",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
-                <div style={{display:"flex",flexDirection:"column",gap:"3px",alignItems:"flex-end"}}>
+              <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"16px"}}>
+                <p style={{margin:0,color:"#f0f0f0",fontSize:"24px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
+                <div style={{display:"flex",flexDirection:"column",gap:"4px",alignItems:"flex-end"}}>
                   {semanas.map((sem,si)=>(
-                    <div key={si} style={{display:"flex",gap:"3px"}}>
+                    <div key={si} style={{display:"flex",gap:"4px"}}>
                       {Array.from({length:7}).map((_,di)=>{
                         const cel = sem[di];
-                        if(cel===undefined||cel===null) return <div key={di} style={{width:"7px",height:"7px"}}/>;
+                        if(cel===undefined||cel===null) return <div key={di} style={{width:"8px",height:"8px"}}/>;
                         const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
                         const operado = diasOperadosSet.has(dKey);
                         const isHoje = cel===hoje.getDate();
-                        return <div key={di} style={{width:"7px",height:"7px",borderRadius:"50%",background:operado?"#00d4aa":isHoje?"#2a2a3a":"#1a1a2e",border:isHoje&&!operado?"1px solid #333":"none",transition:"background 0.2s"}}/>;
+                        return <div key={di} style={{width:"8px",height:"8px",borderRadius:"50%",background:operado?"#00d4aa":isHoje?"#2a2a3a":"#1a1a2e",border:isHoje&&!operado?"1px solid #333":"none",transition:"background 0.2s"}}/>;
                       })}
                     </div>
                   ))}
@@ -597,7 +597,7 @@ Gere um diagnóstico com:
   }
 
   return (
-    <div style={{marginTop:"28px",background:"linear-gradient(135deg,rgba(0,212,170,0.05),rgba(0,153,255,0.05))",border:"1px solid #00d4aa33",borderRadius:"16px",padding:"24px"}}>
+    <div style={{background:"linear-gradient(135deg,rgba(0,212,170,0.05),rgba(0,153,255,0.05))",border:"1px solid #00d4aa33",borderRadius:"16px",padding:"24px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"12px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
           <div style={{width:"40px",height:"40px",borderRadius:"10px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
