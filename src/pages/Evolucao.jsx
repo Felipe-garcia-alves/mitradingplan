@@ -211,30 +211,65 @@ export default function Evolucao({ entries, compliance }) {
       {/* Top 3 cards */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px",marginBottom:"28px"}}>
         {/* Resultado Total */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"110px"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
-          <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
-          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
-            {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
-          </p>
-          <p style={{margin:0,color:"#888",fontSize:"12px",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
+          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"18px"}}>
+            <p style={{margin:0,color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
+              {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+            </p>
+            <p style={{margin:0,color:"#555",fontSize:"12px",fontFamily:"monospace",paddingBottom:"2px"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
+          </div>
         </div>
         {/* Win Rate */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"110px"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+(winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d")+",transparent)"}}/>
-          <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
-          <p style={{margin:"0 0 4px",color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace"}}>
-            {winRate !== null ? winRate+"%" : "—"}
-          </p>
-          <p style={{margin:0,color:"#888",fontSize:"12px"}}>{wins} de {allTrades.length} trades</p>
+          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"18px"}}>
+            <p style={{margin:0,color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace"}}>
+              {winRate !== null ? winRate+"%" : "—"}
+            </p>
+            <p style={{margin:0,color:"#555",fontSize:"12px",paddingBottom:"2px"}}>{wins} de {allTrades.length} trades</p>
+          </div>
         </div>
         {/* Dias Operados */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#f59e0b,transparent)"}}/>
-          <p style={{margin:"0 0 6px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
-          <p style={{margin:"0 0 4px",color:"#f0f0f0",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
-          <p style={{margin:0,color:"#888",fontSize:"13px"}}>{filtered.length} dias no período</p>
-        </div>
+        {(() => {
+          const hoje = new Date();
+          const ano = hoje.getFullYear();
+          const mes = hoje.getMonth();
+          const totalDias = new Date(ano, mes+1, 0).getDate();
+          const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+          const mesKey = ano+"-"+String(mes+1).padStart(2,"0");
+          const diasOperadosSet = new Set(Object.keys(entries).filter(d=>d.startsWith(mesKey)&&(entries[d].numTrades||0)>0));
+          const celulas = [];
+          for(let i=0;i<primeiroDiaSemana;i++) celulas.push(null);
+          for(let d=1;d<=totalDias;d++) celulas.push(d);
+          const semanas = [];
+          for(let i=0;i<celulas.length;i+=7) semanas.push(celulas.slice(i,i+7));
+          return (
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"110px"}}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#f59e0b,transparent)"}}/>
+              <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"18px"}}>
+                <p style={{margin:0,color:"#f0f0f0",fontSize:"26px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
+                <div style={{display:"flex",flexDirection:"column",gap:"3px",alignItems:"flex-end"}}>
+                  {semanas.map((sem,si)=>(
+                    <div key={si} style={{display:"flex",gap:"3px"}}>
+                      {Array.from({length:7}).map((_,di)=>{
+                        const cel = sem[di];
+                        if(cel===undefined||cel===null) return <div key={di} style={{width:"7px",height:"7px"}}/>;
+                        const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
+                        const operado = diasOperadosSet.has(dKey);
+                        const isHoje = cel===hoje.getDate();
+                        return <div key={di} style={{width:"7px",height:"7px",borderRadius:"50%",background:operado?"#00d4aa":isHoje?"#2a2a3a":"#1a1a2e",border:isHoje&&!operado?"1px solid #333":"none",transition:"background 0.2s"}}/>;
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Curva de Capital + Resultado Diário */}
