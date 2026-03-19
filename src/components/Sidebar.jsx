@@ -22,10 +22,10 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
   return (
     <>
       {mobile && <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:199}}/>}
-      <div style={{width:"240px",minHeight:"100vh",background:"#0a0a0f",borderRight:"1px solid #1a1a2e",display:"flex",flexDirection:"column",position:"fixed",left:0,top:0,zIndex:200,fontFamily:"Inter,sans-serif"}}>
+      <div style={{width:"240px",minHeight:"100vh",background:"#0a0a0f",display:"flex",flexDirection:"column",position:"fixed",left:0,top:0,zIndex:200,fontFamily:"Inter,sans-serif"}}>
 
         {/* Logo - bigger */}
-        <div style={{padding:"24px 20px 20px"}}>
+        <div style={{padding:"40px 20px 20px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             <div style={{width:"42px",height:"42px",borderRadius:"10px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -51,7 +51,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
         </nav>
 
         {/* Logout */}
-        <div style={{padding:"12px 10px",borderTop:"1px solid #1a1a2e"}}>
+        <div style={{padding:"12px 10px"}}>
           <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",cursor:"pointer",background:"transparent",color:"#666",fontWeight:"500",fontSize:"16px",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}
             onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,77,77,0.08)";e.currentTarget.style.color="#ff6b6b";}}
             onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#666";}}>
