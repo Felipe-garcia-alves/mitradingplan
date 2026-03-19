@@ -183,7 +183,7 @@ function AppInterno() {
   };
 
   if (loading) return (
-    <div style={{minHeight:"100vh",background:"#080810",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Inter,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#0d0d1a",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Inter,sans-serif"}}>
       <div style={{textAlign:"center"}}>
         <div style={{width:"44px",height:"44px",borderRadius:"12px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -194,7 +194,7 @@ function AppInterno() {
   );
 
   return (
-    <div style={{display:"flex",minHeight:"100vh",background:"#080810",fontFamily:"Inter,sans-serif"}}>
+    <div style={{display:"flex",minHeight:"100vh",background:"#0d0d1a",fontFamily:"Inter,sans-serif"}}>
       {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance}/>}
       <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
         <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(8,8,16,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #1a1a2e",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
@@ -211,7 +211,7 @@ function AppInterno() {
           {renderPage()}
         </div>
       </main>
-      <style>{`*{-webkit-tap-highlight-color:transparent}body{margin:0;background:#080810}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0d0d14}::-webkit-scrollbar-thumb{background:#1e1e2e;border-radius:3px}`}</style>
+      <style>{`*{-webkit-tap-highlight-color:transparent}body{margin:0;background:#0d0d1a}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0d0d14}::-webkit-scrollbar-thumb{background:#1e1e2e;border-radius:3px}`}</style>
     </div>
   );
 }
