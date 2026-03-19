@@ -209,27 +209,27 @@ export default function Evolucao({ entries, compliance }) {
       </div>
 
       {/* Top 3 cards */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px",marginBottom:"28px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"14px",marginBottom:"22px"}}>
         {/* Resultado Total */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"110px"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px 18px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"80px"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
-          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"18px"}}>
-            <p style={{margin:0,color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
+          <p style={{margin:"0 0 auto",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"12px"}}>
+            <p style={{margin:0,color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
               {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
             </p>
-            <p style={{margin:0,color:"#555",fontSize:"12px",fontFamily:"monospace",paddingBottom:"2px"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
+            <p style={{margin:0,color:"#555",fontSize:"11px",fontFamily:"monospace",paddingBottom:"1px"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
           </div>
         </div>
         {/* Win Rate */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"110px"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px 18px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"80px"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+(winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d")+",transparent)"}}/>
-          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"18px"}}>
-            <p style={{margin:0,color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"26px",fontWeight:"800",fontFamily:"monospace"}}>
+          <p style={{margin:"0 0 auto",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"12px"}}>
+            <p style={{margin:0,color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>
               {winRate !== null ? winRate+"%" : "—"}
             </p>
-            <p style={{margin:0,color:"#555",fontSize:"12px",paddingBottom:"2px"}}>{wins} de {allTrades.length} trades</p>
+            <p style={{margin:0,color:"#555",fontSize:"11px",paddingBottom:"1px"}}>{wins} de {allTrades.length} trades</p>
           </div>
         </div>
         {/* Dias Operados */}
@@ -247,11 +247,11 @@ export default function Evolucao({ entries, compliance }) {
           const semanas = [];
           for(let i=0;i<celulas.length;i+=7) semanas.push(celulas.slice(i,i+7));
           return (
-            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"110px"}}>
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px 18px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"80px"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#f59e0b,transparent)"}}/>
-              <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"18px"}}>
-                <p style={{margin:0,color:"#f0f0f0",fontSize:"26px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
+              <p style={{margin:"0 0 auto",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"12px"}}>
+                <p style={{margin:0,color:"#f0f0f0",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
                 <div style={{display:"flex",flexDirection:"column",gap:"3px",alignItems:"flex-end"}}>
                   {semanas.map((sem,si)=>(
                     <div key={si} style={{display:"flex",gap:"3px"}}>
