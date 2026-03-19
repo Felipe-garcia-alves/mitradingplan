@@ -40,7 +40,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
         </div>
 
         {/* Menu - more spacing, bigger font, lighter color */}
-        <nav style={{flex:1,padding:"40px 10px",overflowY:"auto"}}>
+        <nav style={{flex:1,padding:"80px 10px",overflowY:"auto"}}>
           {MENU.map(item => {
             const active = pagina === item.id;
             return (

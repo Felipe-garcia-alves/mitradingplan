@@ -20,6 +20,7 @@ const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888",
 export default function Diario({ entries, saveEntry, deleteEntry, estrategias }) {
   const today    = todayKey();
   const curMonth = monthKey(today);
+  const [selectedDate, setSelectedDate] = useState(today);
   const [selMonth,   setSelMonth]   = useState(curMonth);
   const [expanded,   setExpanded]   = useState(null);
   const [msg,        setMsg]        = useState("");
@@ -29,7 +30,14 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
   const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:""});
   const [showEstSug, setShowEstSug] = useState(false);
 
-  const todayEntry = entries[today];
+  function changeDate(delta) {
+    const d = new Date(selectedDate + "T12:00:00");
+    d.setDate(d.getDate() + delta);
+    const newKey = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if (newKey <= today) setSelectedDate(newKey);
+  }
+
+  const todayEntry = entries[selectedDate];
   const estNomes = [...new Set((estrategias||[]).map(e=>e.nome).filter(Boolean))];
 
   function toggleEmocao(em) {
@@ -58,7 +66,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     if (trades.length === 0 && !observacao.trim()) {
       setMsg("Adicione ao menos um trade ou observação."); return;
     }
-    // Merge with existing trades for today
+    // Merge with existing trades for selectedDate
     const existingTrades = todayEntry?.trades || [];
     const allTrades = [
       ...existingTrades,
@@ -90,8 +98,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     if (totalForex !== 0) data.totalForex = totalForex;
     if (winRate    !== null) data.winRate = winRate;
 
-    await saveEntry(today, data);
-    setMsg("✓ Salvo! "+allTrades.length+" trades hoje"); setTimeout(()=>setMsg(""),2500);
+    await saveEntry(selectedDate, data);
+    const label = selectedDate === today ? "hoje" : "em "+formatDateFull(selectedDate);
+    setMsg("✓ Salvo! "+allTrades.length+" trades "+label); setTimeout(()=>setMsg(""),2500);
     setTrades([]); setEmocoes([]); setObservacao("");
   }
 
@@ -109,10 +118,18 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
       <div style={{background:"#0d0d14",border:"1px solid "+(todayEntry?"#00d4aa22":"#1a1a2e"),borderRadius:"16px",padding:"28px",marginBottom:"24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
           <div>
-            <p style={{margin:"0 0 4px",color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar hoje</p>
-            <p style={{margin:0,color:"#f0f0f0",fontSize:"18px",fontWeight:"700"}}>{formatDateLong(today)}</p>
+            <p style={{margin:"0 0 8px",color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar</p>
+            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+              <button onClick={()=>changeDate(-1)} style={{background:"rgba(255,255,255,0.05)",border:"1px solid #2a2a3a",borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#aaa",flexShrink:0}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"17px",fontWeight:"700",whiteSpace:"nowrap"}}>{selectedDate===today?"Hoje — ":""}{formatDateLong(selectedDate)}</p>
+              <button onClick={()=>changeDate(+1)} disabled={selectedDate===today} style={{background:selectedDate===today?"transparent":"rgba(255,255,255,0.05)",border:"1px solid "+(selectedDate===today?"#1a1a2e":"#2a2a3a"),borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:selectedDate===today?"default":"pointer",color:selectedDate===today?"#333":"#aaa",flexShrink:0}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
           </div>
-          {todayEntry && <span style={{background:"rgba(0,212,170,0.1)",color:"#00d4aa",padding:"5px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ Registrado hoje</span>}
+          {todayEntry && <span style={{background:"rgba(0,212,170,0.1)",color:"#00d4aa",padding:"5px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ {selectedDate===today?"Registrado hoje":"Já registrado"}</span>}
         </div>
 
         {/* Emocoes */}

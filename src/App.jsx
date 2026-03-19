@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -26,10 +26,19 @@ function Spinner() {
 
 function UserHeader({ nomeUsuario, entries }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
   const today = new Date().toISOString().slice(0,10);
   const todayEntry = entries[today];
   const total = todayEntry ? (todayEntry.totalB3||0)+(todayEntry.totalForex||0) : null;
   const inicial = nomeUsuario ? nomeUsuario[0].toUpperCase() : "U";
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
   // Weekly stats
   const last7 = Object.entries(entries).filter(([d])=>d<=today).sort(([a],[b])=>b.localeCompare(a)).slice(0,7);
@@ -39,8 +48,7 @@ function UserHeader({ nomeUsuario, entries }) {
   const weekWR     = weekTrades>0 ? Math.round((weekWins/weekTrades)*100) : null;
 
   return (
-    <div style={{position:"relative"}}>
-      {open && <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:299}}/>}
+    <div ref={ref} style={{position:"relative"}}>
       <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(0,212,170,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#00d4aa44":"#1e1e2e"),borderRadius:"10px",padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.2s"}}>
         <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,#00d4aa22,#0099ff22)",border:"1px solid #00d4aa44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:"700",color:"#00d4aa",flexShrink:0}}>{inicial}</div>
         <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{nomeUsuario||"Trader"}</span>
