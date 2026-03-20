@@ -172,12 +172,12 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
     <div style={{fontFamily:"Inter,sans-serif"}}>
 
       {/* Card de frases no topo */}
-      <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px 28px",marginBottom:"24px",display:"flex",gap:"0",flexWrap:"wrap"}}>
-        <div style={{flex:1,minWidth:"220px",borderRight:"1px solid #1a1a2e",paddingRight:"28px",marginRight:"28px"}}>
-          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO A TÉCNICA.</p>
+      <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"22px 28px",marginBottom:"24px",display:"flex",gap:"0",flexWrap:"wrap"}}>
+        <div style={{flex:1,minWidth:"220px",borderRight:"1px solid #1a1a2e",paddingRight:"28px",marginRight:"28px",textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"13px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.9"}}>O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO A TÉCNICA.</p>
         </div>
-        <div style={{flex:1,minWidth:"220px",display:"flex",alignItems:"center"}}>
-          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE.<br/>CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
+        <div style={{flex:1,minWidth:"220px",display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
+          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"13px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.9"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE.<br/>CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
         </div>
       </div>
 
@@ -269,12 +269,12 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
         </div>
 
         <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"4px",marginBottom:"8px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px",marginBottom:"8px"}}>
             {["Dom","Seg","Ter","Qua","Qui","Sex","Sab"].map(d=>(
               <div key={d} style={{textAlign:"center",color:"#444",fontSize:"10px",fontWeight:"600",padding:"4px 0"}}>{d}</div>
             ))}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"4px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px"}}>
             {Array.from({length:firstDay}).map((_,i)=><div key={"e"+i}/>)}
             {Array.from({length:daysInMon}).map((_,i)=>{
               const d=i+1,k=calKey(d),isToday=k===today,future=k>today;
@@ -290,23 +290,21 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               const emocoes = dayEntry?.emocoes || [];
               const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
               return (
-                <div key={d} style={{aspectRatio:"1",display:"flex",flexDirection:"column",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"5px",position:"relative",overflow:"hidden"}}
+                <div key={d} style={{minHeight:"80px",display:"flex",flexDirection:"column",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
                   onClick={()=>!future&&toggleDay(k)}>
-                  {/* Número do dia — canto superior esquerdo */}
-                  <span style={{fontSize:"13px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#aaa",lineHeight:1,flexShrink:0}}>{d}</span>
+                  {/* Número do dia — canto superior esquerdo, fonte maior */}
+                  <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#ccc",lineHeight:1,marginBottom:"4px"}}>{d}</span>
                   {/* Porcentagem — centro */}
                   {(hasPct || status===true) && (
-                    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      <span style={{fontSize:"14px",fontWeight:"800",fontFamily:"monospace",color:accentColor}}>
-                        {hasPct ? status+"%" : "✓"}
-                      </span>
-                    </div>
+                    <span style={{fontSize:"15px",fontWeight:"800",fontFamily:"monospace",color:accentColor,marginBottom:"4px"}}>
+                      {hasPct ? status+"%" : "100%"}
+                    </span>
                   )}
-                  {/* Emoções — parte inferior, bolinhas */}
+                  {/* Emoções em texto */}
                   {!future && emocoes.length > 0 && (
-                    <div style={{display:"flex",gap:"2px",flexWrap:"wrap",marginTop:"auto"}}>
-                      {emocoes.slice(0,3).map(em=>(
-                        <div key={em} style={{width:"5px",height:"5px",borderRadius:"50%",background:EMOCAO_COLORS[em]||"#888",flexShrink:0}}/>
+                    <div style={{display:"flex",flexDirection:"column",gap:"2px",marginTop:"auto"}}>
+                      {emocoes.slice(0,2).map(em=>(
+                        <span key={em} style={{fontSize:"9px",fontWeight:"600",color:EMOCAO_COLORS[em]||"#888",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{em}</span>
                       ))}
                     </div>
                   )}

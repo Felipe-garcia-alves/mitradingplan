@@ -67,22 +67,19 @@ export default function Evolucao({ entries, compliance, estrategias }) {
     return Object.entries(entries).filter(([d]) => d >= inicio && d <= fim).sort(([a],[b])=>a.localeCompare(b));
   }, [entries, inicio, fim]);
 
-  // Compliance — usa o valor salvo hoje (porcentagem do checklist)
+  // Compliance — média total de todos os dias salvos até hoje
   const now2 = new Date();
   const ym = now2.getFullYear()+"-"+String(now2.getMonth()+1).padStart(2,"0");
   const today2 = dayKey(now2);
   const daysThisMonth = Object.keys(compliance||{}).filter(k=>k.startsWith(ym));
-  const todayPctVal = (compliance||{})[today2];
-  // Card circular = valor de hoje se salvo, senão média do mês
-  const compliancePct = typeof todayPctVal === "number" ? todayPctVal :
-    todayPctVal === true ? 100 :
-    daysThisMonth.length > 0 ? (() => {
-      const vals = daysThisMonth.map(k => {
-        const v = (compliance||{})[k];
-        return typeof v === "number" ? v : v === true ? 100 : null;
-      }).filter(v => v !== null);
-      return vals.length > 0 ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-    })() : null;
+  // Card = média de TODOS os dias salvos no mês até hoje
+  const allSavedVals = Object.entries(compliance||{})
+    .filter(([k]) => k <= today2)
+    .map(([,v]) => typeof v === "number" ? v : v === true ? 100 : null)
+    .filter(v => v !== null);
+  const compliancePct = allSavedVals.length > 0
+    ? Math.round(allSavedVals.reduce((a,b)=>a+b,0)/allSavedVals.length)
+    : null;
   const compliedDays = daysThisMonth.filter(k => {
     const v = (compliance||{})[k];
     return v === true || (typeof v === "number" && v >= 80);
@@ -230,7 +227,7 @@ export default function Evolucao({ entries, compliance, estrategias }) {
           </div>
           <div>
             <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
-            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{typeof todayPctVal==="number"?"salvo hoje":compliedDays+" de "+daysThisMonth.length+" dias"}</p>
+            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{allSavedVals.length>0?`média de ${allSavedVals.length} dia${allSavedVals.length!==1?"s":""}`:compliedDays+" de "+daysThisMonth.length+" dias"}</p>
           </div>
         </div>
         {/* Resultado Total hero */}
