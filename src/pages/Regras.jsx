@@ -23,7 +23,7 @@ const REGRAS_PADRAO = [
 
 const ICONS = ["limit","stop","loss","target","wait","clock","log","three","rr","trend","shield","eye","chart","lock","check"];
 
-function RuleIcon({ id, color="#00d4aa", size=16 }) {
+function RuleIcon({ id, color="#2dc99a", size=16 }) {
   const s = { width:size, height:size, viewBox:"0 0 24 24", fill:"none", stroke:color, strokeWidth:"1.8", strokeLinecap:"round", strokeLinejoin:"round" };
   const icons = {
     limit:  <svg {...s}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
@@ -161,7 +161,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
             <button onClick={salvar} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>💾 Salvar regra</button>
             <button onClick={()=>setEditando(false)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"10px",padding:"11px 18px",color:"#777",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Cancelar</button>
-            {msg && <span style={{color:"#00d4aa",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
+            {msg && <span style={{color:"#2dc99a",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
           </div>
         </div>
       </div>
@@ -186,8 +186,8 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Disciplina</h1>
         </div>
         <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-          {msg && <span style={{color:"#00d4aa",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
-          {allChecked && <span style={{background:"rgba(0,212,170,0.15)",color:"#00d4aa",padding:"6px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"700"}}>✓ Pronto para operar</span>}
+          {msg && <span style={{color:"#2dc99a",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
+          {allChecked && <span style={{background:"rgba(0,212,170,0.15)",color:"#2dc99a",padding:"6px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"700"}}>✓ Pronto para operar</span>}
           <button onClick={abrirNova} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"10px",padding:"9px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>+ Nova regra</button>
         </div>
       </div>
@@ -196,7 +196,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
       <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"24px"}}>
         {regrasList.map((rule,idx) => {
           const ok    = !!checked[rule.id];
-          const color = rule.personal ? "#f59e0b" : "#00d4aa";
+          const color = rule.personal ? "#f59e0b" : "#2dc99a";
           return (
             <div key={rule.id} style={{background:ok?(rule.personal?"rgba(245,158,11,0.07)":"rgba(0,212,170,0.07)"):"#111118",border:"1px solid "+(ok?(rule.personal?"#f59e0b44":"#00d4aa44"):"#1a1a2e"),borderRadius:"12px",padding:"12px 14px",display:"flex",gap:"10px",alignItems:"flex-start",transition:"all 0.2s"}}>
               <div onClick={()=>toggleCheck(rule.id)} style={{width:"22px",height:"22px",borderRadius:"6px",border:"2px solid "+(ok?color:"#333"),background:ok?color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",cursor:"pointer",transition:"all 0.2s"}}>
@@ -235,9 +235,9 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
         {pct !== null && (
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <div style={{width:"120px",height:"6px",borderRadius:"3px",background:"#1a1a2e",overflow:"hidden"}}>
-              <div style={{height:"100%",width:pct+"%",background:pct>=80?"#00d4aa":pct>=50?"#f59e0b":"#ff4d4d",borderRadius:"3px",transition:"width 0.3s"}}/>
+              <div style={{height:"100%",width:pct+"%",background:pct>=80?"#2dc99a":pct>=50?"#f59e0b":"#e05656",borderRadius:"3px",transition:"width 0.3s"}}/>
             </div>
-            <span style={{color:pct>=80?"#00d4aa":pct>=50?"#f59e0b":"#ff4d4d",fontSize:"14px",fontWeight:"800",fontFamily:"monospace"}}>{pct}%</span>
+            <span style={{color:pct>=80?"#2dc99a":pct>=50?"#f59e0b":"#e05656",fontSize:"14px",fontWeight:"800",fontFamily:"monospace"}}>{pct}%</span>
             <span style={{color:"#444",fontSize:"12px"}}>{checkedCount} de {totalRegras}</span>
           </div>
         )}
@@ -252,17 +252,17 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           {pct !== null && (
             <div style={{textAlign:"right"}}>
               <p style={{margin:"0 0 2px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Hoje — progresso</p>
-              <p style={{margin:0,color:pct>=80?"#00d4aa":pct>=50?"#f59e0b":"#ff4d4d",fontSize:"24px",fontWeight:"800",fontFamily:"JetBrains Mono,monospace"}}>{pct}%</p>
+              <p style={{margin:0,color:pct>=80?"#2dc99a":pct>=50?"#f59e0b":"#e05656",fontSize:"24px",fontWeight:"800",fontFamily:"JetBrains Mono,monospace"}}>{pct}%</p>
               <p style={{margin:"2px 0 0",color:"#444",fontSize:"11px"}}>{checkedCount} de {totalRegras} regras</p>
             </div>
           )}
         </div>
 
         <div onClick={()=>toggleDay(today)} style={{background:todayComplied?"rgba(0,212,170,0.1)":"rgba(255,255,255,0.03)",border:"1px solid "+(todayComplied?"#00d4aa44":"#2a2a3a"),borderRadius:"10px",padding:"12px 18px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"10px",marginBottom:"20px",transition:"all 0.2s"}}>
-          <div style={{width:"20px",height:"20px",borderRadius:"5px",border:"2px solid "+(todayComplied?"#00d4aa":"#555"),background:todayComplied?"#00d4aa":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+          <div style={{width:"20px",height:"20px",borderRadius:"5px",border:"2px solid "+(todayComplied?"#2dc99a":"#555"),background:todayComplied?"#2dc99a":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
             {todayComplied && <span style={{color:"#000",fontSize:"11px",fontWeight:"900"}}>✓</span>}
           </div>
-          <span style={{color:todayComplied?"#00d4aa":"#888",fontWeight:"600",fontSize:"13px"}}>
+          <span style={{color:todayComplied?"#2dc99a":"#888",fontWeight:"600",fontSize:"13px"}}>
             {todayComplied?"✓ Cumpri todas as regras hoje":"Marcar: cumpri todas as regras hoje"}
           </span>
           {todayComplied && <span style={{color:"#00d4aa66",fontSize:"11px"}}>({formatDateFull(today)})</span>}
@@ -285,23 +285,22 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               const isBad  = hasPct && status < 50;
               const bg    = future?"transparent":isOk?"rgba(0,212,170,0.12)":isMid?"rgba(245,158,11,0.12)":isBad?"rgba(255,77,77,0.12)":"rgba(255,255,255,0.02)";
               const border= isToday?"2px solid #00d4aa55":"1px solid "+(isOk?"#00d4aa22":isMid?"#f59e0b22":isBad?"#ff4d4d22":"#1a1a2e");
-              const accentColor = isOk?"#00d4aa":isMid?"#f59e0b":isBad?"#ff4d4d":"#555";
+              const accentColor = isOk?"#2dc99a":isMid?"#f59e0b":isBad?"#e05656":"#555";
               const dayEntry = (entries||{})[k];
               const emocoes = dayEntry?.emocoes || [];
-              const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+              const EMOCAO_COLORS = {"Focado":"#2dc99a","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
               return (
                 <div key={d} style={{minHeight:"80px",display:"flex",flexDirection:"column",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
                   onClick={()=>!future&&toggleDay(k)}>
-                  {/* Linha topo: número esquerda, porcentagem direita */}
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"6px"}}>
-                    <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#ccc",lineHeight:1}}>{d}</span>
-                    {(hasPct || status===true) && (
-                      <span style={{fontSize:"18px",fontWeight:"800",fontFamily:"monospace",color:accentColor,lineHeight:1}}>
-                        {hasPct ? status+"%" : "100%"}
-                      </span>
-                    )}
-                  </div>
-                  {/* Emoções em texto maior */}
+                  {/* Número do dia — topo esquerda */}
+                  <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#ccc",lineHeight:1,marginBottom:"4px"}}>{d}</span>
+                  {/* Porcentagem — linha abaixo do número */}
+                  {(hasPct || status===true) && (
+                    <span style={{fontSize:"18px",fontWeight:"800",fontFamily:"monospace",color:accentColor,lineHeight:1,marginBottom:"6px"}}>
+                      {hasPct ? status+"%" : "100%"}
+                    </span>
+                  )}
+                  {/* Emoções em texto */}
                   {!future && emocoes.length > 0 && (
                     <div style={{display:"flex",flexDirection:"column",gap:"3px",marginTop:"auto"}}>
                       {emocoes.slice(0,2).map(em=>(

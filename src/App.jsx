@@ -267,7 +267,7 @@ function AppInterno() {
 
   const renderPage = () => {
     switch(pagina){
-      case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias}/>;
+      case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina}/>;
       case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry}/>;
       case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
