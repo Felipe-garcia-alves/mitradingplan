@@ -512,6 +512,280 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
         </div>
       )}
 
+      {/* ── SEÇÃO: CORRELAÇÃO EMOÇÃO × RESULTADO ── */}
+      {allTrades.length >= 3 && (() => {
+        const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+        const emocaoStats = {};
+        filtered.forEach(([,e]) => {
+          const tot = (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0);
+          const wr = e.winRate;
+          (e.emocoes||[]).forEach(em => {
+            if (!emocaoStats[em]) emocaoStats[em] = { resultado:0, dias:0, winRates:[] };
+            emocaoStats[em].resultado += tot;
+            emocaoStats[em].dias++;
+            if (wr !== undefined) emocaoStats[em].winRates.push(wr);
+          });
+        });
+        const emList = Object.entries(emocaoStats).sort(([,a],[,b])=>b.resultado-a.resultado);
+        if (emList.length === 0) return null;
+        const maxAbs = Math.max(1, ...emList.map(([,s])=>Math.abs(s.resultado)));
+        return (
+          <div style={{marginBottom:"28px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Correlação Emoção × Resultado</p>
+              <span style={{color:"#333",fontSize:"11px"}}>impacto no seu trading</span>
+            </div>
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+                {emList.map(([em,s])=>{
+                  const cor = EMOCAO_COLORS[em]||"#888";
+                  const avgWR = s.winRates.length>0 ? Math.round(s.winRates.reduce((a,b)=>a+b,0)/s.winRates.length) : null;
+                  const barW = Math.round((Math.abs(s.resultado)/maxAbs)*100);
+                  const pos = s.resultado >= 0;
+                  return (
+                    <div key={em} style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                      <div style={{width:"90px",flexShrink:0}}>
+                        <span style={{fontSize:"12px",fontWeight:"700",color:cor}}>{em}</span>
+                        <p style={{margin:0,color:"#444",fontSize:"10px"}}>{s.dias} dia{s.dias!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
+                      </div>
+                      <div style={{flex:1,height:"8px",background:"#1a1a2e",borderRadius:"4px",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:barW+"%",background:pos?"#2dc99a":"#e05656",borderRadius:"4px",transition:"width 0.3s"}}/>
+                      </div>
+                      <span style={{width:"80px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#2dc99a":"#e05656",flexShrink:0}}>
+                        {pos?"+":""}R$ {s.resultado.toFixed(0)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── SEÇÃO: STREAK DE DISCIPLINA ── */}
+      {(() => {
+        const savedDays = Object.entries(compliance||{})
+          .filter(([,v])=>typeof v==="number"||v===true)
+          .sort(([a],[b])=>b.localeCompare(a));
+        if (savedDays.length === 0) return null;
+        let streak = 0, maxStreak = 0, curStreak = 0;
+        const sortedAsc = [...savedDays].sort(([a],[b])=>a.localeCompare(b));
+        let prevDate = null;
+        sortedAsc.forEach(([k,v]) => {
+          const pct = typeof v==="number" ? v : 100;
+          const cur = new Date(k+"T12:00:00");
+          if (prevDate) {
+            const diff = (cur-prevDate)/(1000*60*60*24);
+            if (diff === 1 && pct >= 80) curStreak++;
+            else curStreak = pct >= 80 ? 1 : 0;
+          } else {
+            curStreak = pct >= 80 ? 1 : 0;
+          }
+          if (curStreak > maxStreak) maxStreak = curStreak;
+          prevDate = cur;
+        });
+        streak = curStreak;
+        const todayVal = (compliance||{})[dayKey(new Date())];
+        const todayPct = typeof todayVal==="number" ? todayVal : todayVal===true ? 100 : 0;
+        if (todayPct < 80) streak = 0;
+        return (
+          <div style={{marginBottom:"28px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Streak de Disciplina</p>
+              <span style={{color:"#333",fontSize:"11px"}}>dias consecutivos ≥80%</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"14px"}}>
+              <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
+                <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Streak Atual</p>
+                <p style={{margin:0,color:streak>=7?"#2dc99a":streak>=3?"#f59e0b":"#e05656",fontSize:"36px",fontWeight:"800",fontFamily:"monospace"}}>{streak}</p>
+                <p style={{margin:0,color:"#444",fontSize:"11px"}}>dias seguidos</p>
+              </div>
+              <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
+                <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Recorde</p>
+                <p style={{margin:0,color:"#f59e0b",fontSize:"36px",fontWeight:"800",fontFamily:"monospace"}}>{maxStreak}</p>
+                <p style={{margin:0,color:"#444",fontSize:"11px"}}>dias seguidos</p>
+              </div>
+              <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
+                <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Salvos</p>
+                <p style={{margin:0,color:"#aaa",fontSize:"36px",fontWeight:"800",fontFamily:"monospace"}}>{savedDays.length}</p>
+                <p style={{margin:0,color:"#444",fontSize:"11px"}}>total registrado</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── SEÇÃO: ANÁLISE POR HORÁRIO ── */}
+      {allTrades.filter(t=>t.horario).length >= 3 && (() => {
+        const horarioStats = {};
+        allTrades.filter(t=>t.horario).forEach(t => {
+          const hora = t.horario.slice(0,2)+"h";
+          if (!horarioStats[hora]) horarioStats[hora] = {wins:0,total:0,resultado:0,pontos:0};
+          horarioStats[hora].total++;
+          horarioStats[hora].resultado += t.resultado||0;
+          horarioStats[hora].pontos    += t.pontos||0;
+          if (t.tipo==="WIN") horarioStats[hora].wins++;
+        });
+        const horaList = Object.entries(horarioStats).sort(([a],[b])=>a.localeCompare(b));
+        const maxRes = Math.max(1, ...horaList.map(([,s])=>Math.abs(s.resultado)));
+        return (
+          <div style={{marginBottom:"28px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Performance por Horário</p>
+              <span style={{color:"#333",fontSize:"11px"}}>baseado nas operações registradas</span>
+            </div>
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+                {horaList.map(([hora,s])=>{
+                  const wr = Math.round((s.wins/s.total)*100);
+                  const pos = s.resultado >= 0;
+                  const barW = Math.round((Math.abs(s.resultado)/maxRes)*100);
+                  const cor = wr>=60?"#2dc99a":wr>=40?"#f59e0b":"#e05656";
+                  return (
+                    <div key={hora} style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                      <span style={{width:"36px",color:"#aaa",fontSize:"12px",fontFamily:"monospace",fontWeight:"700",flexShrink:0}}>{hora}</span>
+                      <div style={{width:"40px",textAlign:"center",flexShrink:0}}>
+                        <span style={{fontSize:"11px",fontWeight:"700",color:cor}}>{wr}%</span>
+                        <p style={{margin:0,color:"#444",fontSize:"9px"}}>{s.total} ops</p>
+                      </div>
+                      <div style={{flex:1,height:"8px",background:"#1a1a2e",borderRadius:"4px",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:barW+"%",background:pos?"#2dc99a":"#e05656",borderRadius:"4px"}}/>
+                      </div>
+                      <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#2dc99a":"#e05656",flexShrink:0}}>
+                        {pos?"+":""}R$ {s.resultado.toFixed(0)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── SEÇÃO: CURVA DE CAPITAL POR ESTRATÉGIA ── */}
+      {Object.keys(estratStats).length >= 2 && (() => {
+        const colors2 = ["#00d4aa","#0099ff","#f59e0b","#a78bfa","#f472b6","#34d399","#fb923c"];
+        const estratDays = {};
+        filtered.forEach(([d,e]) => {
+          (e.trades||[]).forEach(t => {
+            const n = t.estrategia||"Sem nome";
+            if (!estratDays[n]) estratDays[n] = {};
+            if (!estratDays[n][d]) estratDays[n][d] = 0;
+            estratDays[n][d] += (t.resultado||0);
+          });
+        });
+        const allDates = [...new Set(filtered.map(([d])=>d))].sort();
+        if (allDates.length < 2) return null;
+        const estratNames = Object.keys(estratDays);
+        const curves = estratNames.map((n,i) => {
+          let acc = 0;
+          const pts = allDates.map(d => { acc += estratDays[n][d]||0; return acc; });
+          return { n, pts, color: colors2[i%colors2.length] };
+        });
+        const W=600, H=140, PT=10, PB=10, PL=10, PR=10;
+        const allVals = curves.flatMap(c=>c.pts);
+        const minV = Math.min(0,...allVals), maxV = Math.max(1,...allVals);
+        const range = maxV-minV||1;
+        const xStep = (W-PL-PR)/(allDates.length-1||1);
+        const yScale = v => PT + (H-PT-PB)*(1-(v-minV)/range);
+        return (
+          <div style={{marginBottom:"28px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Curva de Capital por Estratégia</p>
+            </div>
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+              <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block",marginBottom:"14px"}}>
+                <line x1={PL} y1={yScale(0)} x2={W-PR} y2={yScale(0)} stroke="#ffffff0a" strokeWidth="1"/>
+                {curves.map(({n,pts,color})=>{
+                  const path = pts.map((v,i)=>`${i===0?"M":"L"}${PL+i*xStep},${yScale(v)}`).join(" ");
+                  return <path key={n} d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85"/>;
+                })}
+              </svg>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"12px"}}>
+                {curves.map(({n,pts,color})=>{
+                  const last = pts[pts.length-1]||0;
+                  return (
+                    <div key={n} style={{display:"flex",alignItems:"center",gap:"6px",cursor:"pointer"}} onClick={()=>setPanelEst(n)}>
+                      <div style={{width:"10px",height:"10px",borderRadius:"50%",background:color,flexShrink:0}}/>
+                      <span style={{fontSize:"12px",color:"#aaa"}}>{n}</span>
+                      <span style={{fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:last>=0?"#2dc99a":"#e05656"}}>{last>=0?"+":""}R${last.toFixed(0)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── SEÇÃO: SEQUÊNCIA WIN/LOSS POR ESTRATÉGIA ── */}
+      {Object.keys(estratStats).length > 0 && (() => {
+        const seqStats = {};
+        Object.keys(estratStats).forEach(n => {
+          const ops = filtered.flatMap(([,e])=>(e.trades||[]).filter(t=>t.estrategia===n));
+          if (ops.length < 3) return;
+          let maxWin=0,maxLoss=0,curWin=0,curLoss=0,curStreak=0,curType="";
+          ops.forEach(t => {
+            if (t.tipo==="WIN") { curWin++; curLoss=0; if(curWin>maxWin)maxWin=curWin; }
+            else { curLoss++; curWin=0; if(curLoss>maxLoss)maxLoss=curLoss; }
+          });
+          // current streak
+          for (let i=ops.length-1;i>=0;i--) {
+            if (i===ops.length-1) { curType=ops[i].tipo; curStreak=1; }
+            else if (ops[i].tipo===curType) curStreak++;
+            else break;
+          }
+          seqStats[n] = { maxWin, maxLoss, curStreak, curType, total:ops.length };
+        });
+        const entries2 = Object.entries(seqStats);
+        if (entries2.length === 0) return null;
+        const colors2 = ["#00d4aa","#0099ff","#f59e0b","#a78bfa","#f472b6","#34d399","#fb923c"];
+        return (
+          <div style={{marginBottom:"28px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Sequências WIN/LOSS por Estratégia</p>
+              <span style={{color:"#333",fontSize:"11px"}}>detecta fases de cada setup</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"12px"}}>
+              {entries2.map(([n,s],i)=>{
+                const cor = colors2[i%colors2.length];
+                const streakColor = s.curType==="WIN"?"#2dc99a":"#e05656";
+                const alert = s.curLoss >= 3 || (s.curType==="LOSS" && s.curStreak>=2);
+                return (
+                  <div key={n} style={{background:"#0d0d14",border:"1px solid "+(alert?"#e0565633":"#1a1a2e"),borderRadius:"14px",padding:"16px",cursor:"pointer"}}
+                    onClick={()=>setPanelEst(n)}>
+                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px"}}>
+                      <div style={{padding:"3px 7px",borderRadius:"5px",background:cor+"22",border:"1px solid "+cor+"33"}}>
+                        <span style={{color:cor,fontSize:"10px",fontWeight:"800"}}>{n.slice(0,3).toUpperCase()}</span>
+                      </div>
+                      <span style={{color:"#aaa",fontSize:"12px",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n}</span>
+                      {alert && <span style={{fontSize:"10px",color:"#e05656"}}>⚠</span>}
+                    </div>
+                    <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
+                      <div style={{flex:1,textAlign:"center",background:"rgba(45,201,154,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
+                        <p style={{margin:0,color:"#2dc99a",fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{s.maxWin}</p>
+                        <p style={{margin:0,color:"#444",fontSize:"9px",textTransform:"uppercase"}}>Max WIN</p>
+                      </div>
+                      <div style={{flex:1,textAlign:"center",background:"rgba(224,86,86,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
+                        <p style={{margin:0,color:"#e05656",fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{s.maxLoss}</p>
+                        <p style={{margin:0,color:"#444",fontSize:"9px",textTransform:"uppercase"}}>Max LOSS</p>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                      <span style={{fontSize:"11px",color:"#555"}}>Agora:</span>
+                      <span style={{padding:"2px 8px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:streakColor+"18",color:streakColor}}>{s.curStreak}× {s.curType}</span>
+                      {s.curType==="LOSS"&&s.curStreak>=2&&<span style={{fontSize:"10px",color:"#e05656"}}>— revisar setup</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* LINHA 6: Diagnóstico IA full width */}
       {allTrades.length >= 3 && <DiagnosticoIA trades={allTrades} entries={filtered} totalResult={totalResult} winRate={winRate} mediaVenc={mediaVenc} mediaPerd={mediaPerd} rr={rr} estratStats={estratStats} diasOp={diasOp}/>}
 

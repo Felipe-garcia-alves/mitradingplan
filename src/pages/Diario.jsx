@@ -27,7 +27,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
   const [emocoes,    setEmocoes]    = useState([]);
   const [observacao, setObservacao] = useState("");
   const [trades,     setTrades]     = useState([]);
-  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:""});
+  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:""});
   const [showEstSug, setShowEstSug] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null); // { dateKey, index, data }
 
@@ -98,9 +98,10 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
       estrategia: novoTrade.estrategia,
       tipo: novoTrade.tipo,
       observacao: novoTrade.observacao,
+      horario: novoTrade.horario,
     };
     setTrades(prev => [...prev, t]);
-    setNovoTrade({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:""});
+    setNovoTrade({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:""});
     setShowEstSug(false);
   }
 
@@ -115,7 +116,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     const allTrades = [
       ...existingTrades,
       ...trades.map(t => {
-        const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||""};
+        const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||"", horario:t.horario||""};
         if (t.resultado !== null) tr.resultado = t.resultado;
         if (t.pontos    !== null) tr.pontos    = t.pontos;
         return tr;
@@ -226,7 +227,10 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
             </div>
             <button onClick={addTrade} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer",whiteSpace:"nowrap"}}>+ Add</button>
           </div>
-          <input style={{...inp,width:"100%",boxSizing:"border-box",marginTop:"8px"}} type="text" placeholder="Observação desta operação (opcional)" value={novoTrade.observacao} onChange={e=>setNovoTrade(p=>({...p,observacao:e.target.value}))}/>
+          <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>
+            <input style={{...inp,width:"100px"}} type="time" value={novoTrade.horario} onChange={e=>setNovoTrade(p=>({...p,horario:e.target.value}))} title="Horário da operação"/>
+            <input style={{...inp,flex:1}} type="text" placeholder="Observação desta operação (opcional)" value={novoTrade.observacao} onChange={e=>setNovoTrade(p=>({...p,observacao:e.target.value}))}/>
+          </div>
         </div>
 
         {/* Lista trades */}
@@ -238,6 +242,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
                 <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
                 {t.pontos    !== null && <span style={{color:"#f0f0f0",fontSize:"14px",fontWeight:"600",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
                 {t.resultado !== null && <span style={{color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"600",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$ ":"$ "}{t.resultado?.toFixed(2)}</span>}
+                {t.horario && <span style={{color:"#555",fontSize:"12px",fontFamily:"monospace"}}>{t.horario}</span>}
                 {t.estrategia && <span style={{color:"#888",fontSize:"13px",background:"rgba(255,255,255,0.05)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
                 {t.observacao && <span style={{color:"#666",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                 <button onClick={()=>removeTrade(t.id)} style={{marginLeft:"auto",background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"15px",padding:"2px 6px"}}>✕</button>
