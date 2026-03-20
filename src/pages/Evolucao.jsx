@@ -186,180 +186,157 @@ export default function Evolucao({ entries, compliance }) {
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:allTrades.length>=3?"1fr 360px":"1fr",gap:"28px",alignItems:"start"}}>
-      {/* LEFT COLUMN */}
-      <div>
+      {/* LINHA 1: Alerta full width */}
+      <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
 
-      {/* Disciplina + Alertas — mesma linha */}
-      <div style={{display:"flex",alignItems:"center",gap:"16px",marginBottom:"28px",flexWrap:"wrap"}}>
-        {/* Card circular disciplina */}
-        <div style={{display:"flex",alignItems:"center",gap:"14px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"14px 20px"}}>
-          <div style={{background:"#0d0d14",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),borderRadius:"50%",width:"72px",height:"72px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
-            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
-            <div style={{position:"absolute",inset:"7px",background:"#0d0d14",borderRadius:"50%"}}/>
-            <div style={{position:"relative",textAlign:"center"}}>
-              <p style={{margin:0,color:compliancePct===null?"#444":complianceColor,fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
-              <p style={{margin:0,color:"#555",fontSize:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Disciplina</p>
-            </div>
-          </div>
-          <div>
-            <p style={{margin:"0 0 2px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
-            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{compliedDays} de {daysThisMonth.length} dias este mês</p>
-          </div>
-        </div>
-
-        {/* Alertas inteligentes */}
-        <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
-      </div>
-
-      {/* Top 3 cards */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",marginBottom:"24px"}}>
-        {/* Resultado Total */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px 24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"100px"}}>
-          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#00d4aa,transparent)"}}/>
-          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"16px"}}>
-            <p style={{margin:0,color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"24px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
-              {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
-            </p>
-            <p style={{margin:0,color:"#555",fontSize:"11px",fontFamily:"monospace",paddingBottom:"1px"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts</p>
-          </div>
+      {/* LINHA 2: 4 KPIs */}
+      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:"16px",marginBottom:"20px",marginTop:"20px"}}>
+        {/* Resultado Total hero */}
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px 28px",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:"3px",background:"linear-gradient(90deg,#00d4aa,#0099ff)"}}/>
+          <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
+          <p style={{margin:"0 0 4px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"32px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
+            {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+          </p>
+          <p style={{margin:"0 0 16px",color:"#444",fontSize:"13px",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts no período</p>
+          <span style={{background:totalResult>=0?"rgba(0,212,170,0.12)":"rgba(255,77,77,0.12)",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"11px",fontWeight:"700",padding:"4px 12px",borderRadius:"20px",border:"1px solid "+(totalResult>=0?"#00d4aa33":"#ff4d4d33")}}>
+            {totalResult>=0?"↑ Positivo":"↓ Negativo"}
+          </span>
         </div>
         {/* Win Rate */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px 24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"100px"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+(winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d")+",transparent)"}}/>
-          <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"16px"}}>
-            <p style={{margin:0,color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"24px",fontWeight:"800",fontFamily:"monospace"}}>
-              {winRate !== null ? winRate+"%" : "—"}
-            </p>
-            <p style={{margin:0,color:"#555",fontSize:"12px",paddingBottom:"1px"}}>{wins} de {allTrades.length} trades</p>
-          </div>
+          <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
+          <p style={{margin:"0 0 6px",color:winRate===null?"#666":winRate>=60?"#00d4aa":winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>
+            {winRate !== null ? winRate+"%" : "—"}
+          </p>
+          <p style={{margin:0,color:"#444",fontSize:"12px"}}>{wins} de {allTrades.length} trades</p>
         </div>
         {/* Dias Operados */}
-        {(() => {
+        {(()=>{
           const hoje = new Date();
           const ano = hoje.getFullYear();
           const mes = hoje.getMonth();
-          const totalDias = new Date(ano, mes+1, 0).getDate();
-          const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
           const mesKey = ano+"-"+String(mes+1).padStart(2,"0");
           const diasOperadosSet = new Set(Object.keys(entries).filter(d=>d.startsWith(mesKey)&&(entries[d].numTrades||0)>0));
+          const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+          const totalDias = new Date(ano, mes+1, 0).getDate();
           const celulas = [];
           for(let i=0;i<primeiroDiaSemana;i++) celulas.push(null);
           for(let d=1;d<=totalDias;d++) celulas.push(d);
           const semanas = [];
           for(let i=0;i<celulas.length;i+=7) semanas.push(celulas.slice(i,i+7));
           return (
-            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px 24px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",minHeight:"100px"}}>
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,#f59e0b,transparent)"}}/>
-              <p style={{margin:"0 0 auto",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:"16px"}}>
-                <p style={{margin:0,color:"#f0f0f0",fontSize:"24px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
-                <div style={{display:"flex",flexDirection:"column",gap:"4px",alignItems:"flex-end"}}>
-                  {semanas.map((sem,si)=>(
-                    <div key={si} style={{display:"flex",gap:"4px"}}>
-                      {Array.from({length:7}).map((_,di)=>{
-                        const cel = sem[di];
-                        if(cel===undefined||cel===null) return <div key={di} style={{width:"8px",height:"8px"}}/>;
-                        const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
-                        const operado = diasOperadosSet.has(dKey);
-                        const isHoje = cel===hoje.getDate();
-                        return <div key={di} style={{width:"8px",height:"8px",borderRadius:"50%",background:operado?"#00d4aa":isHoje?"#2a2a3a":"#1a1a2e",border:isHoje&&!operado?"1px solid #333":"none",transition:"background 0.2s"}}/>;
-                      })}
-                    </div>
-                  ))}
-                </div>
+              <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
+              <p style={{margin:"0 0 10px",color:"#f0f0f0",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
+                {semanas.map((sem,si)=>(
+                  <div key={si} style={{display:"flex",gap:"4px"}}>
+                    {Array.from({length:7}).map((_,di)=>{
+                      const cel = sem[di];
+                      if(cel===undefined||cel===null) return <div key={di} style={{width:"8px",height:"8px"}}/>;
+                      const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
+                      const operado = diasOperadosSet.has(dKey);
+                      const isHoje = cel===hoje.getDate();
+                      return <div key={di} style={{width:"8px",height:"8px",borderRadius:"50%",background:operado?"#00d4aa":isHoje?"#2a2a3a":"#1a1a2e",border:isHoje&&!operado?"1px solid #333":"none",transition:"background 0.2s"}}/>;
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
           );
         })()}
+        {/* Disciplina */}
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",display:"flex",alignItems:"center",gap:"14px"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+complianceColor+",transparent)"}}/>
+          <div style={{width:"56px",height:"56px",borderRadius:"50%",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),background:"#0d0d14",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
+            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
+            <div style={{position:"absolute",inset:"6px",background:"#0d0d14",borderRadius:"50%"}}/>
+            <div style={{position:"relative",textAlign:"center"}}>
+              <p style={{margin:0,color:compliancePct===null?"#444":complianceColor,fontSize:"13px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
+              <p style={{margin:0,color:"#555",fontSize:"7px",textTransform:"uppercase",letterSpacing:"0.5px"}}>disc.</p>
+            </div>
+          </div>
+          <div>
+            <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
+            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{compliedDays} de {daysThisMonth.length} dias</p>
+          </div>
+        </div>
       </div>
 
-      {/* Curva de Capital + Resultado Diário */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"28px"}}>
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px"}}>
-          <p style={{margin:"0 0 4px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Curva de Capital</p>
+      {/* LINHA 3: Curva Capital (60%) + Origem Ganho + Origem Perda */}
+      <div style={{display:"grid",gridTemplateColumns:"5fr 3fr 3fr",gap:"16px",marginBottom:"20px"}}>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+          <p style={{margin:"0 0 4px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Curva de Capital</p>
           <p style={{margin:"0 0 14px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"18px",fontWeight:"700",fontFamily:"monospace"}}>
             R$ {totalResult>=0?"+":""}{totalResult.toLocaleString("pt-BR",{minimumFractionDigits:2})}
           </p>
           <LineChart points={capitalPoints}/>
         </div>
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px"}}>
-          <p style={{margin:"0 0 4px",color:"#888",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Diário</p>
-          <p style={{margin:"0 0 14px",color:"#999",fontSize:"12px"}}>{dailyBars.filter(b=>b.val>0).length} dias positivos · {dailyBars.filter(b=>b.val<0).length} negativos</p>
-          <BarChart bars={dailyBars}/>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            <p style={{margin:0,color:"#00d4aa",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem do Ganho</p>
+          </div>
+          {Object.entries(gByEst).sort(([,a],[,b])=>b-a).map(([n,v],i)=>{
+            const pct = totGanho>0 ? Math.round((v/totGanho)*100) : 0;
+            return (
+              <div key={n} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+                <div style={{width:"26px",height:"26px",borderRadius:"6px",background:colors[i%colors.length]+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{color:colors[i%colors.length],fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
+                    <span style={{color:"#ccc",fontSize:"12px",fontWeight:"600"}}>{n}</span>
+                    <span style={{color:"#00d4aa",fontSize:"12px",fontWeight:"700",fontFamily:"monospace"}}>+R$ {v.toFixed(2)}</span>
+                  </div>
+                  <div style={{height:"3px",borderRadius:"2px",background:"#1a1a2e"}}>
+                    <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:colors[i%colors.length]}}/>
+                  </div>
+                </div>
+                <span style={{color:"#555",fontSize:"11px",minWidth:"28px",textAlign:"right"}}>{pct}%</span>
+              </div>
+            );
+          })}
+          {Object.keys(gByEst).length===0&&<p style={{color:"#444",fontSize:"12px"}}>Nenhum ganho</p>}
+        </div>
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            <p style={{margin:0,color:"#ff4d4d",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem da Perda</p>
+          </div>
+          {Object.entries(pByEst).sort(([,a],[,b])=>a-b).map(([n,v],i)=>{
+            const pct = totPerda<0 ? Math.round((v/totPerda)*100) : 0;
+            return (
+              <div key={n} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+                <div style={{width:"26px",height:"26px",borderRadius:"6px",background:"#ff4d4d22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{color:"#ff4d4d",fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
+                    <span style={{color:"#ccc",fontSize:"12px",fontWeight:"600"}}>{n}</span>
+                    <span style={{color:"#ff4d4d",fontSize:"12px",fontWeight:"700",fontFamily:"monospace"}}>R$ {v.toFixed(2)}</span>
+                  </div>
+                  <div style={{height:"3px",borderRadius:"2px",background:"#1a1a2e"}}>
+                    <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:"#ff4d4d"}}/>
+                  </div>
+                </div>
+                <span style={{color:"#555",fontSize:"11px",minWidth:"28px",textAlign:"right"}}>{pct}%</span>
+              </div>
+            );
+          })}
+          {Object.keys(pByEst).length===0&&<p style={{color:"#444",fontSize:"12px"}}>Nenhuma perda</p>}
         </div>
       </div>
 
-      {/* Origem ganhos e perdas */}
-      {allTrades.length > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"28px"}}>
-          {/* Ganhos */}
-          <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-              <p style={{margin:0,color:"#00d4aa",fontSize:"12px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem do Ganho</p>
-            </div>
-            {Object.entries(gByEst).sort(([,a],[,b])=>b-a).map(([n,v],i)=>{
-              const pct = totGanho>0 ? Math.round((v/totGanho)*100) : 0;
-              return (
-                <div key={n} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
-                  <div style={{width:"28px",height:"28px",borderRadius:"6px",background:colors[i%colors.length]+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <span style={{color:colors[i%colors.length],fontSize:"10px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
-                      <span style={{color:"#ccc",fontSize:"12px",fontWeight:"600"}}>{n}</span>
-                      <span style={{color:"#00d4aa",fontSize:"12px",fontWeight:"700",fontFamily:"monospace"}}>+R$ {v.toFixed(2)}</span>
-                    </div>
-                    <div style={{height:"3px",borderRadius:"2px",background:"#1a1a2e"}}>
-                      <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:colors[i%colors.length]}}/>
-                    </div>
-                  </div>
-                  <span style={{color:"#999",fontSize:"11px",minWidth:"30px",textAlign:"right"}}>{pct}%</span>
-                </div>
-              );
-            })}
-            {Object.keys(gByEst).length === 0 && <p style={{color:"#666",fontSize:"12px"}}>Nenhum ganho no período</p>}
-          </div>
-          {/* Perdas */}
-          <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-              <p style={{margin:0,color:"#ff4d4d",fontSize:"12px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem da Perda</p>
-            </div>
-            {Object.entries(pByEst).sort(([,a],[,b])=>a-b).map(([n,v],i)=>{
-              const pct = totPerda<0 ? Math.round((v/totPerda)*100) : 0;
-              return (
-                <div key={n} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
-                  <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"#ff4d4d22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <span style={{color:"#ff4d4d",fontSize:"10px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
-                      <span style={{color:"#ccc",fontSize:"12px",fontWeight:"600"}}>{n}</span>
-                      <span style={{color:"#ff4d4d",fontSize:"12px",fontWeight:"700",fontFamily:"monospace"}}>R$ {v.toFixed(2)}</span>
-                    </div>
-                    <div style={{height:"3px",borderRadius:"2px",background:"#1a1a2e"}}>
-                      <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:"#ff4d4d"}}/>
-                    </div>
-                  </div>
-                  <span style={{color:"#999",fontSize:"11px",minWidth:"30px",textAlign:"right"}}>{pct}%</span>
-                </div>
-              );
-            })}
-            {Object.keys(pByEst).length === 0 && <p style={{color:"#666",fontSize:"12px"}}>Nenhuma perda no período</p>}
-          </div>
-        </div>
-      )}
-
-      {/* Métricas por estratégia */}
+      {/* LINHA 4: Métricas por Estratégia full width */}
       {Object.keys(estratStats).length > 0 && (
-        <div style={{marginBottom:"28px"}}>
+        <div style={{marginBottom:"20px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
             <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Métricas por Estratégia</p>
-            <span style={{color:"#444",fontSize:"11px"}}>Clique para filtrar</span>
+            <span style={{color:"#333",fontSize:"11px"}}>clique para filtrar</span>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             {Object.entries(estratStats).map(([n,s],i)=>{
@@ -367,7 +344,7 @@ export default function Evolucao({ entries, compliance }) {
               const cor = colors[i%colors.length];
               const mediaPts = s.total>0 ? (s.pontos/s.total).toFixed(1) : "0.0";
               return (
-                <div key={n} style={{background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"14px",padding:"18px",overflow:"hidden",cursor:"pointer",transition:"border-color 0.2s"}}
+                <div key={n} style={{background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"14px",padding:"18px",cursor:"pointer",transition:"border-color 0.2s"}}
                   onMouseEnter={e=>e.currentTarget.style.borderColor=cor+"55"}
                   onMouseLeave={e=>e.currentTarget.style.borderColor="#1e1e2e"}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
@@ -396,20 +373,20 @@ export default function Evolucao({ entries, compliance }) {
         </div>
       )}
 
-      {/* Médias */}
+      {/* LINHA 5: Médias */}
       {allTrades.length > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"20px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",marginBottom:"20px"}}>
           {[
             {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),color:"#00d4aa",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
             {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),color:"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
             {label:"Risco × Retorno",sub:"razão média",val:rr+":1",color:parseFloat(rr)>=1.5?"#00d4aa":parseFloat(rr)>=1?"#f59e0b":"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>},
           ].map((s,i)=>(
-            <div key={i} style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"12px",padding:"16px",display:"flex",alignItems:"center",gap:"14px"}}>
-              <div style={{width:"36px",height:"36px",borderRadius:"8px",background:s.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:s.color}}>{s.icon}</div>
+            <div key={i} style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px",display:"flex",alignItems:"center",gap:"14px"}}>
+              <div style={{width:"38px",height:"38px",borderRadius:"10px",background:s.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:s.color}}>{s.icon}</div>
               <div>
-                <p style={{margin:"0 0 2px",color:"#888",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{s.label}</p>
-                <p style={{margin:"0 0 1px",color:s.color,fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{s.val}</p>
-                <p style={{margin:0,color:"#666",fontSize:"11px"}}>{s.sub}</p>
+                <p style={{margin:"0 0 2px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{s.label}</p>
+                <p style={{margin:"0 0 1px",color:s.color,fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{s.val}</p>
+                <p style={{margin:0,color:"#444",fontSize:"11px"}}>{s.sub}</p>
               </div>
             </div>
           ))}
@@ -417,26 +394,17 @@ export default function Evolucao({ entries, compliance }) {
       )}
 
       {filtered.length === 0 && (
-        <div style={{textAlign:"center",padding:"60px 20px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",marginTop:"16px"}}>
+        <div style={{textAlign:"center",padding:"60px 20px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",marginBottom:"20px"}}>
           <p style={{color:"#666",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
           <p style={{color:"#222",fontSize:"12px",margin:"6px 0 0"}}>Registre operações no Diário para ver as métricas.</p>
         </div>
       )}
 
-      </div>{/* end left column */}
-
-      {/* RIGHT COLUMN: Diagnóstico IA */}
-      {allTrades.length >= 3 && (
-        <div style={{position:"sticky",top:"24px"}}>
-          <DiagnosticoIA trades={allTrades} entries={filtered} totalResult={totalResult} winRate={winRate} mediaVenc={mediaVenc} mediaPerd={mediaPerd} rr={rr} estratStats={estratStats} diasOp={diasOp}/>
-        </div>
-      )}
-
-      </div>{/* end two-column grid */}
+      {/* LINHA 6: Diagnóstico IA full width */}
+      {allTrades.length >= 3 && <DiagnosticoIA trades={allTrades} entries={filtered} totalResult={totalResult} winRate={winRate} mediaVenc={mediaVenc} mediaPerd={mediaPerd} rr={rr} estratStats={estratStats} diasOp={diasOp}/>}
     </div>
   );
 }
-
 function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
   if (!trades || trades.length < 3) return null;
 
