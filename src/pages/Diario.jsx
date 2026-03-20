@@ -58,14 +58,16 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
       if (data.resultado !== "") updated.resultado = parseFloat(data.resultado);
       return updated;
     });
-    const totalB3    = updatedTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalForex = updatedTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalB3     = updatedTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalForex  = updatedTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalCripto = updatedTrades.filter(t=>t.mercado==="Cripto").reduce((s,t)=>s+(t.resultado||0),0);
     const totalPts   = updatedTrades.reduce((s,t)=>s+(t.pontos||0),0);
     const wins       = updatedTrades.filter(t=>t.tipo==="WIN").length;
     const winRate    = updatedTrades.length > 0 ? Math.round((wins/updatedTrades.length)*100) : null;
     const data2 = { ...entry, trades: updatedTrades, numTrades: updatedTrades.length, totalPts };
-    if (totalB3    !== 0) data2.totalB3    = totalB3; else delete data2.totalB3;
-    if (totalForex !== 0) data2.totalForex = totalForex; else delete data2.totalForex;
+    if (totalB3     !== 0) data2.totalB3     = totalB3;     else delete data2.totalB3;
+    if (totalForex  !== 0) data2.totalForex  = totalForex;  else delete data2.totalForex;
+    if (totalCripto !== 0) data2.totalCripto = totalCripto; else delete data2.totalCripto;
     if (winRate    !== null) data2.winRate = winRate;
     await saveEntry(dateKey, data2);
     setEditingTrade(null);
@@ -122,8 +124,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     const mergedEmocoes = [...new Set([...(todayEntry?.emocoes||[]), ...emocoes])];
     const mergedObs = observacao.trim() || todayEntry?.observacao || "";
 
-    const totalB3    = allTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalForex = allTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalB3     = allTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalForex  = allTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalCripto = allTrades.filter(t=>t.mercado==="Cripto").reduce((s,t)=>s+(t.resultado||0),0);
     const totalPts   = allTrades.reduce((s,t)=>s+(t.pontos||0),0);
     const wins       = allTrades.filter(t=>t.tipo==="WIN").length;
     const winRate    = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
@@ -136,8 +139,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
       totalPts,
       ts: new Date().toISOString()
     };
-    if (totalB3    !== 0) data.totalB3    = totalB3;
-    if (totalForex !== 0) data.totalForex = totalForex;
+    if (totalB3     !== 0) data.totalB3     = totalB3;
+    if (totalForex  !== 0) data.totalForex  = totalForex;
+    if (totalCripto !== 0) data.totalCripto = totalCripto;
     if (winRate    !== null) data.winRate = winRate;
 
     await saveEntry(selectedDate, data);
@@ -197,9 +201,10 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
             <select value={novoTrade.mercado} onChange={e=>setNovoTrade(p=>({...p,mercado:e.target.value}))} style={{...inp,width:"95px"}}>
               <option value="B3">B3</option>
               <option value="Forex">Forex</option>
+              <option value="Cripto">Cripto</option>
             </select>
             <input style={{...inp,width:"95px"}} type="number" placeholder="Pontos" value={novoTrade.pontos} onChange={e=>setNovoTrade(p=>({...p,pontos:e.target.value}))}/>
-            <input style={{...inp,width:"95px"}} type="number" placeholder={novoTrade.mercado==="B3"?"R$":"$"} value={novoTrade.resultado} onChange={e=>setNovoTrade(p=>({...p,resultado:e.target.value}))}/>
+            <input style={{...inp,width:"95px"}} type="number" placeholder={novoTrade.mercado==="B3"?"R$":novoTrade.mercado==="Cripto"?"$":"$"} value={novoTrade.resultado} onChange={e=>setNovoTrade(p=>({...p,resultado:e.target.value}))}/>
             {/* Estrategia com autocomplete */}
             <div style={{position:"relative",flex:1,minWidth:"120px"}}>
               <input style={{...inp,width:"100%",boxSizing:"border-box"}} type="text" placeholder="Estratégia" value={novoTrade.estrategia}
@@ -265,7 +270,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
         {monthDays.map(([ds, entry]) => {
           const isToday = ds === today;
           const isOpen  = expanded === ds;
-          const total   = (entry.totalB3||0)+(entry.totalForex||0);
+          const total   = (entry.totalB3||0)+(entry.totalForex||0)+(entry.totalCripto||0);
           return (
             <div key={ds} style={{borderRadius:"14px",overflow:"hidden",border:"1px solid "+(isToday?"#00d4aa22":"#1a1a2e"),background:"#0d0d14"}}>
               <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px",cursor:"pointer"}} onClick={()=>setExpanded(isOpen?null:ds)}>

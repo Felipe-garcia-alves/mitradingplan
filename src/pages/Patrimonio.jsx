@@ -19,18 +19,20 @@ export default function Patrimonio({ entries, config }) {
   const bancaInicialForex = config?.bancaForex || 200;
   const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.totalB3||0),    bancaInicialB3);
   const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.totalForex||0), bancaInicialForex);
+  const bancaInicialCripto = 1000;
+  const bancaRealCripto   = Object.values(entries).reduce((s,e)=>s+(e.totalCripto||0), bancaInicialCripto);
 
   const cur     = market==="b3" ? "R$" : "$";
-  const color   = market==="b3" ? "#00d4aa" : "#f59e0b";
-  const bancaAt = market==="b3" ? bancaRealB3 : bancaRealForex;
-  const bancaIn = market==="b3" ? bancaInicialB3 : bancaInicialForex;
+  const color   = market==="b3" ? "#00d4aa" : market==="forex" ? "#f59e0b" : "#a78bfa";
+  const bancaAt = market==="b3" ? bancaRealB3 : market==="forex" ? bancaRealForex : bancaRealCripto;
+  const bancaIn = market==="b3" ? bancaInicialB3 : market==="forex" ? bancaInicialForex : bancaInicialCripto;
 
   const sortedDays = Object.entries(entries).sort(([a],[b])=>a.localeCompare(b));
   let acc = bancaIn;
   const realPoints = [
     {d:"Inicio",val:bancaIn,label:"Inicio"},
     ...sortedDays.map(([d,e])=>{
-      acc += market==="b3" ? (e.totalB3||0) : (e.totalForex||0);
+      acc += market==="b3" ? (e.totalB3||0) : market==="forex" ? (e.totalForex||0) : (e.totalCripto||0);
       return {d, val:parseFloat(acc.toFixed(2)), label:formatDateFull(d)};
     })
   ];
@@ -53,8 +55,8 @@ export default function Patrimonio({ entries, config }) {
   const xLabels=["Hoje","M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M11","M12"];
 
   // Operacoes perdedoras
-  const perdedoras = sortedDays.filter(([,e])=>(market==="b3"?(e.totalB3||0):(e.totalForex||0))<0)
-    .map(([d,e])=>({d,val:market==="b3"?e.totalB3:e.totalForex}))
+  const perdedoras = sortedDays.filter(([,e])=>(market==="b3"?(e.totalB3||0):market==="forex"?(e.totalForex||0):(e.totalCripto||0))<0)
+    .map(([d,e])=>({d,val:market==="b3"?e.totalB3:market==="forex"?e.totalForex:e.totalCripto}))
     .sort((a,b)=>a.val-b.val).slice(0,5);
 
   return (
@@ -65,9 +67,9 @@ export default function Patrimonio({ entries, config }) {
       </div>
 
       <div style={{ display:"flex", gap:"8px", marginBottom:"16px" }}>
-        {["b3","forex"].map(m=>(
-          <button key={m} onClick={()=>setMarket(m)} style={{ padding:"8px 18px", borderRadius:"8px", cursor:"pointer", fontWeight:"600", fontSize:"13px", border:"none", background:market===m?(m==="b3"?"#00d4aa":"#f59e0b"):"rgba(255,255,255,0.05)", color:market===m?"#000":"#777", fontFamily:"Inter,sans-serif" }}>
-            {m==="b3"?"🇧🇷 Mini Indice":"🌍 Forex"}
+        {[["b3","B3"],["forex","Forex"],["cripto","Cripto"]].map(([m,l])=>(
+          <button key={m} onClick={()=>setMarket(m)} style={{ padding:"8px 18px", borderRadius:"8px", cursor:"pointer", fontWeight:"600", fontSize:"13px", border:"none", background:market===m?color:"rgba(255,255,255,0.05)", color:market===m?"#000":"#777", fontFamily:"Inter,sans-serif" }}>
+            {l}
           </button>
         ))}
       </div>
@@ -139,7 +141,7 @@ export default function Patrimonio({ entries, config }) {
       {/* Piores operacoes */}
       {perdedoras.length > 0 && (
         <div style={{ background:"#111118", border:"1px solid #1a1a2e", borderRadius:"14px", padding:"20px" }}>
-          <p style={{ margin:"0 0 14px", color:"#ff4d4d", fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>⚠️ Piores operacoes — {market==="b3"?"B3":"Forex"}</p>
+          <p style={{ margin:"0 0 14px", color:"#ff4d4d", fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>⚠️ Piores operacoes — {market==="b3"?"B3":market==="forex"?"Forex":"Cripto"}</p>
           <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
             {perdedoras.map((op,i)=>(
               <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderRadius:"8px", background:"rgba(255,77,77,0.04)", border:"1px solid #ff4d4d18" }}>

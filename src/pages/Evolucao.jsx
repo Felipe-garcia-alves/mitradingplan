@@ -61,7 +61,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
   const [inicio, setInicio] = useState(dayKey(ini1m));
   const [fim,    setFim]    = useState(dayKey(now));
   const [panelEst, setPanelEst] = useState(null);
-  const [panelDrill, setPanelDrill] = useState(null); // "winrate" | "resultado" | "dias"
+  const [panelDrill, setPanelDrill] = useState(null);
+  const [filtroMercado, setFiltroMercado] = useState("todos");
   const isMobile = window.innerWidth < 768;
 
   const filtered = useMemo(() => {
@@ -88,14 +89,15 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
   const complianceColor = compliancePct===null?"#666":compliancePct>=80?"#00d4aa":compliancePct>=50?"#f59e0b":"#ff4d4d";
 
   // Aggregates
-  const totalB3    = filtered.reduce((s,[,e])=>s+(e.totalB3||0), 0);
-  const totalForex = filtered.reduce((s,[,e])=>s+(e.totalForex||0), 0);
+  const totalB3    = filtroMercado==="todos"||filtroMercado==="B3"    ? filtered.reduce((s,[,e])=>s+(e.totalB3||0),    0) : 0;
+  const totalForex = filtroMercado==="todos"||filtroMercado==="Forex"  ? filtered.reduce((s,[,e])=>s+(e.totalForex||0),  0) : 0;
+  const totalCripto= filtroMercado==="todos"||filtroMercado==="Cripto" ? filtered.reduce((s,[,e])=>s+(e.totalCripto||0), 0) : 0;
   const totalPts   = filtered.reduce((s,[,e])=>s+(e.totalPts||0), 0);
-  const totalResult= totalB3 + totalForex;
+  const totalResult= totalB3 + totalForex + totalCripto;
   const diasOp     = filtered.filter(([,e])=>e.numTrades>0).length;
 
   // Win rate
-  const allTrades = filtered.flatMap(([,e])=>e.trades||[]);
+  const allTrades = filtered.flatMap(([,e])=>e.trades||[]).filter(t=>filtroMercado==="todos"||t.mercado===filtroMercado);
   const wins      = allTrades.filter(t=>t.tipo==="WIN").length;
   const winRate   = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
 
@@ -104,7 +106,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
   const capitalPoints = [
     { d:"inicio", val: 0 },
     ...filtered.map(([d,e]) => {
-      acc += (e.totalB3||0)+(e.totalForex||0);
+      if(filtroMercado==="todos"||filtroMercado==="B3")     acc += e.totalB3||0;
+      if(filtroMercado==="todos"||filtroMercado==="Forex")   acc += e.totalForex||0;
+      if(filtroMercado==="todos"||filtroMercado==="Cripto")  acc += e.totalCripto||0;
       return { d, val: parseFloat(acc.toFixed(2)) };
     })
   ];
@@ -112,7 +116,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
   // Resultado diario (barras)
   const dailyBars = filtered.map(([d,e]) => ({
     d,
-    val: (e.totalB3||0)+(e.totalForex||0),
+    val: (filtroMercado==="todos"||filtroMercado==="B3"?e.totalB3||0:0)+(filtroMercado==="todos"||filtroMercado==="Forex"?e.totalForex||0:0)+(filtroMercado==="todos"||filtroMercado==="Cripto"?e.totalCripto||0:0),
     pts: e.totalPts||0
   }));
 
@@ -206,7 +210,12 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
       {/* Filter row */}
-      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:"24px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"24px",gap:"12px",flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:"6px"}}>
+          {[["todos","Todos"],["B3","B3"],["Forex","Forex"],["Cripto","Cripto"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setFiltroMercado(v)} style={{padding:"7px 16px",borderRadius:"20px",border:"1px solid "+(filtroMercado===v?"#00d4aa44":"#1a1a2e"),cursor:"pointer",fontWeight:"600",fontSize:"12px",background:filtroMercado===v?"rgba(0,212,170,0.1)":"transparent",color:filtroMercado===v?"#00d4aa":"#666",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}>{l}</button>
+          ))}
+        </div>
         <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
       </div>
 
