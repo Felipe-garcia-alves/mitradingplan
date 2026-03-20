@@ -290,23 +290,21 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               const emocoes = dayEntry?.emocoes || [];
               const EMOCAO_COLORS = {"Focado":"#2dc99a","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
               return (
-                <div key={d} style={{minHeight:"80px",display:"flex",flexDirection:"column",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
+                <div key={d} style={{minHeight:"80px",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
                   onClick={()=>!future&&toggleDay(k)}>
                   {/* Número do dia — topo esquerda */}
                   <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#ccc",lineHeight:1}}>{d}</span>
-                  {/* Emoções — centro da célula */}
+                  {/* Emoções — centro direita */}
                   {!future && emocoes.length > 0 && (
-                    <div style={{display:"flex",flexDirection:"column",gap:"3px",flex:1,justifyContent:"center",alignItems:"center"}}>
+                    <div style={{position:"absolute",right:"7px",top:"50%",transform:"translateY(-50%)",display:"flex",flexDirection:"column",gap:"3px",alignItems:"flex-end"}}>
                       {emocoes.slice(0,2).map(em=>(
-                        <span key={em} style={{fontSize:"11px",fontWeight:"600",color:EMOCAO_COLORS[em]||"#888",lineHeight:1.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textAlign:"center"}}>{em}</span>
+                        <span key={em} style={{fontSize:"10px",fontWeight:"600",color:EMOCAO_COLORS[em]||"#888",lineHeight:1.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textAlign:"right"}}>{em}</span>
                       ))}
                     </div>
                   )}
-                  {/* Espaço flexível quando sem emoções */}
-                  {(future || emocoes.length === 0) && <div style={{flex:1}}/>}
-                  {/* Porcentagem — canto inferior esquerdo */}
+                  {/* Porcentagem — inferior esquerda */}
                   {(hasPct || status===true) && (
-                    <span style={{fontSize:"16px",fontWeight:"800",fontFamily:"monospace",color:accentColor,lineHeight:1,alignSelf:"flex-start"}}>
+                    <span style={{position:"absolute",bottom:"7px",left:"8px",fontSize:"14px",fontWeight:"800",fontFamily:"monospace",color:accentColor,lineHeight:1}}>
                       {hasPct ? status+"%" : "100%"}
                     </span>
                   )}
