@@ -172,7 +172,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
     <div style={{fontFamily:"Inter,sans-serif"}}>
 
       {/* Card de frases no topo */}
-      <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"22px 28px",marginBottom:"24px",display:"flex",gap:"0",flexWrap:"wrap"}}>
+      <div style={{background:"linear-gradient(135deg,rgba(0,212,170,0.06),rgba(0,153,255,0.04))",border:"1px solid #00d4aa22",borderRadius:"14px",padding:"22px 28px",marginBottom:"24px",display:"flex",gap:"0",flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:"220px",borderRight:"1px solid #1a1a2e",paddingRight:"28px",marginRight:"28px",textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"13px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.9"}}>O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO A TÉCNICA.</p>
         </div>
@@ -292,19 +292,20 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               return (
                 <div key={d} style={{minHeight:"80px",display:"flex",flexDirection:"column",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
                   onClick={()=>!future&&toggleDay(k)}>
-                  {/* Número do dia — canto superior esquerdo, fonte maior */}
-                  <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#ccc",lineHeight:1,marginBottom:"4px"}}>{d}</span>
-                  {/* Porcentagem — centro */}
-                  {(hasPct || status===true) && (
-                    <span style={{fontSize:"15px",fontWeight:"800",fontFamily:"monospace",color:accentColor,marginBottom:"4px"}}>
-                      {hasPct ? status+"%" : "100%"}
-                    </span>
-                  )}
-                  {/* Emoções em texto */}
+                  {/* Linha topo: número esquerda, porcentagem direita */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"6px"}}>
+                    <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#ccc",lineHeight:1}}>{d}</span>
+                    {(hasPct || status===true) && (
+                      <span style={{fontSize:"18px",fontWeight:"800",fontFamily:"monospace",color:accentColor,lineHeight:1}}>
+                        {hasPct ? status+"%" : "100%"}
+                      </span>
+                    )}
+                  </div>
+                  {/* Emoções em texto maior */}
                   {!future && emocoes.length > 0 && (
-                    <div style={{display:"flex",flexDirection:"column",gap:"2px",marginTop:"auto"}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:"3px",marginTop:"auto"}}>
                       {emocoes.slice(0,2).map(em=>(
-                        <span key={em} style={{fontSize:"9px",fontWeight:"600",color:EMOCAO_COLORS[em]||"#888",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{em}</span>
+                        <span key={em} style={{fontSize:"11px",fontWeight:"600",color:EMOCAO_COLORS[em]||"#888",lineHeight:1.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{em}</span>
                       ))}
                     </div>
                   )}
