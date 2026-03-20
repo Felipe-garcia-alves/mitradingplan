@@ -296,7 +296,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
                   <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#ccc",lineHeight:1,marginBottom:"4px"}}>{d}</span>
                   {/* Porcentagem — linha abaixo do número */}
                   {(hasPct || status===true) && (
-                    <span style={{fontSize:"18px",fontWeight:"800",fontFamily:"monospace",color:accentColor,lineHeight:1,marginBottom:"6px"}}>
+                    <span style={{fontSize:"18px",fontWeight:"800",fontFamily:"monospace",color:accentColor,lineHeight:1,marginBottom:"6px",alignSelf:"flex-end"}}>
                       {hasPct ? status+"%" : "100%"}
                     </span>
                   )}
