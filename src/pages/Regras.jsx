@@ -92,7 +92,10 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
 
   const monthDays = Object.keys(compliance).filter(k=>monthKey(k)===monthKey(today)&&compliance[k]!==undefined);
   const complied  = monthDays.filter(k=>compliance[k]===true).length;
-  const pct       = monthDays.length>0 ? Math.round((complied/monthDays.length)*100) : null;
+  // % disciplina = baseado nos checks do dia atual
+  const totalRegras = regrasList.length;
+  const checkedCount = regrasList.filter(r=>!!checked[r.id]).length;
+  const pct = totalRegras > 0 ? Math.round((checkedCount/totalRegras)*100) : null;
   const inp = { width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid #2a2a3a", borderRadius:"10px", padding:"11px 13px", color:"#f0f0f0", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"Inter,sans-serif" };
 
   if (editando) {
@@ -203,8 +206,9 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
           </div>
           {pct !== null && (
             <div style={{textAlign:"right"}}>
-              <p style={{margin:"0 0 2px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{MONTH_NAMES[month]} — cumprimento</p>
+              <p style={{margin:"0 0 2px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Hoje — progresso</p>
               <p style={{margin:0,color:pct>=80?"#00d4aa":pct>=50?"#f59e0b":"#ff4d4d",fontSize:"24px",fontWeight:"800",fontFamily:"JetBrains Mono,monospace"}}>{pct}%</p>
+              <p style={{margin:"2px 0 0",color:"#444",fontSize:"11px"}}>{checkedCount} de {totalRegras} regras</p>
             </div>
           )}
         </div>

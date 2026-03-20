@@ -104,16 +104,26 @@ export default function Evolucao({ entries, compliance, estrategias }) {
     pts: e.totalPts||0
   }));
 
-  // Estrategias
-  const estratStats = {};
-  allTrades.forEach(t => {
-    const n = t.estrategia || "Sem nome";
-    if (!estratStats[n]) estratStats[n] = { wins:0, total:0, resultado:0, pontos:0 };
-    estratStats[n].total++;
-    estratStats[n].resultado += t.resultado||0;
-    estratStats[n].pontos    += t.pontos||0;
-    if (t.tipo==="WIN") estratStats[n].wins++;
-  });
+  // Estrategias — useMemo garante recompute quando entries mudar
+  const estratStats = useMemo(() => {
+    const stats = {};
+    allTrades.forEach(t => {
+      const n = t.estrategia || "Sem nome";
+      if (!stats[n]) stats[n] = { wins:0, total:0, resultado:0, pontos:0 };
+      stats[n].total++;
+      stats[n].resultado += t.resultado||0;
+      stats[n].pontos    += t.pontos||0;
+      if (t.tipo==="WIN") stats[n].wins++;
+    });
+    return stats;
+  }, [allTrades]);
+
+  // Lookup de nome atual das estratégias (para refletir renomeações)
+  const nomeAtual = useMemo(() => {
+    const map = {};
+    (estrategias||[]).forEach(e => { if(e.nome) map[e.nome] = e.nome; });
+    return map;
+  }, [estrategias]);
 
   // Origem ganhos/perdas
   const ganhos  = allTrades.filter(t=>(t.resultado||0)>0);
@@ -352,10 +362,10 @@ export default function Evolucao({ entries, compliance, estrategias }) {
                   onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor=cor+"44";}}}
                   onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor="#1e1e2e";}}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
-                    <div style={{padding:"4px 8px",borderRadius:"6px",background:cor+"22",border:"1px solid "+cor+"44"}}>
+                    <div style={{padding:"4px 8px",borderRadius:"6px",background:cor+"22",border:"1px solid "+cor+"44",flexShrink:0}}>
                       <span style={{color:cor,fontSize:"11px",fontWeight:"800",letterSpacing:"0.5px"}}>{n.slice(0,3).toUpperCase()}</span>
                     </div>
-                    <span style={{color:"#aaa",fontSize:"13px",fontWeight:"600",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{n}</span>
+                    <span style={{color:"#aaa",fontSize:"13px",fontWeight:"500",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{nomeAtual[n]||n}</span>
                     {isSelected && <span style={{color:cor,fontSize:"11px"}}>▸</span>}
                   </div>
                   <p style={{margin:"0 0 3px",color:"#00d4aa",fontSize:"22px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
