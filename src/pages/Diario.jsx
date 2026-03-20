@@ -29,6 +29,48 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
   const [trades,     setTrades]     = useState([]);
   const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:""});
   const [showEstSug, setShowEstSug] = useState(false);
+  const [editingTrade, setEditingTrade] = useState(null); // { dateKey, index, data }
+
+  function startEditTrade(dateKey, index, trade) {
+    setEditingTrade({
+      dateKey,
+      index,
+      data: {
+        tipo: trade.tipo || "WIN",
+        mercado: trade.mercado || "B3",
+        pontos: trade.pontos !== undefined && trade.pontos !== null ? String(trade.pontos) : "",
+        resultado: trade.resultado !== undefined && trade.resultado !== null ? String(trade.resultado) : "",
+        estrategia: trade.estrategia || "",
+        observacao: trade.observacao || "",
+      }
+    });
+  }
+
+  async function saveEditTrade() {
+    if (!editingTrade) return;
+    const { dateKey, index, data } = editingTrade;
+    const entry = entries[dateKey];
+    if (!entry) return;
+    const updatedTrades = entry.trades.map((t, i) => {
+      if (i !== index) return t;
+      const updated = { mercado: data.mercado, tipo: data.tipo, estrategia: data.estrategia || "", observacao: data.observacao || "" };
+      if (data.pontos !== "") updated.pontos = parseFloat(data.pontos);
+      if (data.resultado !== "") updated.resultado = parseFloat(data.resultado);
+      return updated;
+    });
+    const totalB3    = updatedTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalForex = updatedTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalPts   = updatedTrades.reduce((s,t)=>s+(t.pontos||0),0);
+    const wins       = updatedTrades.filter(t=>t.tipo==="WIN").length;
+    const winRate    = updatedTrades.length > 0 ? Math.round((wins/updatedTrades.length)*100) : null;
+    const data2 = { ...entry, trades: updatedTrades, numTrades: updatedTrades.length, totalPts };
+    if (totalB3    !== 0) data2.totalB3    = totalB3; else delete data2.totalB3;
+    if (totalForex !== 0) data2.totalForex = totalForex; else delete data2.totalForex;
+    if (winRate    !== null) data2.winRate = winRate;
+    await saveEntry(dateKey, data2);
+    setEditingTrade(null);
+    setMsg("✓ Operação atualizada!"); setTimeout(()=>setMsg(""), 2500);
+  }
 
   function changeDate(delta) {
     const d = new Date(selectedDate + "T12:00:00");
@@ -254,16 +296,51 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
                   {entry.trades?.length>0 && (
                     <div style={{marginBottom:"14px"}}>
                       <p style={{margin:"0 0 8px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações</p>
-                      {entry.trades.map((t,i)=>(
-                        <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",borderRadius:"8px",background:"rgba(255,255,255,0.02)",marginBottom:"5px"}}>
-                          <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
-                          <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
-                          {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
-                          {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
-                          {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
-                          {t.observacao&&<p style={{margin:"5px 0 0",color:"#777",fontSize:"12px",fontStyle:"italic",paddingLeft:"4px"}}>"{t.observacao}"</p>}
-                        </div>
-                      ))}
+                      {entry.trades.map((t,i)=>{
+                        const isEditing = editingTrade?.dateKey===ds && editingTrade?.index===i;
+                        if (isEditing) {
+                          const ed = editingTrade.data;
+                          const inpE = {background:"#0d0d14",border:"1px solid #2a2a3a",borderRadius:"6px",padding:"6px 10px",color:"#f0f0f0",fontSize:"13px",outline:"none",fontFamily:"Inter,sans-serif"};
+                          return (
+                            <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"rgba(0,212,170,0.04)",border:"1px solid #00d4aa33",marginBottom:"6px"}}>
+                              <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center",marginBottom:"8px"}}>
+                                <select value={ed.tipo} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,tipo:e.target.value}}))} style={{...inpE,width:"80px"}}>
+                                  <option value="WIN">WIN</option>
+                                  <option value="LOSS">LOSS</option>
+                                </select>
+                                <select value={ed.mercado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,mercado:e.target.value}}))} style={{...inpE,width:"85px"}}>
+                                  <option value="B3">B3</option>
+                                  <option value="Forex">Forex</option>
+                                </select>
+                                <input type="number" placeholder="Pontos" value={ed.pontos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,pontos:e.target.value}}))} style={{...inpE,width:"90px"}}/>
+                                <input type="number" placeholder={ed.mercado==="B3"?"R$":"$"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:e.target.value}}))} style={{...inpE,width:"90px"}}/>
+                                <input type="text" placeholder="Estratégia" value={ed.estrategia} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,estrategia:e.target.value}}))} style={{...inpE,flex:1,minWidth:"100px"}}/>
+                              </div>
+                              <input type="text" placeholder="Observação" value={ed.observacao} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,observacao:e.target.value}}))} style={{...inpE,width:"100%",boxSizing:"border-box",marginBottom:"8px"}}/>
+                              <div style={{display:"flex",gap:"8px"}}>
+                                <button onClick={saveEditTrade} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"6px",padding:"7px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>Salvar</button>
+                                <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"#666",border:"1px solid #2a2a3a",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",borderRadius:"8px",background:"rgba(255,255,255,0.02)",marginBottom:"5px",group:true}}>
+                            <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
+                            <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
+                            {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
+                            {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
+                            {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
+                            {t.observacao&&<span style={{color:"#777",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
+                            <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} title="Editar operação" style={{marginLeft:"auto",background:"none",border:"1px solid #2a2a3a",borderRadius:"5px",color:"#555",cursor:"pointer",fontSize:"12px",padding:"3px 8px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
+                              onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
+                              onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#555";}}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              Editar
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   {entry.observacao&&(
