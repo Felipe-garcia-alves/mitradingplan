@@ -67,13 +67,27 @@ export default function Evolucao({ entries, compliance, estrategias }) {
     return Object.entries(entries).filter(([d]) => d >= inicio && d <= fim).sort(([a],[b])=>a.localeCompare(b));
   }, [entries, inicio, fim]);
 
-  // Compliance (regras do mês atual)
+  // Compliance — usa o valor salvo hoje (porcentagem do checklist)
   const now2 = new Date();
   const ym = now2.getFullYear()+"-"+String(now2.getMonth()+1).padStart(2,"0");
-  const daysThisMonth  = Object.keys(compliance||{}).filter(k=>k.startsWith(ym));
-  const compliedDays   = daysThisMonth.filter(k=>(compliance||{})[k]===true).length;
-  const compliancePct  = daysThisMonth.length>0 ? Math.round((compliedDays/daysThisMonth.length)*100) : null;
-  const complianceColor= compliancePct===null?"#666":compliancePct>=80?"#00d4aa":compliancePct>=50?"#f59e0b":"#ff4d4d";
+  const today2 = dayKey(now2);
+  const daysThisMonth = Object.keys(compliance||{}).filter(k=>k.startsWith(ym));
+  const todayPctVal = (compliance||{})[today2];
+  // Card circular = valor de hoje se salvo, senão média do mês
+  const compliancePct = typeof todayPctVal === "number" ? todayPctVal :
+    todayPctVal === true ? 100 :
+    daysThisMonth.length > 0 ? (() => {
+      const vals = daysThisMonth.map(k => {
+        const v = (compliance||{})[k];
+        return typeof v === "number" ? v : v === true ? 100 : null;
+      }).filter(v => v !== null);
+      return vals.length > 0 ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+    })() : null;
+  const compliedDays = daysThisMonth.filter(k => {
+    const v = (compliance||{})[k];
+    return v === true || (typeof v === "number" && v >= 80);
+  }).length;
+  const complianceColor = compliancePct===null?"#666":compliancePct>=80?"#00d4aa":compliancePct>=50?"#f59e0b":"#ff4d4d";
 
   // Aggregates
   const totalB3    = filtered.reduce((s,[,e])=>s+(e.totalB3||0), 0);
@@ -216,7 +230,7 @@ export default function Evolucao({ entries, compliance, estrategias }) {
           </div>
           <div>
             <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
-            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{compliedDays} de {daysThisMonth.length} dias</p>
+            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{typeof todayPctVal==="number"?"salvo hoje":compliedDays+" de "+daysThisMonth.length+" dias"}</p>
           </div>
         </div>
         {/* Resultado Total hero */}

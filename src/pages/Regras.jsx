@@ -45,7 +45,7 @@ function RuleIcon({ id, color="#00d4aa", size=16 }) {
   return icons[id] || icons.check;
 }
 
-export default function Regras({ regras, saveRegras, compliance, saveCompliance }) {
+export default function Regras({ regras, saveRegras, compliance, saveCompliance, entries }) {
   const regrasList  = regras && regras.length > 0 ? regras : REGRAS_PADRAO;
   const today       = todayKey();
   const now         = new Date();
@@ -174,10 +174,10 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
       {/* Card de frases no topo */}
       <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px 28px",marginBottom:"24px",display:"flex",gap:"0",flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:"220px",borderRight:"1px solid #1a1a2e",paddingRight:"28px",marginRight:"28px"}}>
-          <p style={{margin:0,color:"#888",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O QUE GERA RESULTADO É COMPORTAMENTO, NÃO A TÉCNICA.</p>
+          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO A TÉCNICA.</p>
         </div>
         <div style={{flex:1,minWidth:"220px",display:"flex",alignItems:"center"}}>
-          <p style={{margin:0,color:"#888",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE. CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
+          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE.<br/>CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
         </div>
       </div>
 
@@ -281,17 +281,35 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
               const status=compliance[k];
               const hasPct = typeof status === "number";
               const isOk   = status === true || (hasPct && status >= 80);
-              const isBad  = status === false || (hasPct && status < 50);
               const isMid  = hasPct && status >= 50 && status < 80;
-              const bg    = future?"transparent":isOk?"rgba(0,212,170,0.15)":isMid?"rgba(245,158,11,0.15)":isBad?"rgba(255,77,77,0.15)":status===undefined?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.02)";
-              const border= isToday?"2px solid #00d4aa44":"1px solid "+(isOk?"#00d4aa33":isMid?"#f59e0b33":isBad?"#ff4d4d33":"#1a1a2e");
-              const color = future?"#2a2a3a":isOk?"#00d4aa":isMid?"#f59e0b":isBad?"#ff4d4d":isToday?"#f0f0f0":"#555";
+              const isBad  = hasPct && status < 50;
+              const bg    = future?"transparent":isOk?"rgba(0,212,170,0.12)":isMid?"rgba(245,158,11,0.12)":isBad?"rgba(255,77,77,0.12)":"rgba(255,255,255,0.02)";
+              const border= isToday?"2px solid #00d4aa55":"1px solid "+(isOk?"#00d4aa22":isMid?"#f59e0b22":isBad?"#ff4d4d22":"#1a1a2e");
+              const accentColor = isOk?"#00d4aa":isMid?"#f59e0b":isBad?"#ff4d4d":"#555";
+              const dayEntry = (entries||{})[k];
+              const emocoes = dayEntry?.emocoes || [];
+              const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
               return (
-                <div key={d} style={{aspectRatio:"1",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderRadius:"8px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s"}}
+                <div key={d} style={{aspectRatio:"1",display:"flex",flexDirection:"column",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"5px",position:"relative",overflow:"hidden"}}
                   onClick={()=>!future&&toggleDay(k)}>
-                  <span style={{fontSize:isToday?"11px":"10px",fontWeight:isToday?"800":"500",color,lineHeight:1}}>{d}</span>
-                  {hasPct && <span style={{fontSize:"7px",marginTop:"1px",color,fontWeight:"700",fontFamily:"monospace"}}>{status}%</span>}
-                  {status===true && !hasPct && <span style={{fontSize:"7px",marginTop:"1px",color:"#00d4aa"}}>✓</span>}
+                  {/* Número do dia — canto superior esquerdo */}
+                  <span style={{fontSize:"13px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#2a2a3a":"#aaa",lineHeight:1,flexShrink:0}}>{d}</span>
+                  {/* Porcentagem — centro */}
+                  {(hasPct || status===true) && (
+                    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{fontSize:"14px",fontWeight:"800",fontFamily:"monospace",color:accentColor}}>
+                        {hasPct ? status+"%" : "✓"}
+                      </span>
+                    </div>
+                  )}
+                  {/* Emoções — parte inferior, bolinhas */}
+                  {!future && emocoes.length > 0 && (
+                    <div style={{display:"flex",gap:"2px",flexWrap:"wrap",marginTop:"auto"}}>
+                      {emocoes.slice(0,3).map(em=>(
+                        <div key={em} style={{width:"5px",height:"5px",borderRadius:"50%",background:EMOCAO_COLORS[em]||"#888",flexShrink:0}}/>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
