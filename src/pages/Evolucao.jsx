@@ -189,8 +189,24 @@ export default function Evolucao({ entries, compliance }) {
       {/* LINHA 1: Alerta full width */}
       <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
 
-      {/* LINHA 2: 4 KPIs */}
-      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:"16px",marginBottom:"20px",marginTop:"20px"}}>
+      {/* LINHA 2: 4 KPIs — Disciplina primeiro */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 1fr 1fr",gap:"16px",marginBottom:"28px",marginTop:"24px"}}>
+        {/* Disciplina — primeiro */}
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",display:"flex",alignItems:"center",gap:"14px"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+complianceColor+",transparent)"}}/>
+          <div style={{width:"56px",height:"56px",borderRadius:"50%",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),background:"#0d0d14",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
+            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
+            <div style={{position:"absolute",inset:"6px",background:"#0d0d14",borderRadius:"50%"}}/>
+            <div style={{position:"relative",textAlign:"center"}}>
+              <p style={{margin:0,color:compliancePct===null?"#444":complianceColor,fontSize:"13px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
+              <p style={{margin:0,color:"#555",fontSize:"7px",textTransform:"uppercase",letterSpacing:"0.5px"}}>disc.</p>
+            </div>
+          </div>
+          <div>
+            <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
+            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{compliedDays} de {daysThisMonth.length} dias</p>
+          </div>
+        </div>
         {/* Resultado Total hero */}
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"24px 28px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"3px",background:"linear-gradient(90deg,#00d4aa,#0099ff)"}}/>
@@ -248,26 +264,10 @@ export default function Evolucao({ entries, compliance }) {
             </div>
           );
         })()}
-        {/* Disciplina */}
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",display:"flex",alignItems:"center",gap:"14px"}}>
-          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+complianceColor+",transparent)"}}/>
-          <div style={{width:"56px",height:"56px",borderRadius:"50%",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),background:"#0d0d14",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
-            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
-            <div style={{position:"absolute",inset:"6px",background:"#0d0d14",borderRadius:"50%"}}/>
-            <div style={{position:"relative",textAlign:"center"}}>
-              <p style={{margin:0,color:compliancePct===null?"#444":complianceColor,fontSize:"13px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
-              <p style={{margin:0,color:"#555",fontSize:"7px",textTransform:"uppercase",letterSpacing:"0.5px"}}>disc.</p>
-            </div>
-          </div>
-          <div>
-            <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
-            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{compliedDays} de {daysThisMonth.length} dias</p>
-          </div>
-        </div>
       </div>
 
       {/* LINHA 3: Curva Capital (60%) + Origem Ganho + Origem Perda */}
-      <div style={{display:"grid",gridTemplateColumns:"5fr 3fr 3fr",gap:"16px",marginBottom:"20px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"5fr 3fr 3fr",gap:"16px",marginBottom:"28px"}}>
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
           <p style={{margin:"0 0 4px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Curva de Capital</p>
           <p style={{margin:"0 0 14px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"18px",fontWeight:"700",fontFamily:"monospace"}}>
@@ -333,7 +333,7 @@ export default function Evolucao({ entries, compliance }) {
 
       {/* LINHA 4: Métricas por Estratégia full width */}
       {Object.keys(estratStats).length > 0 && (
-        <div style={{marginBottom:"20px"}}>
+        <div style={{marginBottom:"28px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
             <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Métricas por Estratégia</p>
             <span style={{color:"#333",fontSize:"11px"}}>clique para filtrar</span>
@@ -375,7 +375,7 @@ export default function Evolucao({ entries, compliance }) {
 
       {/* LINHA 5: Médias */}
       {allTrades.length > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",marginBottom:"20px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",marginBottom:"28px"}}>
           {[
             {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),color:"#00d4aa",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
             {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),color:"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
@@ -394,7 +394,7 @@ export default function Evolucao({ entries, compliance }) {
       )}
 
       {filtered.length === 0 && (
-        <div style={{textAlign:"center",padding:"60px 20px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",marginBottom:"20px"}}>
+        <div style={{textAlign:"center",padding:"60px 20px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",marginBottom:"28px"}}>
           <p style={{color:"#666",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
           <p style={{color:"#222",fontSize:"12px",margin:"6px 0 0"}}>Registre operações no Diário para ver as métricas.</p>
         </div>

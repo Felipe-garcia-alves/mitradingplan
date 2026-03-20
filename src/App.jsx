@@ -235,8 +235,42 @@ function AppInterno() {
 
   const saveEstrategia = async (id,data) => {
     try {
-      if(id){ await updateDoc(doc(db,"usuarios",uid,"estrategias",id),data); setEstrategias(p=>p.map(e=>e.id===id?{id,...data}:e)); }
-      else  { const r=await addDoc(collection(db,"usuarios",uid,"estrategias"),data); setEstrategias(p=>[...p,{id:r.id,...data}]); }
+      if(id){
+        // Verifica se o nome mudou
+        const estrategiaAntiga = estrategias.find(e=>e.id===id);
+        const nomeAntigo = estrategiaAntiga?.nome;
+        const nomeNovo = data.nome;
+        await updateDoc(doc(db,"usuarios",uid,"estrategias",id),data);
+        setEstrategias(p=>p.map(e=>e.id===id?{id,...data}:e));
+        // Se o nome mudou, atualiza todos os trades que referenciam o nome antigo
+        if(nomeAntigo && nomeNovo && nomeAntigo !== nomeNovo) {
+          const entradasParaAtualizar = Object.entries(entries).filter(([,e])=>
+            (e.trades||[]).some(t=>t.estrategia===nomeAntigo)
+          );
+          for(const [dateKey, entry] of entradasParaAtualizar) {
+            const tradesAtualizados = entry.trades.map(t=>
+              t.estrategia===nomeAntigo ? {...t, estrategia:nomeNovo} : t
+            );
+            const entryAtualizada = {...entry, trades: tradesAtualizados};
+            await setDoc(doc(db,"usuarios",uid,"diario",dateKey), entryAtualizada);
+          }
+          if(entradasParaAtualizar.length > 0) {
+            setEntries(prev => {
+              const updated = {...prev};
+              for(const [dateKey, entry] of entradasParaAtualizar) {
+                updated[dateKey] = {
+                  ...entry,
+                  trades: entry.trades.map(t=>t.estrategia===nomeAntigo?{...t,estrategia:nomeNovo}:t)
+                };
+              }
+              return updated;
+            });
+          }
+        }
+      } else {
+        const r=await addDoc(collection(db,"usuarios",uid,"estrategias"),data);
+        setEstrategias(p=>[...p,{id:r.id,...data}]);
+      }
     }catch(e){console.error(e);}
   };
   const deleteEstrategia = async id => {
