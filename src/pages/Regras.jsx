@@ -70,9 +70,8 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
   async function toggleDay(k) {
     if (k > today) return;
     const updated = {...compliance};
-    if (updated[k]===true) updated[k]=false;
-    else if (updated[k]===false) delete updated[k];
-    else updated[k]=true;
+    if (updated[k] !== undefined) delete updated[k];
+    else updated[k] = true;
     await saveCompliance(updated);
   }
 
@@ -173,12 +172,12 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
     <div style={{fontFamily:"Inter,sans-serif"}}>
 
       {/* Card de frases no topo */}
-      <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 24px",marginBottom:"24px",display:"flex",gap:"32px",flexWrap:"wrap"}}>
-        <div style={{flex:1,minWidth:"200px",borderRight:"1px solid #1a1a2e",paddingRight:"24px"}}>
-          <p style={{margin:0,color:"#f0f0f0",fontWeight:"700",fontSize:"13px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.5"}}>O QUE GERA RESULTADO É COMPORTAMENTO, NÃO A TÉCNICA.</p>
+      <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px 28px",marginBottom:"24px",display:"flex",gap:"0",flexWrap:"wrap"}}>
+        <div style={{flex:1,minWidth:"220px",borderRight:"1px solid #1a1a2e",paddingRight:"28px",marginRight:"28px"}}>
+          <p style={{margin:0,color:"#888",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O QUE GERA RESULTADO É COMPORTAMENTO, NÃO A TÉCNICA.</p>
         </div>
-        <div style={{flex:1,minWidth:"200px",display:"flex",alignItems:"center"}}>
-          <p style={{margin:0,color:"#666",fontSize:"13px",lineHeight:"1.6",letterSpacing:"0.3px",textTransform:"uppercase"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE. CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
+        <div style={{flex:1,minWidth:"220px",display:"flex",alignItems:"center"}}>
+          <p style={{margin:0,color:"#888",fontWeight:"600",fontSize:"12px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.8"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE. CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
         </div>
       </div>
 
@@ -226,7 +225,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
       <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"28px"}}>
         <button onClick={async()=>{
           const updated={...compliance};
-          updated[today]=allChecked;
+          updated[today] = pct; // salva a porcentagem
           await saveCompliance(updated);
           setMsg("✓ Disciplina salva!"); setTimeout(()=>setMsg(""),2500);
         }} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 24px",fontWeight:"700",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
@@ -280,23 +279,29 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
             {Array.from({length:daysInMon}).map((_,i)=>{
               const d=i+1,k=calKey(d),isToday=k===today,future=k>today;
               const status=compliance[k];
-              const bg    =future?"transparent":status===true?"rgba(0,212,170,0.2)":status===false?"rgba(255,77,77,0.2)":"rgba(255,255,255,0.02)";
-              const border=isToday?"2px solid #00d4aa44":"1px solid "+(status===true?"#00d4aa33":status===false?"#ff4d4d33":"#1a1a2e");
-              const color =future?"#2a2a3a":status===true?"#00d4aa":status===false?"#ff4d4d":isToday?"#f0f0f0":"#555";
+              const hasPct = typeof status === "number";
+              const isOk   = status === true || (hasPct && status >= 80);
+              const isBad  = status === false || (hasPct && status < 50);
+              const isMid  = hasPct && status >= 50 && status < 80;
+              const bg    = future?"transparent":isOk?"rgba(0,212,170,0.15)":isMid?"rgba(245,158,11,0.15)":isBad?"rgba(255,77,77,0.15)":status===undefined?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.02)";
+              const border= isToday?"2px solid #00d4aa44":"1px solid "+(isOk?"#00d4aa33":isMid?"#f59e0b33":isBad?"#ff4d4d33":"#1a1a2e");
+              const color = future?"#2a2a3a":isOk?"#00d4aa":isMid?"#f59e0b":isBad?"#ff4d4d":isToday?"#f0f0f0":"#555";
               return (
-                <div key={d} onClick={()=>toggleDay(k)} style={{aspectRatio:"1",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderRadius:"8px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s"}}>
-                  <span style={{fontSize:"12px",fontWeight:isToday?"800":"500",color,lineHeight:1}}>{d}</span>
-                  {status===true  && <span style={{fontSize:"8px",marginTop:"1px",color:"#00d4aa"}}>✓</span>}
-                  {status===false && <span style={{fontSize:"8px",marginTop:"1px",color:"#ff4d4d"}}>✗</span>}
+                <div key={d} style={{aspectRatio:"1",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderRadius:"8px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s"}}
+                  onClick={()=>!future&&toggleDay(k)}>
+                  <span style={{fontSize:isToday?"11px":"10px",fontWeight:isToday?"800":"500",color,lineHeight:1}}>{d}</span>
+                  {hasPct && <span style={{fontSize:"7px",marginTop:"1px",color,fontWeight:"700",fontFamily:"monospace"}}>{status}%</span>}
+                  {status===true && !hasPct && <span style={{fontSize:"7px",marginTop:"1px",color:"#00d4aa"}}>✓</span>}
                 </div>
               );
             })}
           </div>
         </div>
         <p style={{margin:"10px 0 0",color:"#444",fontSize:"11px",textAlign:"center"}}>
-          <span style={{color:"#00d4aa66"}}>■</span> Cumpriu &nbsp;
-          <span style={{color:"#ff4d4d66"}}>■</span> Nao cumpriu &nbsp;
-          <span style={{color:"#ffffff08"}}>■</span> Sem registro · Clique em qualquer dia para registrar
+          <span style={{color:"#00d4aa66"}}>■</span> ≥80% &nbsp;
+          <span style={{color:"#f59e0b66"}}>■</span> 50–79% &nbsp;
+          <span style={{color:"#ff4d4d66"}}>■</span> &lt;50% &nbsp;
+          · Salve o progresso para registrar
         </p>
       </div>
     </div>

@@ -398,7 +398,10 @@ export default function Evolucao({ entries, compliance, estrategias }) {
         const totalResEst = ops.reduce((s,t)=>s+(t.resultado||0),0);
         const winsEst = ops.filter(t=>t.tipo==="WIN").length;
         return (
-          <div style={{position:"fixed",top:0,right:0,bottom:0,width:"380px",background:"#0a0a12",borderLeft:"1px solid #1a1a2e",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
+          <>
+            {/* Overlay click-outside */}
+            <div onClick={()=>setPanelEst(null)} style={{position:"fixed",inset:0,zIndex:399,background:"rgba(0,0,0,0.4)"}}/>
+            <div style={{position:"fixed",top:0,right:0,bottom:0,width:"380px",background:"#0a0a12",borderLeft:"1px solid #1a1a2e",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
             <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
             {/* Header */}
             <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #1a1a2e",flexShrink:0}}>
@@ -449,6 +452,7 @@ export default function Evolucao({ entries, compliance, estrategias }) {
               {ops.length===0&&<p style={{color:"#333",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação no período selecionado.</p>}
             </div>
           </div>
+          </>
         );
       })()}
 
