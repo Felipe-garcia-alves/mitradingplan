@@ -263,7 +263,7 @@ function AppInterno() {
     try{ await deleteDoc(doc(db,"usuarios",uid,"estrategias",id)); setEstrategias(p=>p.filter(e=>e.id!==id)); }catch(e){console.error(e);}
   };
 
-  const TITLES = {evolucao:"Evolução",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Regras",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações"};
+  const TITLES = {evolucao:"Evolução",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações"};
 
   const renderPage = () => {
     switch(pagina){

@@ -10,18 +10,40 @@ function monthKey(s) { return s.slice(0,7); }
 function formatDateFull(s) { const p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
 
 const REGRAS_PADRAO = [
-  { id:"r1", icon:"🎯", title:"Maximo 5 operacoes/dia",             desc:"Apos 5 entradas feche a plataforma. Sem excecoes.", personal:false },
-  { id:"r2", icon:"🛑", title:"Stop loss obrigatorio",               desc:"Nunca entre sem stop definido ANTES de clicar.", personal:false },
-  { id:"r3", icon:"⛔", title:"Respeitar perda maxima diaria",       desc:"Bateu o stop diario (3% da banca), encerra tudo.", personal:false },
-  { id:"r4", icon:"🏆", title:"Respeitar meta diaria",               desc:"Bateu a meta (2% da banca), pode encerrar.", personal:false },
-  { id:"r5", icon:"🔒", title:"Regra da vinganca",                   desc:"Tomou stop? Aguarde 15 minutos antes da proxima entrada.", personal:false },
-  { id:"r6", icon:"📵", title:"Horario proibido",                    desc:"Nao opere no primeiro candle nem nos 15 min antes do fechamento.", personal:false },
-  { id:"r7", icon:"📝", title:"Anotar no diario apos cada operacao", desc:"Registre motivo, emocao e resultado imediatamente.", personal:true },
-  { id:"r8", icon:"🚨", title:"3 stops seguidos = parar o dia",      desc:"Tomou 3 stops consecutivos? Encerra. Volte amanha.", personal:true },
-  { id:"r9", icon:"📐", title:"RR minimo 1:2",                       desc:"So entre se o alvo for pelo menos o dobro do stop.", personal:false },
+  { id:"r1", icon:"limit",  title:"Máximo 5 operações/dia",             desc:"Após 5 entradas feche a plataforma. Sem exceções.", personal:false },
+  { id:"r2", icon:"stop",   title:"Stop loss obrigatório",               desc:"Nunca entre sem stop definido ANTES de clicar.", personal:false },
+  { id:"r3", icon:"loss",   title:"Respeitar perda máxima diária",       desc:"Bateu o stop diário (3% da banca), encerra tudo.", personal:false },
+  { id:"r4", icon:"target", title:"Respeitar meta diária",               desc:"Bateu a meta (2% da banca), pode encerrar.", personal:false },
+  { id:"r5", icon:"wait",   title:"Regra da vingança",                   desc:"Tomou stop? Aguarde 15 minutos antes da próxima entrada.", personal:false },
+  { id:"r6", icon:"clock",  title:"Horário proibido",                    desc:"Não opere no primeiro candle nem nos 15 min antes do fechamento.", personal:false },
+  { id:"r7", icon:"log",    title:"Anotar no diário após cada operação", desc:"Registre motivo, emoção e resultado imediatamente.", personal:true },
+  { id:"r8", icon:"three",  title:"3 stops seguidos = parar o dia",      desc:"Tomou 3 stops consecutivos? Encerra. Volte amanhã.", personal:true },
+  { id:"r9", icon:"rr",     title:"RR mínimo 1:2",                       desc:"Só entre se o alvo for pelo menos o dobro do stop.", personal:false },
 ];
 
-const ICONS = ["🎯","🛑","⛔","🏆","🔒","📵","📝","🚨","📐","💡","⚡","🧠","📊","🔥","✅","❌","⏰","💰","📈","🎲"];
+const ICONS = ["limit","stop","loss","target","wait","clock","log","three","rr","trend","shield","eye","chart","lock","check"];
+
+function RuleIcon({ id, color="#00d4aa", size=16 }) {
+  const s = { width:size, height:size, viewBox:"0 0 24 24", fill:"none", stroke:color, strokeWidth:"1.8", strokeLinecap:"round", strokeLinejoin:"round" };
+  const icons = {
+    limit:  <svg {...s}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+    stop:   <svg {...s}><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+    loss:   <svg {...s}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>,
+    target: <svg {...s}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+    wait:   <svg {...s}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    clock:  <svg {...s}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    log:    <svg {...s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+    three:  <svg {...s}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+    rr:     <svg {...s}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+    trend:  <svg {...s}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+    shield: <svg {...s}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+    eye:    <svg {...s}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    chart:  <svg {...s}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
+    lock:   <svg {...s}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+    check:  <svg {...s}><polyline points="20 6 9 17 4 12"/></svg>,
+  };
+  return icons[id] || icons.check;
+}
 
 export default function Regras({ regras, saveRegras, compliance, saveCompliance }) {
   const regrasList  = regras && regras.length > 0 ? regras : REGRAS_PADRAO;
@@ -149,9 +171,20 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
 
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
+
+      {/* Card de frases no topo */}
+      <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 24px",marginBottom:"24px",display:"flex",gap:"32px",flexWrap:"wrap"}}>
+        <div style={{flex:1,minWidth:"200px",borderRight:"1px solid #1a1a2e",paddingRight:"24px"}}>
+          <p style={{margin:0,color:"#f0f0f0",fontWeight:"700",fontSize:"13px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.5"}}>O QUE GERA RESULTADO É COMPORTAMENTO, NÃO A TÉCNICA.</p>
+        </div>
+        <div style={{flex:1,minWidth:"200px",display:"flex",alignItems:"center"}}>
+          <p style={{margin:0,color:"#666",fontSize:"13px",lineHeight:"1.6",letterSpacing:"0.3px",textTransform:"uppercase"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE. CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
+        </div>
+      </div>
+
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"8px",flexWrap:"wrap",gap:"10px"}}>
         <div>
-          <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Regras</h1>
+          <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Disciplina</h1>
         </div>
         <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
           {msg && <span style={{color:"#00d4aa",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
@@ -172,7 +205,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
               </div>
               <div style={{flex:1,cursor:"pointer"}} onClick={()=>toggleCheck(rule.id)}>
                 <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"3px",flexWrap:"wrap"}}>
-                  <span style={{fontSize:"16px"}}>{rule.icon}</span>
+                  <RuleIcon id={rule.icon} color={ok?color:"#555"} size={16}/>
                   <span style={{color:"#f0f0f0",fontWeight:"600",fontSize:"14px"}}>{rule.title}</span>
                   {rule.personal && <span style={{background:"rgba(245,158,11,0.15)",color:"#f59e0b",fontSize:"10px",fontWeight:"700",padding:"2px 7px",borderRadius:"20px"}}>PESSOAL</span>}
                 </div>
@@ -189,13 +222,26 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance 
         })}
       </div>
 
-      <div style={{padding:"16px 20px",borderRadius:"12px",background:"rgba(255,77,77,0.05)",border:"1px solid rgba(255,77,77,0.15)",marginBottom:"14px"}}>
-        <p style={{margin:"0 0 6px",color:"#ff4d4d",fontWeight:"700",fontSize:"14px"}}>⚠️ Regra de ouro do overtrading</p>
-        <p style={{margin:0,color:"#888",fontSize:"13px",lineHeight:"1.6"}}><strong style={{color:"#ccc"}}>O problema não é a técnica — é o clique.</strong> Cada entrada extra fora do setup e uma aposta.</p>
-      </div>
-
-      <div style={{padding:"18px 24px",borderRadius:"12px",background:"linear-gradient(135deg,rgba(0,212,170,0.07),rgba(0,153,255,0.05))",border:"1px solid rgba(0,212,170,0.2)",textAlign:"center",marginBottom:"28px"}}>
-        <p style={{margin:0,color:"#f0f0f0",fontWeight:"800",fontSize:"17px",letterSpacing:"0.5px",lineHeight:"1.5"}}>O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO A TÉCNICA.</p>
+      {/* Botão salvar progresso */}
+      <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"28px"}}>
+        <button onClick={async()=>{
+          const updated={...compliance};
+          updated[today]=allChecked;
+          await saveCompliance(updated);
+          setMsg("✓ Disciplina salva!"); setTimeout(()=>setMsg(""),2500);
+        }} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 24px",fontWeight:"700",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Salvar progresso de hoje
+        </button>
+        {pct !== null && (
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{width:"120px",height:"6px",borderRadius:"3px",background:"#1a1a2e",overflow:"hidden"}}>
+              <div style={{height:"100%",width:pct+"%",background:pct>=80?"#00d4aa":pct>=50?"#f59e0b":"#ff4d4d",borderRadius:"3px",transition:"width 0.3s"}}/>
+            </div>
+            <span style={{color:pct>=80?"#00d4aa":pct>=50?"#f59e0b":"#ff4d4d",fontSize:"14px",fontWeight:"800",fontFamily:"monospace"}}>{pct}%</span>
+            <span style={{color:"#444",fontSize:"12px"}}>{checkedCount} de {totalRegras}</span>
+          </div>
+        )}
       </div>
 
       <div style={{borderTop:"1px solid #1a1a2e",paddingTop:"24px"}}>
