@@ -241,17 +241,25 @@ function AppInterno() {
         const nomeNovo = data.nome;
         await updateDoc(doc(db,"usuarios",uid,"estrategias",id),data);
         setEstrategias(p=>p.map(e=>e.id===id?{id,...data}:e));
-        // Se nome mudou, atualiza todos os trades no diário (onSnapshot cuida do re-render)
+        // Se nome mudou, busca TODOS os entries frescos do Firestore e atualiza
         if(nomeAntigo && nomeNovo && nomeAntigo !== nomeNovo) {
-          const entradasParaAtualizar = Object.entries(entries).filter(([,e])=>
-            (e.trades||[]).some(t=>t.estrategia===nomeAntigo)
-          );
-          for(const [dateKey, entry] of entradasParaAtualizar) {
-            const tradesAtualizados = entry.trades.map(t=>
-              t.estrategia===nomeAntigo ? {...t, estrategia:nomeNovo} : t
-            );
-            await setDoc(doc(db,"usuarios",uid,"diario",dateKey), {...entry, trades:tradesAtualizados});
-          }
+          const snap = await getDocs(collection(db,"usuarios",uid,"diario"));
+          const promises = [];
+          snap.forEach(docSnap => {
+            const entry = docSnap.data();
+            const trades = entry.trades || [];
+            const temNomeAntigo = trades.some(t=>t.estrategia===nomeAntigo);
+            if (temNomeAntigo) {
+              const tradesAtualizados = trades.map(t=>
+                t.estrategia===nomeAntigo ? {...t, estrategia:nomeNovo} : t
+              );
+              promises.push(
+                setDoc(doc(db,"usuarios",uid,"diario",docSnap.id), {...entry, trades:tradesAtualizados})
+              );
+            }
+          });
+          await Promise.all(promises);
+          // onSnapshot vai re-renderizar automaticamente com os dados novos
         }
       } else {
         const r=await addDoc(collection(db,"usuarios",uid,"estrategias"),data);
