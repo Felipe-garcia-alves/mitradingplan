@@ -236,13 +236,12 @@ function AppInterno() {
   const saveEstrategia = async (id,data) => {
     try {
       if(id){
-        // Verifica se o nome mudou
         const estrategiaAntiga = estrategias.find(e=>e.id===id);
         const nomeAntigo = estrategiaAntiga?.nome;
         const nomeNovo = data.nome;
         await updateDoc(doc(db,"usuarios",uid,"estrategias",id),data);
         setEstrategias(p=>p.map(e=>e.id===id?{id,...data}:e));
-        // Se o nome mudou, atualiza todos os trades que referenciam o nome antigo
+        // Se nome mudou, atualiza todos os trades no diário (onSnapshot cuida do re-render)
         if(nomeAntigo && nomeNovo && nomeAntigo !== nomeNovo) {
           const entradasParaAtualizar = Object.entries(entries).filter(([,e])=>
             (e.trades||[]).some(t=>t.estrategia===nomeAntigo)
@@ -251,20 +250,7 @@ function AppInterno() {
             const tradesAtualizados = entry.trades.map(t=>
               t.estrategia===nomeAntigo ? {...t, estrategia:nomeNovo} : t
             );
-            const entryAtualizada = {...entry, trades: tradesAtualizados};
-            await setDoc(doc(db,"usuarios",uid,"diario",dateKey), entryAtualizada);
-          }
-          if(entradasParaAtualizar.length > 0) {
-            setEntries(prev => {
-              const updated = {...prev};
-              for(const [dateKey, entry] of entradasParaAtualizar) {
-                updated[dateKey] = {
-                  ...entry,
-                  trades: entry.trades.map(t=>t.estrategia===nomeAntigo?{...t,estrategia:nomeNovo}:t)
-                };
-              }
-              return updated;
-            });
+            await setDoc(doc(db,"usuarios",uid,"diario",dateKey), {...entry, trades:tradesAtualizados});
           }
         }
       } else {
@@ -281,7 +267,7 @@ function AppInterno() {
 
   const renderPage = () => {
     switch(pagina){
-      case "evolucao":    return <Evolucao entries={entries} compliance={compliance}/>;
+      case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias}/>;
       case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry}/>;
       case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
@@ -309,7 +295,7 @@ function AppInterno() {
     <div style={{display:"flex",minHeight:"100vh",background:"#0d0d1a",fontFamily:"Inter,sans-serif"}}>
       {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance}/>}
       <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
-        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(8,8,16,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #1a1a2e",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(8,8,16,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #1a1a2e",padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
             <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"rgba(0,212,170,0.1)",border:"1px solid #00d4aa33",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -319,7 +305,7 @@ function AppInterno() {
           </div>
           <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
         </div>
-        <div style={{flex:1,padding:"28px 24px",maxWidth:"1000px",width:"100%",boxSizing:"border-box"}}>
+        <div style={{flex:1,padding:isMobile?"16px 12px":"28px 24px",maxWidth:"1200px",width:"100%",boxSizing:"border-box"}}>
           {renderPage()}
         </div>
       </main>

@@ -55,11 +55,13 @@ function DateFilter({ inicio, fim, onChange }) {
   );
 }
 
-export default function Evolucao({ entries, compliance }) {
+export default function Evolucao({ entries, compliance, estrategias }) {
   const now     = new Date();
   const ini1m   = new Date(now.getFullYear(), now.getMonth(), 1);
   const [inicio, setInicio] = useState(dayKey(ini1m));
   const [fim,    setFim]    = useState(dayKey(now));
+  const [panelEst, setPanelEst] = useState(null);
+  const isMobile = window.innerWidth < 768;
 
   const filtered = useMemo(() => {
     return Object.entries(entries).filter(([d]) => d >= inicio && d <= fim).sort(([a],[b])=>a.localeCompare(b));
@@ -190,7 +192,7 @@ export default function Evolucao({ entries, compliance }) {
       <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
 
       {/* LINHA 2: 4 KPIs — Disciplina primeiro */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 1fr 1fr",gap:"16px",marginBottom:"28px",marginTop:"24px"}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 2fr 1fr 1fr",gap:"12px",marginBottom:"28px",marginTop:"24px"}}>
         {/* Disciplina — primeiro */}
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",display:"flex",alignItems:"center",gap:"14px"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+complianceColor+",transparent)"}}/>
@@ -267,7 +269,7 @@ export default function Evolucao({ entries, compliance }) {
       </div>
 
       {/* LINHA 3: Curva Capital (60%) + Origem Ganho + Origem Perda */}
-      <div style={{display:"grid",gridTemplateColumns:"5fr 3fr 3fr",gap:"16px",marginBottom:"28px"}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"5fr 3fr 3fr",gap:"16px",marginBottom:"28px"}}>
         <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
           <p style={{margin:"0 0 4px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Curva de Capital</p>
           <p style={{margin:"0 0 14px",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"18px",fontWeight:"700",fontFamily:"monospace"}}>
@@ -336,22 +338,25 @@ export default function Evolucao({ entries, compliance }) {
         <div style={{marginBottom:"28px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
             <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Métricas por Estratégia</p>
-            <span style={{color:"#333",fontSize:"11px"}}>clique para filtrar</span>
+            <span style={{color:"#333",fontSize:"11px"}}>clique para ver operações</span>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             {Object.entries(estratStats).map(([n,s],i)=>{
               const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
               const cor = colors[i%colors.length];
               const mediaPts = s.total>0 ? (s.pontos/s.total).toFixed(1) : "0.0";
+              const isSelected = panelEst === n;
               return (
-                <div key={n} style={{background:"#0d0d14",border:"1px solid #1e1e2e",borderRadius:"14px",padding:"18px",cursor:"pointer",transition:"border-color 0.2s"}}
-                  onMouseEnter={e=>e.currentTarget.style.borderColor=cor+"55"}
-                  onMouseLeave={e=>e.currentTarget.style.borderColor="#1e1e2e"}>
+                <div key={n} onClick={()=>setPanelEst(isSelected?null:n)}
+                  style={{background:"#0d0d14",border:"1px solid "+(isSelected?cor+"66":"#1e1e2e"),borderRadius:"14px",padding:"18px",cursor:"pointer",transition:"all 0.2s",boxShadow:isSelected?"0 0 0 1px "+cor+"33":"none"}}
+                  onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor=cor+"44";}}}
+                  onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor="#1e1e2e";}}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
                     <div style={{padding:"4px 8px",borderRadius:"6px",background:cor+"22",border:"1px solid "+cor+"44"}}>
                       <span style={{color:cor,fontSize:"11px",fontWeight:"800",letterSpacing:"0.5px"}}>{n.slice(0,3).toUpperCase()}</span>
                     </div>
                     <span style={{color:"#aaa",fontSize:"13px",fontWeight:"600",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{n}</span>
+                    {isSelected && <span style={{color:cor,fontSize:"11px"}}>▸</span>}
                   </div>
                   <p style={{margin:"0 0 3px",color:"#00d4aa",fontSize:"22px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
                     {s.pontos>=0?"+":""}{s.pontos.toFixed(1)} pts
@@ -373,9 +378,73 @@ export default function Evolucao({ entries, compliance }) {
         </div>
       )}
 
+      {/* PAINEL LATERAL — operações da estratégia selecionada */}
+      {panelEst && (() => {
+        const cor = colors[Object.keys(estratStats).indexOf(panelEst) % colors.length];
+        const ops = filtered.flatMap(([d,e])=>
+          (e.trades||[]).filter(t=>t.estrategia===panelEst).map(t=>({...t,_date:d}))
+        ).sort((a,b)=>b._date.localeCompare(a._date));
+        const totalPtsEst = ops.reduce((s,t)=>s+(t.pontos||0),0);
+        const totalResEst = ops.reduce((s,t)=>s+(t.resultado||0),0);
+        const winsEst = ops.filter(t=>t.tipo==="WIN").length;
+        return (
+          <div style={{position:"fixed",top:0,right:0,bottom:0,width:"380px",background:"#0a0a12",borderLeft:"1px solid #1a1a2e",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
+            <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
+            {/* Header */}
+            <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #1a1a2e",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <div style={{padding:"5px 10px",borderRadius:"7px",background:cor+"22",border:"1px solid "+cor+"44"}}>
+                    <span style={{color:cor,fontSize:"12px",fontWeight:"800"}}>{panelEst.slice(0,3).toUpperCase()}</span>
+                  </div>
+                  <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{panelEst}</p>
+                </div>
+                <button onClick={()=>setPanelEst(null)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
+              </div>
+              {/* Stats resumo */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
+                <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                  <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Pts</p>
+                  <p style={{margin:0,color:"#00d4aa",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{totalPtsEst>=0?"+":""}{totalPtsEst.toFixed(0)}</p>
+                </div>
+                <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                  <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>R$</p>
+                  <p style={{margin:0,color:totalResEst>=0?"#00d4aa":"#ff4d4d",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{totalResEst>=0?"+":""}{ Math.abs(totalResEst).toFixed(0)}</p>
+                </div>
+                <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                  <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Acerto</p>
+                  <p style={{margin:0,color:winsEst/ops.length>=0.6?"#00d4aa":"#f59e0b",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{ops.length>0?Math.round((winsEst/ops.length)*100):0}%</p>
+                </div>
+              </div>
+            </div>
+            {/* Lista de operações */}
+            <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
+              <p style={{margin:"0 0 12px",color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>{ops.length} operações no período</p>
+              {ops.map((t,i)=>(
+                <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"#0d0d14",border:"1px solid #1a1a2e",marginBottom:"8px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                      <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
+                      <span style={{color:"#666",fontSize:"12px"}}>{t.mercado}</span>
+                    </div>
+                    <span style={{color:"#555",fontSize:"11px"}}>{t._date.split("-").reverse().join("/")}</span>
+                  </div>
+                  <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
+                    {t.pontos!=null&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace",fontWeight:"600"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
+                    {t.resultado!=null&&<span style={{color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"13px",fontFamily:"monospace",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</span>}
+                  </div>
+                  {t.observacao&&<p style={{margin:"6px 0 0",color:"#555",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</p>}
+                </div>
+              ))}
+              {ops.length===0&&<p style={{color:"#333",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação no período selecionado.</p>}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* LINHA 5: Médias */}
       {allTrades.length > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",marginBottom:"28px"}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:"16px",marginBottom:"28px"}}>
           {[
             {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),color:"#00d4aa",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
             {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),color:"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
