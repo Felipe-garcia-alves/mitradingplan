@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { supabase } from "./supabase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login       from "./pages/Login";
+import Onboarding  from "./pages/Onboarding";
 import Evolucao    from "./pages/Evolucao";
 import Diario      from "./pages/Diario";
 import Historico   from "./pages/Historico";
@@ -178,6 +179,7 @@ function AppInterno() {
   const [regras,      setRegras]      = useState([]);
   const [nomeUsuario, setNomeUsuario] = useState("");
   const [loading,     setLoading]     = useState(true);
+  const [onboarding,  setOnboarding]  = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768);
   const uid = user.id;
@@ -211,6 +213,7 @@ function AppInterno() {
             compliance: {}, regras: []
           });
           setNomeUsuario(nome);
+          setOnboarding(true); // novo usuário → onboarding
         }
       } catch(e){ console.error("load user:",e); }
 
@@ -357,6 +360,15 @@ function AppInterno() {
         <p style={{color:"#444",fontSize:"14px"}}>Carregando...</p>
       </div>
     </div>
+  );
+
+  if (onboarding) return (
+    <Onboarding
+      nomeUsuario={nomeUsuario}
+      onComplete={()=>setOnboarding(false)}
+      saveConfig={saveConfig}
+      saveEstrategia={saveEstrategia}
+    />
   );
 
   return (
