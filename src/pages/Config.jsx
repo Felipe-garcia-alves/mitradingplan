@@ -2,7 +2,7 @@ import { useState } from "react";
 import { updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
 
-export default function Config({ config, saveConfig, nomeUsuario }) {
+export default function Config({ config, saveConfig, nomeUsuario, setPagina }) {
   const { user, logout } = useAuth();
   const [bancaB3,    setBancaB3]    = useState(String(config?.bancaB3    || 3000));
   const [bancaForex, setBancaForex] = useState(String(config?.bancaForex || 200));
@@ -98,6 +98,17 @@ export default function Config({ config, saveConfig, nomeUsuario }) {
           {msgSenha && <span style={{ color:msgSenha.includes("✓")?"#00d4aa":"#ff6b6b", fontSize:"13px", fontWeight:"600" }}>{msgSenha}</span>}
         </div>
       </div>
+
+      {/* Termos */}
+      {setPagina && (
+        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 22px",marginBottom:"0"}}>
+          <p style={{margin:"0 0 4px",color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Documentos Legais</p>
+          <p style={{margin:"0 0 14px",color:"#555",fontSize:"13px"}}>Termos de uso e política de privacidade da plataforma.</p>
+          <button onClick={()=>setPagina("termos")} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",color:"#aaa",borderRadius:"10px",padding:"10px 20px",fontWeight:"600",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+            📄 Ver Termos & Privacidade
+          </button>
+        </div>
+      )}
 
       {/* Sair */}
       <div style={{ background:"#111118", border:"1px solid #ff4d4d22", borderRadius:"14px", padding:"22px" }}>

@@ -145,7 +145,11 @@ export default function Login() {
           </div>
 
           <p style={{textAlign:"center",color:"#ccc",fontSize:"12px",marginTop:"20px",lineHeight:"1.6"}}>
-            Seus dados são privados e protegidos.<br/>Cada usuário vê apenas suas próprias operações.
+            Seus dados são privados e protegidos.<br/>
+            Ao criar conta você concorda com os{" "}
+            <span onClick={()=>window.open("/termos","_blank")} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Termos de Uso</span>
+            {" "}e a{" "}
+            <span onClick={()=>window.open("/termos","_blank")} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Política de Privacidade</span>.
           </p>
         </div>
       </div>

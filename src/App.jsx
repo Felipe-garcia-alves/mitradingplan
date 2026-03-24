@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login       from "./pages/Login";
 import Onboarding  from "./pages/Onboarding";
+import Termos      from "./pages/Termos";
 import Evolucao    from "./pages/Evolucao";
 import Diario      from "./pages/Diario";
 import Historico   from "./pages/Historico";
@@ -334,7 +335,7 @@ function AppInterno() {
     } catch(e){ console.error(e); }
   };
 
-  const TITLES = {evolucao:"Evolução",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações"};
+  const TITLES = {evolucao:"Evolução",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações",termos:"Termos & Privacidade"};
 
   const renderPage = () => {
     switch(pagina){
@@ -346,7 +347,8 @@ function AppInterno() {
       case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries}/></Suspense>;
       case "crescimento": return <Suspense fallback={<Spinner/>}><Crescimento entries={entries} config={config}/></Suspense>;
       case "patrimonio":  return <Suspense fallback={<Spinner/>}><Patrimonio entries={entries} config={config}/></Suspense>;
-      case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario}/></Suspense>;
+      case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario} setPagina={setPagina}/></Suspense>;
+      case "termos":      return <Termos onVoltar={()=>setPagina("config")}/>;
       default:            return <Evolucao entries={entries}/>;
     }
   };
