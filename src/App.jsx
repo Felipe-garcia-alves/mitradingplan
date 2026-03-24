@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
-import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "./firebase";
+import { supabase } from "./supabase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login       from "./pages/Login";
 import Evolucao    from "./pages/Evolucao";
@@ -189,120 +188,145 @@ function AppInterno() {
     return ()=>window.removeEventListener("resize",fn);
   },[]);
 
+  // ── LOAD USER DATA FROM SUPABASE ──
   useEffect(()=>{
     if (!uid) return;
     async function load() {
       setLoading(true);
       try {
-        const userDoc = await getDoc(doc(db,"usuarios",uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setNomeUsuario(data.nome||"");
-          if (data.config)     setConfigState(data.config);
-          if (data.compliance) setCompliance(data.compliance);
-          if (data.regras)     setRegras(data.regras);
+        const { data: userData } = await supabase
+          .from("usuarios").select("*").eq("id", uid).single();
+        if (userData) {
+          setNomeUsuario(userData.nome||"");
+          if (userData.config)     setConfigState(userData.config);
+          if (userData.compliance) setCompliance(userData.compliance);
+          if (userData.regras)     setRegras(userData.regras);
         } else {
-          // Novo usuário Supabase — verifica se existe conta antiga no Firebase pelo email
-          let migrated = false;
-          try {
-            const q = query(collection(db,"usuarios"), where("email","==",user.email||""));
-            const oldSnap = await getDocs(q);
-            if (!oldSnap.empty) {
-              const oldDoc = oldSnap.docs[0];
-              const oldUid = oldDoc.id;
-              if (oldUid !== uid) {
-                // Copia documento principal
-                const oldData = oldDoc.data();
-                await setDoc(doc(db,"usuarios",uid), {...oldData, email: user.email||""});
-                setNomeUsuario(oldData.nome||"");
-                if (oldData.config)     setConfigState(oldData.config);
-                if (oldData.compliance) setCompliance(oldData.compliance);
-                if (oldData.regras)     setRegras(oldData.regras);
-                // Copia diário
-                const diarioSnap = await getDocs(collection(db,"usuarios",oldUid,"diario"));
-                for (const d of diarioSnap.docs) {
-                  await setDoc(doc(db,"usuarios",uid,"diario",d.id), d.data());
-                }
-                // Copia estratégias
-                const estSnap = await getDocs(collection(db,"usuarios",oldUid,"estrategias"));
-                for (const d of estSnap.docs) {
-                  await setDoc(doc(db,"usuarios",uid,"estrategias",d.id), d.data());
-                }
-                migrated = true;
-                console.log("Migração concluída: "+diarioSnap.docs.length+" entradas do diário copiadas.");
-              }
-            }
-          } catch(migErr) { console.error("migração:",migErr); }
-
-          if (!migrated) {
-            const nome = user.email?.split("@")[0]||"Trader";
-            await setDoc(doc(db,"usuarios",uid),{nome,email:user.email||"",criadoEm:new Date().toISOString(),config:{bancaB3:3000,bancaForex:200}});
-            setNomeUsuario(nome);
-          }
+          // Novo usuário — cria registro
+          const nome = user.email?.split("@")[0]||"Trader";
+          await supabase.from("usuarios").insert({
+            id: uid, nome, email: user.email||"",
+            criado_em: new Date().toISOString(),
+            config: {bancaB3:3000,bancaForex:200},
+            compliance: {}, regras: []
+          });
+          setNomeUsuario(nome);
         }
       } catch(e){ console.error("load user:",e); }
+
+      // Carrega estratégias
       try {
-        const snap = await getDocs(collection(db,"usuarios",uid,"estrategias"));
-        const ests=[]; snap.forEach(d=>ests.push({id:d.id,...d.data()}));
-        setEstrategias(ests);
+        const { data: ests } = await supabase
+          .from("estrategias").select("*").eq("usuario_id", uid);
+        if (ests) setEstrategias(ests.map(e=>({id:e.id, firebase_id:e.firebase_id, ...e.dados})));
       } catch(e){ console.error("load estrategias:",e); }
+
+      // Carrega diário
+      try {
+        const { data: diario } = await supabase
+          .from("diario").select("*").eq("usuario_id", uid);
+        if (diario) {
+          const d={};
+          diario.forEach(row=>{ d[row.data_key]=row.dados; });
+          setEntries(d);
+        }
+      } catch(e){ console.error("load diario:",e); }
+
       setLoading(false);
     }
     load();
   },[uid]);
 
+  // ── REALTIME DIÁRIO ──
   useEffect(()=>{
     if (!uid) return;
-    const unsub = onSnapshot(
-      collection(db,"usuarios",uid,"diario"),
-      snap=>{ const d={}; snap.forEach(s=>{d[s.id]=s.data();}); setEntries(d); },
-      err=>console.error("diario:",err)
-    );
-    return ()=>unsub();
+    const channel = supabase
+      .channel("diario-changes")
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "diario",
+        filter: `usuario_id=eq.${uid}`
+      }, async () => {
+        // Recarrega o diário completo
+        const { data } = await supabase.from("diario").select("*").eq("usuario_id", uid);
+        if (data) {
+          const d={};
+          data.forEach(row=>{ d[row.data_key]=row.dados; });
+          setEntries(d);
+        }
+      })
+      .subscribe();
+    return ()=>{ supabase.removeChannel(channel); };
   },[uid]);
 
-  const saveEntry      = async (k,d) => { try{await setDoc(doc(db,"usuarios",uid,"diario",k),d);}catch(e){console.error(e);} };
-  const deleteEntry    = async k    => { try{await deleteDoc(doc(db,"usuarios",uid,"diario",k));}catch(e){console.error(e);} };
-  const saveConfig     = async c    => { setConfigState(c); try{await setDoc(doc(db,"usuarios",uid),{config:c},{merge:true});}catch(e){console.error(e);} };
-  const saveComplianceData = async c=>{ setCompliance(c);  try{await setDoc(doc(db,"usuarios",uid),{compliance:c},{merge:true});}catch(e){console.error(e);} };
-  const saveRegras     = async r    => { setRegras(r);      try{await setDoc(doc(db,"usuarios",uid),{regras:r},{merge:true});}catch(e){console.error(e);} };
-
-  const saveEstrategia = async (id,data) => {
+  // ── SAVE FUNCTIONS ──
+  const saveEntry = async (k, dados) => {
     try {
-      if(id){
+      await supabase.from("diario").upsert(
+        { usuario_id:uid, data_key:k, dados },
+        { onConflict: "usuario_id,data_key" }
+      );
+    } catch(e){ console.error(e); }
+  };
+
+  const deleteEntry = async k => {
+    try {
+      await supabase.from("diario").delete().eq("usuario_id",uid).eq("data_key",k);
+      setEntries(prev=>{ const n={...prev}; delete n[k]; return n; });
+    } catch(e){ console.error(e); }
+  };
+
+  const saveConfig = async c => {
+    setConfigState(c);
+    try { await supabase.from("usuarios").update({config:c}).eq("id",uid); } catch(e){ console.error(e); }
+  };
+
+  const saveComplianceData = async c => {
+    setCompliance(c);
+    try { await supabase.from("usuarios").update({compliance:c}).eq("id",uid); } catch(e){ console.error(e); }
+  };
+
+  const saveRegras = async r => {
+    setRegras(r);
+    try { await supabase.from("usuarios").update({regras:r}).eq("id",uid); } catch(e){ console.error(e); }
+  };
+
+  const saveEstrategia = async (id, data) => {
+    try {
+      if (id) {
         const estrategiaAntiga = estrategias.find(e=>e.id===id);
         const nomeAntigo = estrategiaAntiga?.nome;
         const nomeNovo = data.nome;
-        await updateDoc(doc(db,"usuarios",uid,"estrategias",id),data);
-        setEstrategias(p=>p.map(e=>e.id===id?{id,...data}:e));
-        // Se nome mudou, busca TODOS os entries frescos do Firestore e atualiza
-        if(nomeAntigo && nomeNovo && nomeAntigo !== nomeNovo) {
-          const snap = await getDocs(collection(db,"usuarios",uid,"diario"));
-          const promises = [];
-          snap.forEach(docSnap => {
-            const entry = docSnap.data();
-            const trades = entry.trades || [];
-            const temNomeAntigo = trades.some(t=>t.estrategia===nomeAntigo);
-            if (temNomeAntigo) {
-              const tradesAtualizados = trades.map(t=>
-                t.estrategia===nomeAntigo ? {...t, estrategia:nomeNovo} : t
-              );
-              promises.push(
-                setDoc(doc(db,"usuarios",uid,"diario",docSnap.id), {...entry, trades:tradesAtualizados})
-              );
+        await supabase.from("estrategias").update({dados:data}).eq("id",id).eq("usuario_id",uid);
+        setEstrategias(p=>p.map(e=>e.id===id?{...e,...data}:e));
+        // Se nome mudou, atualiza todos os trades no diário
+        if (nomeAntigo && nomeNovo && nomeAntigo !== nomeNovo) {
+          const { data: diario } = await supabase.from("diario").select("*").eq("usuario_id",uid);
+          if (diario) {
+            const updates = diario
+              .filter(row=>(row.dados.trades||[]).some(t=>t.estrategia===nomeAntigo))
+              .map(row=>({
+                usuario_id: uid,
+                data_key: row.data_key,
+                dados: {...row.dados, trades: (row.dados.trades||[]).map(t=>t.estrategia===nomeAntigo?{...t,estrategia:nomeNovo}:t)}
+              }));
+            if (updates.length > 0) {
+              await supabase.from("diario").upsert(updates, {onConflict:"usuario_id,data_key"});
             }
-          });
-          await Promise.all(promises);
-          // onSnapshot vai re-renderizar automaticamente com os dados novos
+          }
         }
       } else {
-        const r=await addDoc(collection(db,"usuarios",uid,"estrategias"),data);
-        setEstrategias(p=>[...p,{id:r.id,...data}]);
+        const { data: nova } = await supabase.from("estrategias")
+          .insert({usuario_id:uid, dados:data}).select().single();
+        if (nova) setEstrategias(p=>[...p,{id:nova.id,...data}]);
       }
-    }catch(e){console.error(e);}
+    } catch(e){ console.error(e); }
   };
+
   const deleteEstrategia = async id => {
-    try{ await deleteDoc(doc(db,"usuarios",uid,"estrategias",id)); setEstrategias(p=>p.filter(e=>e.id!==id)); }catch(e){console.error(e);}
+    try {
+      await supabase.from("estrategias").delete().eq("id",id).eq("usuario_id",uid);
+      setEstrategias(p=>p.filter(e=>e.id!==id));
+    } catch(e){ console.error(e); }
   };
 
   const TITLES = {evolucao:"Evolução",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações"};
