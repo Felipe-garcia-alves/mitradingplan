@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
-import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login       from "./pages/Login";
@@ -181,7 +181,7 @@ function AppInterno() {
   const [loading,     setLoading]     = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768);
-  const uid = user.uid;
+  const uid = user.id;
 
   useEffect(()=>{
     const fn = ()=>setIsMobile(window.innerWidth<768);
@@ -202,9 +202,43 @@ function AppInterno() {
           if (data.compliance) setCompliance(data.compliance);
           if (data.regras)     setRegras(data.regras);
         } else {
-          const nome = user.email?.split("@")[0]||"Trader";
-          await setDoc(doc(db,"usuarios",uid),{nome,email:user.email||"",criadoEm:new Date().toISOString(),config:{bancaB3:3000,bancaForex:200}});
-          setNomeUsuario(nome);
+          // Novo usuário Supabase — verifica se existe conta antiga no Firebase pelo email
+          let migrated = false;
+          try {
+            const q = query(collection(db,"usuarios"), where("email","==",user.email||""));
+            const oldSnap = await getDocs(q);
+            if (!oldSnap.empty) {
+              const oldDoc = oldSnap.docs[0];
+              const oldUid = oldDoc.id;
+              if (oldUid !== uid) {
+                // Copia documento principal
+                const oldData = oldDoc.data();
+                await setDoc(doc(db,"usuarios",uid), {...oldData, email: user.email||""});
+                setNomeUsuario(oldData.nome||"");
+                if (oldData.config)     setConfigState(oldData.config);
+                if (oldData.compliance) setCompliance(oldData.compliance);
+                if (oldData.regras)     setRegras(oldData.regras);
+                // Copia diário
+                const diarioSnap = await getDocs(collection(db,"usuarios",oldUid,"diario"));
+                for (const d of diarioSnap.docs) {
+                  await setDoc(doc(db,"usuarios",uid,"diario",d.id), d.data());
+                }
+                // Copia estratégias
+                const estSnap = await getDocs(collection(db,"usuarios",oldUid,"estrategias"));
+                for (const d of estSnap.docs) {
+                  await setDoc(doc(db,"usuarios",uid,"estrategias",d.id), d.data());
+                }
+                migrated = true;
+                console.log("Migração concluída: "+diarioSnap.docs.length+" entradas do diário copiadas.");
+              }
+            }
+          } catch(migErr) { console.error("migração:",migErr); }
+
+          if (!migrated) {
+            const nome = user.email?.split("@")[0]||"Trader";
+            await setDoc(doc(db,"usuarios",uid),{nome,email:user.email||"",criadoEm:new Date().toISOString(),config:{bancaB3:3000,bancaForex:200}});
+            setNomeUsuario(nome);
+          }
         }
       } catch(e){ console.error("load user:",e); }
       try {
