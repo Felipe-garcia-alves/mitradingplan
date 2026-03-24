@@ -18,6 +18,7 @@ function gerarProjecao(base, meses, taxa) {
 export default function Crescimento({ entries, config }) {
   const [market, setMarket] = useState("b3");
   const bancaInicialCripto = 1000;
+  const bancaInicialAmericano = 500;
   const [taxa,   setTaxa]   = useState(8);
 
   const bancaInicialB3    = config?.bancaB3    || 3000;
@@ -25,23 +26,24 @@ export default function Crescimento({ entries, config }) {
   const bancaRealB3       = Object.values(entries).reduce((s,e)=>s+(e.totalB3||0),    bancaInicialB3);
   const bancaRealForex    = Object.values(entries).reduce((s,e)=>s+(e.totalForex||0), bancaInicialForex);
   const bancaRealCripto   = Object.values(entries).reduce((s,e)=>s+(e.totalCripto||0), bancaInicialCripto);
+  const bancaRealAmericano= Object.values(entries).reduce((s,e)=>s+(e.totalAmericano||0), bancaInicialAmericano);
 
   const cur     = market==="b3" ? "R$" : "$";
-  const color   = market==="b3" ? "#00d4aa" : market==="forex" ? "#f59e0b" : "#a78bfa";
-  const bancaAt = market==="b3" ? bancaRealB3 : market==="forex" ? bancaRealForex : bancaRealCripto;
-  const bancaIn = market==="b3" ? bancaInicialB3 : market==="forex" ? bancaInicialForex : bancaInicialCripto;
+  const color   = market==="b3" ? "#00d4aa" : market==="forex" ? "#f59e0b" : market==="cripto" ? "#a78bfa" : "#34d399";
+  const bancaAt = market==="b3" ? bancaRealB3 : market==="forex" ? bancaRealForex : market==="cripto" ? bancaRealCripto : bancaRealAmericano;
+  const bancaIn = market==="b3" ? bancaInicialB3 : market==="forex" ? bancaInicialForex : market==="cripto" ? bancaInicialCripto : bancaInicialAmericano;
   const projecao= gerarProjecao(bancaAt, 12, taxa/100);
 
   const byMonth={};
   Object.entries(entries).forEach(([d,e])=>{
     const mk=monthKey(d);
-    if(!byMonth[mk]) byMonth[mk]={b3:0,forex:0,cripto:0};
-    byMonth[mk].b3+=e.totalB3||0; byMonth[mk].forex+=e.totalForex||0; byMonth[mk].cripto+=e.totalCripto||0;
+    if(!byMonth[mk]) byMonth[mk]={b3:0,forex:0,cripto:0,americano:0};
+    byMonth[mk].b3+=e.totalB3||0; byMonth[mk].forex+=e.totalForex||0; byMonth[mk].cripto+=e.totalCripto||0; byMonth[mk].americano+=e.totalAmericano||0;
   });
-  let accB3=bancaInicialB3, accFx=bancaInicialForex, accCr=bancaInicialCripto;
+  let accB3=bancaInicialB3, accFx=bancaInicialForex, accCr=bancaInicialCripto, accAm=bancaInicialAmericano;
   const realRows=Object.keys(byMonth).sort().map(mk=>{
-    accB3+=byMonth[mk].b3; accFx+=byMonth[mk].forex; accCr+=byMonth[mk].cripto||0;
-    return {mk,bancaB3:parseFloat(accB3.toFixed(2)),bancaForex:parseFloat(accFx.toFixed(2)),bancaCripto:parseFloat(accCr.toFixed(2))};
+    accB3+=byMonth[mk].b3; accFx+=byMonth[mk].forex; accCr+=byMonth[mk].cripto||0; accAm+=byMonth[mk].americano||0;
+    return {mk,bancaB3:parseFloat(accB3.toFixed(2)),bancaForex:parseFloat(accFx.toFixed(2)),bancaCripto:parseFloat(accCr.toFixed(2)),bancaAmericano:parseFloat(accAm.toFixed(2))};
   });
 
   return (
@@ -52,7 +54,7 @@ export default function Crescimento({ entries, config }) {
       </div>
 
       <div style={{ display:"flex", gap:"10px", marginBottom:"16px", alignItems:"center", flexWrap:"wrap" }}>
-        {[["b3","B3"],["forex","Forex"],["cripto","Cripto"]].map(([m,l])=>(
+        {[["b3","B3"],["forex","Forex"],["cripto","Cripto"],["americano","Americano"]].map(([m,l])=>(
           <button key={m} onClick={()=>setMarket(m)} style={{ padding:"8px 18px", borderRadius:"8px", cursor:"pointer", fontWeight:"600", fontSize:"13px", border:"none", background:market===m?color:"rgba(255,255,255,0.05)", color:market===m?"#000":"#777", fontFamily:"Inter,sans-serif" }}>
             {l}
           </button>
@@ -87,7 +89,7 @@ export default function Crescimento({ entries, config }) {
       <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
         {projecao.map((p,i)=>{
           const real      = realRows[i];
-          const realBanca = market==="b3" ? real?.bancaB3 : market==="forex" ? real?.bancaForex : real?.bancaCripto;
+          const realBanca = market==="b3" ? real?.bancaB3 : market==="forex" ? real?.bancaForex : market==="cripto" ? real?.bancaCripto : real?.bancaAmericano;
           const delta     = realBanca!==undefined ? realBanca-p.metaFinal : null;
           const aheadRow  = delta!==null && delta>=0;
           return (

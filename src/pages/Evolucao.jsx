@@ -211,7 +211,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
       {/* Filter row */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"24px",gap:"12px",flexWrap:"wrap"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"32px",gap:"12px",flexWrap:"wrap"}}>
         <div style={{display:"flex",gap:"6px"}}>
           {[["todos","Todos"],["B3","B3"],["Forex","Forex"],["Cripto","Cripto"],["Americano","Americano"]].map(([v,l])=>(
             <button key={v} onClick={()=>setFiltroMercado(v)} style={{padding:"7px 16px",borderRadius:"20px",border:"1px solid "+(filtroMercado===v?"#00d4aa44":"#1a1a2e"),cursor:"pointer",fontWeight:"600",fontSize:"12px",background:filtroMercado===v?"rgba(0,212,170,0.1)":"transparent",color:filtroMercado===v?"#00d4aa":"#666",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}>{l}</button>
@@ -224,7 +224,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
       <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
 
       {/* LINHA 2: 4 KPIs — Disciplina primeiro */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 2fr 1fr 1fr",gap:"12px",marginBottom:"36px",marginTop:"24px"}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 2fr 1fr 1fr",gap:"12px",marginBottom:"36px",marginTop:"32px"}}>
         {/* Disciplina — primeiro */}
         <div onClick={()=>setPagina&&setPagina("regras")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #252535",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",display:"flex",alignItems:"center",gap:"14px",cursor:setPagina?"pointer":"default",transition:"all 0.2s",boxShadow:"0 1px 0 0 #2a2a3a inset, 0 -1px 0 0 #080810 inset, 2px 0 0 0 #1a1a28 inset"}}
           onMouseEnter={e=>{if(setPagina)e.currentTarget.style.borderColor=complianceColor+"44";}}
@@ -248,7 +248,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
           onMouseEnter={e=>{e.currentTarget.style.borderColor="#27b58966";e.currentTarget.style.boxShadow="0 0 20px #27b58912";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
           
-          <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
+          <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Resultado Total</p>
           <p style={{margin:"0 0 4px",color:totalResult>=0?"#27b589":"#c94a4a",fontSize:"32px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
             {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
           </p>
@@ -263,7 +263,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
           onMouseEnter={e=>{const wr=winRate>=60?"#27b589":winRate>=40?"#f59e0b":"#c94a4a";e.currentTarget.style.borderColor=wr+"66";e.currentTarget.style.boxShadow="0 0 20px "+wr+"12";}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
           
-          <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
+          <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Win Rate</p>
           <p style={{margin:"0 0 6px",color:winRate===null?"#666":winRate>=60?"#27b589":winRate>=40?"#f59e0b":"#c94a4a",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>
             {winRate !== null ? winRate+"%" : "—"}
           </p>
@@ -287,7 +287,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
           return (
             <div style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #252535",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",boxShadow:"0 1px 0 0 #2a2a3a inset, 0 -1px 0 0 #080810 inset, 2px 0 0 0 #1a1a28 inset"}}>
               
-              <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Operados</p>
+              <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Dias Operados</p>
               <p style={{margin:"0 0 10px",color:"#f0f0f0",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
               <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
                 {semanas.map((sem,si)=>(
@@ -549,7 +549,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
                         <span style={{fontSize:"12px",fontWeight:"700",color:cor}}>{em}</span>
                         <p style={{margin:0,color:"#444",fontSize:"10px"}}>{s.dias} dia{s.dias!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
                       </div>
-                      <div style={{flex:1,height:"4px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
+                      <div style={{flex:1,height:"3px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
                         <div style={{height:"100%",width:barW+"%",background:pos?"#27b589":"#c94a4a",borderRadius:"4px",transition:"width 0.3s"}}/>
                       </div>
                       <span style={{width:"80px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#27b589":"#c94a4a",flexShrink:0}}>
@@ -650,7 +650,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
                         <span style={{fontSize:"11px",fontWeight:"700",color:cor}}>{wr}%</span>
                         <p style={{margin:0,color:"#444",fontSize:"9px"}}>{s.total} ops</p>
                       </div>
-                      <div style={{flex:1,height:"4px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
+                      <div style={{flex:1,height:"3px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
                         <div style={{height:"100%",width:barW+"%",background:pos?"#27b589":"#c94a4a",borderRadius:"4px"}}/>
                       </div>
                       <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#27b589":"#c94a4a",flexShrink:0}}>
@@ -871,69 +871,128 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
   if (!trades || trades.length < 3) return null;
 
   const alertas = [];
+  const today = new Date().toISOString().slice(0,10);
 
-  // 1. Muitos trades no dia
-  const tradesHoje = entries.filter(([d])=>d===new Date().toISOString().slice(0,10)).flatMap(([,e])=>e.trades||[]);
-  if (tradesHoje.length >= 4) {
-    alertas.push({ tipo:"aviso", msg:"Você já fez "+tradesHoje.length+" trades hoje — seu histórico mostra queda após o 3º." });
+  // ── 1. OVERTRADING (max 5 trades/dia)
+  const tradesHoje = entries.filter(([d])=>d===today).flatMap(([,e])=>e.trades||[]);
+  if (tradesHoje.length >= 5) {
+    alertas.push({ tipo:"critico", msg:`⛔ Overtrading: ${tradesHoje.length} trades hoje. Feche a plataforma — cada entrada extra é uma aposta.` });
+  } else if (tradesHoje.length >= 4) {
+    alertas.push({ tipo:"aviso", msg:`🔔 ${tradesHoje.length} trades hoje. Atenção ao limite diário.` });
   }
 
-  // 2. Win rate baixo
+  // ── 2. WIN RATE abaixo do mínimo profissional
   if (winRate !== null && winRate < 40 && trades.length >= 5) {
-    alertas.push({ tipo:"critico", msg:"Win rate em "+winRate+"% — abaixo do ideal. Revise sua estratégia." });
+    alertas.push({ tipo:"critico", msg:`⚠️ Win rate em ${winRate}% — abaixo do mínimo profissional (40%). Pare e revise o setup.` });
+  } else if (winRate !== null && winRate < 50 && trades.length >= 8) {
+    alertas.push({ tipo:"aviso", msg:`📉 Win rate em ${winRate}% — abaixo de 50%. Monitore de perto.` });
   }
 
-  // 3. Estratégia com muitas perdas
+  // ── 3. DRAWDOWN DIÁRIO — dias negativos consecutivos
+  const sortedDays = [...entries].sort(([a],[b])=>b.localeCompare(a));
+  let negStreak = 0;
+  for (const [,e] of sortedDays) {
+    const tot = (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0)+(e.totalAmericano||0);
+    if (tot < 0) negStreak++; else break;
+  }
+  if (negStreak >= 3) {
+    alertas.push({ tipo:"critico", msg:`🔴 ${negStreak} dias negativos consecutivos — reduza o tamanho das posições ou pare por hoje.` });
+  } else if (negStreak >= 2) {
+    alertas.push({ tipo:"aviso", msg:`🟡 2 dias negativos seguidos — revisite o plano antes de operar amanhã.` });
+  }
+
+  // ── 4. ESTRATÉGIA COM BAIXA ASSERTIVIDADE
   const estStats = {};
   trades.forEach(t => {
     const n = t.estrategia||"Sem nome";
-    if (!estStats[n]) estStats[n] = {wins:0,total:0};
+    if (!estStats[n]) estStats[n] = {wins:0,total:0,resultado:0};
     estStats[n].total++;
+    estStats[n].resultado += t.resultado||0;
     if (t.tipo==="WIN") estStats[n].wins++;
   });
   Object.entries(estStats).forEach(([n,s]) => {
     if (s.total >= 3) {
       const ass = Math.round((s.wins/s.total)*100);
-      if (ass < 35) alertas.push({ tipo:"critico", msg:n+" com apenas "+ass+"% de acerto — considere pausar essa estratégia." });
+      if (ass < 35) alertas.push({ tipo:"critico", msg:`⛔ "${n}" com ${ass}% de acerto em ${s.total} ops — considere pausar este setup.` });
     }
   });
 
-  // 4. Dias consecutivos negativos
-  const sortedDays = [...entries].sort(([a],[b])=>b.localeCompare(a)).slice(0,5);
-  let negStreak = 0;
-  for (const [,e] of sortedDays) {
-    const tot = (e.totalB3||0)+(e.totalForex||0);
-    if (tot < 0) negStreak++; else break;
-  }
-  if (negStreak >= 2) {
-    alertas.push({ tipo:"aviso", msg:negStreak+" dias negativos consecutivos — considere reduzir o tamanho das posições." });
+  // ── 5. RISCO × RETORNO NEGATIVO
+  const wins = trades.filter(t=>t.tipo==="WIN" && t.resultado);
+  const losses = trades.filter(t=>t.tipo==="LOSS" && t.resultado);
+  if (wins.length >= 3 && losses.length >= 3) {
+    const mediaW = wins.reduce((s,t)=>s+(t.resultado||0),0)/wins.length;
+    const mediaL = Math.abs(losses.reduce((s,t)=>s+(t.resultado||0),0)/losses.length);
+    const rr = mediaL > 0 ? (mediaW/mediaL) : 0;
+    if (rr < 0.8) alertas.push({ tipo:"critico", msg:`📊 RR médio de ${rr.toFixed(2)}:1 — você está ganhando menos do que perdendo. Revise alvos e stops.` });
+    else if (rr < 1.2) alertas.push({ tipo:"aviso", msg:`📊 RR médio de ${rr.toFixed(2)}:1 — próximo do ponto de equilíbrio. Mire acima de 1.5:1.` });
   }
 
-  // 5. Emoção de risco
+  // ── 6. EMOÇÃO DE RISCO no último dia
   const emocaoRisco = ["Ansioso","Frustrado","Revanche","Impaciente","Eufórico"];
-  const ultimoDia = entries.sort(([a],[b])=>b.localeCompare(a))[0];
+  const ultimoDia = [...entries].sort(([a],[b])=>b.localeCompare(a))[0];
   if (ultimoDia) {
-    const emocoesRuim = (ultimoDia[1].emocoes||[]).filter(e=>emocaoRisco.includes(e));
-    if (emocoesRuim.length > 0) {
-      alertas.push({ tipo:"aviso", msg:"Você registrou '"+emocoesRuim[0]+"' — cuidado com decisões impulsivas." });
+    const ruins = (ultimoDia[1].emocoes||[]).filter(e=>emocaoRisco.includes(e));
+    if (ruins.length > 0) alertas.push({ tipo:"aviso", msg:`🧠 Você registrou "${ruins[0]}" — emoções de risco aumentam erros em 60%. Seja extra cauteloso.` });
+  }
+
+  // ── 7. SEQUÊNCIA LOSS — 3+ stops seguidos
+  const ultimos = trades.slice(-5);
+  let lossSeq = 0;
+  for (let i=ultimos.length-1;i>=0;i--) {
+    if (ultimos[i].tipo==="LOSS") lossSeq++; else break;
+  }
+  if (lossSeq >= 3) alertas.push({ tipo:"critico", msg:`🛑 ${lossSeq} stops seguidos — protocolo de pausa obrigatório. Espere 15 min antes de qualquer entrada.` });
+
+  // ── 8. MELHOR HORÁRIO IGNORADO (se tem dados de horário)
+  const tradesComHorario = trades.filter(t=>t.horario);
+  if (tradesComHorario.length >= 5) {
+    const horStats = {};
+    tradesComHorario.forEach(t => {
+      const h = t.horario.slice(0,2);
+      if (!horStats[h]) horStats[h] = {wins:0,total:0};
+      horStats[h].total++;
+      if (t.tipo==="WIN") horStats[h].wins++;
+    });
+    const melhorHora = Object.entries(horStats).filter(([,s])=>s.total>=2).sort(([,a],[,b])=>b.wins/b.total-a.wins/a.total)[0];
+    const piorHora   = Object.entries(horStats).filter(([,s])=>s.total>=2).sort(([,a],[,b])=>a.wins/a.total-b.wins/b.total)[0];
+    if (melhorHora && piorHora && melhorHora[0]!==piorHora[0]) {
+      const mWR = Math.round((melhorHora[1].wins/melhorHora[1].total)*100);
+      const pWR = Math.round((piorHora[1].wins/piorHora[1].total)*100);
+      if (mWR - pWR >= 30) {
+        alertas.push({ tipo:"ok", msg:`⏰ Melhor horário: ${melhorHora[0]}h (${mWR}% WR). Evite operar às ${piorHora[0]}h (${pWR}% WR).` });
+      }
     }
   }
 
-  if (alertas.length === 0) {
-    alertas.push({ tipo:"ok", msg:"Nenhum alerta no momento. Continue operando com disciplina! 🎯" });
+  // ── 9. CONSISTÊNCIA — dias operados vs dias do período
+  if (diasOp >= 5) {
+    const totalTrades = trades.length;
+    const mediaTradesDia = (totalTrades/diasOp).toFixed(1);
+    if (parseFloat(mediaTradesDia) > 6) {
+      alertas.push({ tipo:"aviso", msg:`📈 Média de ${mediaTradesDia} trades/dia — traders consistentes operam entre 2 e 5 entradas por dia.` });
+    }
   }
 
-  const cores = { critico:"#ff4d4d", aviso:"#f59e0b", ok:"#00d4aa" };
-  const icons = { critico:"⚠️", aviso:"🔔", ok:"✅" };
+  // ── 10. RESULTADO POSITIVO — reforço comportamental
+  if (alertas.length === 0 || alertas.every(a=>a.tipo==="ok")) {
+    const totalRes = trades.reduce((s,t)=>s+(t.resultado||0),0);
+    if (totalRes > 0 && winRate && winRate >= 60) {
+      alertas.push({ tipo:"ok", msg:`✅ Excelente desempenho no período. Win rate de ${winRate}% com resultado positivo. Mantenha a disciplina.` });
+    } else {
+      alertas.push({ tipo:"ok", msg:`✅ Nenhum alerta crítico no momento. Continue seguindo o plano.` });
+    }
+  }
+
+  const cores = { critico:"#c94a4a", aviso:"#f59e0b", ok:"#27b589" };
 
   return (
-    <div style={{flex:1,background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"14px 18px",minWidth:"240px"}}>
-      <p style={{margin:"0 0 10px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
+    <div style={{flex:1,background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"16px 18px",minWidth:"240px",marginBottom:"36px"}}>
+      <p style={{margin:"0 0 12px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-        {alertas.slice(0,3).map((a,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"8px 10px",borderRadius:"8px",background:cores[a.tipo]+"0d",border:"1px solid "+cores[a.tipo]+"33"}}>
-            <span style={{fontSize:"12px",flexShrink:0}}>{icons[a.tipo]}</span>
-            <p style={{margin:0,color:cores[a.tipo]==="ok"?"#aaa":"#ccc",fontSize:"12px",lineHeight:"1.5"}}>{a.msg}</p>
+        {alertas.slice(0,5).map((a,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"9px 12px",borderRadius:"8px",background:cores[a.tipo]+"0d",border:"1px solid "+cores[a.tipo]+"33"}}>
+            <p style={{margin:0,color:a.tipo==="ok"?"#666":"#ccc",fontSize:"12px",lineHeight:"1.6"}}>{a.msg}</p>
           </div>
         ))}
       </div>
