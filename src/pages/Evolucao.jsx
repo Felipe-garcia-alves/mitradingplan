@@ -173,7 +173,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
       <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",height:"auto",display:"block"}} preserveAspectRatio="none">
         <line x1={PL} y1={zero} x2={W-PR} y2={zero} stroke="#ffffff08" strokeWidth="1" strokeDasharray="4,4"/>
         <path d={area} fill={lc+"15"}/>
-        <path d={path} fill="none" stroke={lc} strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round"/>
+        <path d={path} fill="none" stroke={lc} strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round"/>
         {points.map((p,i)=>( i===0||i===points.length-1||i%Math.ceil(points.length/8)===0 ?
           <circle key={i} cx={x(i)} cy={y(p.val)} r="2" fill={p.val>=0?"#27b589":"#c94a4a"} stroke="#0a0a0f" strokeWidth="1.5"/> : null
         ))}
@@ -228,7 +228,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
         {/* Disciplina — primeiro */}
         <div onClick={()=>setPagina&&setPagina("regras")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #252535",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",display:"flex",alignItems:"center",gap:"14px",cursor:setPagina?"pointer":"default",transition:"all 0.2s",boxShadow:"0 1px 0 0 #2a2a3a inset, 0 -1px 0 0 #080810 inset, 2px 0 0 0 #1a1a28 inset"}}
           onMouseEnter={e=>{if(setPagina)e.currentTarget.style.borderColor=complianceColor+"44";}}
-          onMouseLeave={e=>e.currentTarget.style.borderColor="#1a1a2e"}>
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
           
           <div style={{width:"80px",height:"80px",borderRadius:"50%",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),background:"#0d0d14",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
             {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
@@ -244,9 +244,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
           </div>
         </div>
         {/* Resultado Total hero */}
-        <div onClick={()=>setPanelDrill("resultado")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #252535",borderRadius:"16px",padding:"24px 28px",position:"relative",overflow:"hidden",cursor:"pointer",transition:"all 0.2s",boxShadow:"0 1px 0 0 #2a2a3a inset, 0 -1px 0 0 #080810 inset, 2px 0 0 0 #1a1a28 inset"}}
-          onMouseEnter={e=>e.currentTarget.style.borderColor="#00d4aa33"}
-          onMouseLeave={e=>e.currentTarget.style.borderColor="#1a1a2e"}>
+        <div onClick={()=>setPanelDrill("resultado")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #1e1e2e",borderRadius:"16px",padding:"24px 28px",position:"relative",overflow:"hidden",cursor:"pointer",transition:"all 0.3s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#27b58966";e.currentTarget.style.boxShadow="0 0 20px #27b58912";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
           
           <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado Total</p>
           <p style={{margin:"0 0 4px",color:totalResult>=0?"#27b589":"#c94a4a",fontSize:"32px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
@@ -259,9 +259,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
           <span style={{position:"absolute",bottom:"12px",right:"14px",color:"#333",fontSize:"10px"}}>ver detalhes →</span>
         </div>
         {/* Win Rate */}
-        <div onClick={()=>setPanelDrill("winrate")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #252535",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",cursor:"pointer",transition:"all 0.2s",boxShadow:"0 1px 0 0 #2a2a3a inset, 0 -1px 0 0 #080810 inset, 2px 0 0 0 #1a1a28 inset"}}
-          onMouseEnter={e=>e.currentTarget.style.borderColor="#00d4aa33"}
-          onMouseLeave={e=>e.currentTarget.style.borderColor="#1a1a2e"}>
+        <div onClick={()=>setPanelDrill("winrate")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #1e1e2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",cursor:"pointer",transition:"all 0.3s"}}
+          onMouseEnter={e=>{const wr=winRate>=60?"#27b589":winRate>=40?"#f59e0b":"#c94a4a";e.currentTarget.style.borderColor=wr+"66";e.currentTarget.style.boxShadow="0 0 20px "+wr+"12";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
           
           <p style={{margin:"0 0 10px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p>
           <p style={{margin:"0 0 6px",color:winRate===null?"#666":winRate>=60?"#27b589":winRate>=40?"#f59e0b":"#c94a4a",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>
@@ -701,7 +701,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
                 <line x1={PL} y1={yScale(0)} x2={W-PR} y2={yScale(0)} stroke="#ffffff0a" strokeWidth="1"/>
                 {curves.map(({n,pts,color})=>{
                   const path = pts.map((v,i)=>`${i===0?"M":"L"}${PL+i*xStep},${yScale(v)}`).join(" ");
-                  return <path key={n} d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>;
+                  return <path key={n} d={path} fill="none" stroke={color} strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>;
                 })}
               </svg>
               <div style={{display:"flex",flexWrap:"wrap",gap:"12px"}}>
