@@ -992,7 +992,7 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
         {alertas.slice(0,5).map((a,i)=>(
           <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"9px 12px",borderRadius:"8px",background:cores[a.tipo]+"0d",border:"1px solid "+cores[a.tipo]+"33"}}>
-            <p style={{margin:0,color:a.tipo==="ok"?"#666":"#ccc",fontSize:"12px",lineHeight:"1.6"}}>{a.msg}</p>
+            <p style={{margin:0,color:"#f0f0f0",fontSize:"13px",lineHeight:"1.6"}}>{a.msg}</p>
           </div>
         ))}
       </div>

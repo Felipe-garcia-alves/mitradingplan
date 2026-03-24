@@ -141,8 +141,12 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
               if (!cell) return <div key={ci} style={{minHeight:"110px"}}/>;
               const {d,k,e} = cell;
               const isToday = d===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
-              const tot = e ? (e.totalB3||0)+(e.totalForex||0) : null;
-              const hasTrades = e && e.numTrades>0;
+              const tradesDodia = (e?.trades||[]).filter(t=>(filtroMercado==="todos"||t.mercado===filtroMercado)&&(filtroEst==="todas"||t.estrategia===filtroEst));
+              const tot = e && tradesDodia.length > 0 ? tradesDodia.reduce((s,t)=>s+(t.resultado||0),0) : null;
+              const hasTrades = tradesDodia.length > 0;
+              const numTrades = tradesDodia.length;
+              const winsDodia = tradesDodia.filter(t=>t.tipo==="WIN").length;
+              const wrDodia = numTrades > 0 ? Math.round((winsDodia/numTrades)*100) : null;
               const isSel = sel===k;
               const bg = isSel ? (tot>=0?"rgba(0,212,170,0.2)":"rgba(255,77,77,0.2)") : hasTrades ? (tot>=0?"rgba(0,212,170,0.08)":"rgba(255,77,77,0.08)") : "rgba(255,255,255,0.01)";
               const border = isSel ? (tot>=0?"2px solid #00d4aa":"2px solid #ff4d4d") : isToday?"2px solid #00d4aa44":hasTrades?(tot>=0?"1px solid #00d4aa22":"1px solid #ff4d4d22"):"1px solid #1a1a2e";
@@ -151,10 +155,9 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
                   <p style={{margin:0,color:isToday?"#00d4aa":hasTrades?"#f0f0f0":"#555",fontSize:"15px",fontWeight:isToday?"800":"700",textAlign:"center"}}>{d}</p>
                   {hasTrades && (
                     <div style={{textAlign:"center",width:"100%",display:"flex",flexDirection:"column",gap:"6px"}}>
-                      <p style={{margin:0,color:"#888",fontSize:"11px",fontWeight:"500"}}>{e.numTrades} trade{e.numTrades!==1?"s":""}</p>
-                      {e.winRate!==undefined&&<p style={{margin:0,color:e.winRate>=60?"#00d4aa":e.winRate>=40?"#f59e0b":"#ff4d4d",fontSize:"11px",fontWeight:"700"}}>{e.winRate}% acerto</p>}
-                      {tot!==null&&<p style={{margin:0,color:tot>=0?"#00d4aa":"#ff4d4d",fontSize:"12px",fontWeight:"800",fontFamily:"monospace"}}>{tot>=0?"+":""}R${Math.abs(tot)<1000?tot.toFixed(0):(tot/1000).toFixed(1)+"k"}</p>}
-                      {e.totalPts!==undefined&&<p style={{margin:0,color:"#888",fontSize:"11px",fontFamily:"monospace"}}>{e.totalPts>=0?"+":""}{e.totalPts}pts</p>}
+                      <p style={{margin:0,color:"#888",fontSize:"11px",fontWeight:"500"}}>{numTrades} trade{numTrades!==1?"s":""}</p>
+                      {wrDodia!==null&&<p style={{margin:0,color:wrDodia>=60?"#27b589":wrDodia>=40?"#f59e0b":"#c94a4a",fontSize:"11px",fontWeight:"700"}}>{wrDodia}% acerto</p>}
+                      {tot!==null&&<p style={{margin:0,color:tot>=0?"#27b589":"#c94a4a",fontSize:"12px",fontWeight:"800",fontFamily:"monospace"}}>{tot>=0?"+":""}R${Math.abs(tot)<1000?tot.toFixed(0):(tot/1000).toFixed(1)+"k"}</p>}
                       {e.emocoes?.length>0&&<p style={{margin:0,color:EMOCAO_COLORS[e.emocoes[0]]||"#777",fontSize:"11px"}}>{e.emocoes[0]}</p>}
                     </div>
                   )}
