@@ -7,7 +7,7 @@ const EMOCOES_LIST = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansios
 function dayKey(y,m,d) { return y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0"); }
 function formatDateLong(s) { const p=s.split("-"); const d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString("pt-BR",{day:"numeric",month:"long",weekday:"long"}); }
 
-export default function Historico({ entries, saveEntry, deleteEntry }) {
+export default function Historico({ entries, saveEntry, deleteEntry, estrategias }) {
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -15,6 +15,8 @@ export default function Historico({ entries, saveEntry, deleteEntry }) {
   const [editMode, setEditMode] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [msg, setMsg] = useState("");
+  const [filtroMercado, setFiltroMercado] = useState("todos");
+  const [filtroEst, setFiltroEst] = useState("todas");
 
   function prevMonth() { if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }
   function nextMonth() { if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }
@@ -31,7 +33,7 @@ export default function Historico({ entries, saveEntry, deleteEntry }) {
     const k = dayKey(year,month,d);
     const e = entries[k];
     if (e) {
-      const tot=(e.totalB3||0)+(e.totalForex||0);
+      const tot=(e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0)+(e.totalAmericano||0);
       if(tot>0) week.wins++; else if(tot<0) week.losses++;
     }
     week.days.push({d,k,e});
@@ -102,7 +104,7 @@ export default function Historico({ entries, saveEntry, deleteEntry }) {
       </div>
 
       {/* Nav mes */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
         <button onClick={prevMonth} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",width:"40px",height:"40px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888"}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -110,6 +112,18 @@ export default function Historico({ entries, saveEntry, deleteEntry }) {
         <button onClick={nextMonth} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",width:"40px",height:"40px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888"}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+      </div>
+
+      {/* Filtros */}
+      <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"20px",alignItems:"center"}}>
+        {[["todos","Todos"],["B3","B3"],["Forex","Forex"],["Cripto","Cripto"],["Americano","Americano"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setFiltroMercado(v)} style={{padding:"6px 14px",borderRadius:"20px",border:"1px solid "+(filtroMercado===v?"#00d4aa44":"#1a1a2e"),cursor:"pointer",fontWeight:"600",fontSize:"12px",background:filtroMercado===v?"rgba(0,212,170,0.1)":"transparent",color:filtroMercado===v?"#00d4aa":"#666",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}>{l}</button>
+        ))}
+        <div style={{width:"1px",height:"20px",background:"#1a1a2e",margin:"0 4px"}}/>
+        <select value={filtroEst} onChange={e=>setFiltroEst(e.target.value)} style={{...inp,padding:"5px 10px",fontSize:"12px",color:filtroEst==="todas"?"#666":"#00d4aa",border:"1px solid "+(filtroEst==="todas"?"#1a1a2e":"#00d4aa44")}}>
+          <option value="todas">Todas estratégias</option>
+          {(estrategias||[]).map(e=><option key={e.id} value={e.nome}>{e.nome}</option>)}
+        </select>
       </div>
 
       {/* Calendar */}

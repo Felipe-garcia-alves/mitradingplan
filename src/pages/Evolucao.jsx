@@ -175,7 +175,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
         <path d={area} fill={lc+"15"}/>
         <path d={path} fill="none" stroke={lc} strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round"/>
         {points.map((p,i)=>( i===0||i===points.length-1||i%Math.ceil(points.length/8)===0 ?
-          <circle key={i} cx={x(i)} cy={y(p.val)} r="2" fill={p.val>=0?"#27b589":"#c94a4a"} stroke="#0a0a0f" strokeWidth="1.5"/> : null
+          <circle key={i} cx={x(i)} cy={y(p.val)} r="2" fill={p.val>=0?"#27b589":"#c94a4a"} stroke="#0a0a0f" strokeWidth="1.5"><title>{p.d ? p.d+" — R$ "+p.val.toFixed(2) : "R$ "+p.val.toFixed(2)}</title></circle> : null
         ))}
       </svg>
     );
@@ -549,7 +549,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
                         <span style={{fontSize:"12px",fontWeight:"700",color:cor}}>{em}</span>
                         <p style={{margin:0,color:"#444",fontSize:"10px"}}>{s.dias} dia{s.dias!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
                       </div>
-                      <div style={{flex:1,height:"6px",background:"#1a1a2e",borderRadius:"3px",overflow:"hidden"}}>
+                      <div style={{flex:1,height:"4px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
                         <div style={{height:"100%",width:barW+"%",background:pos?"#27b589":"#c94a4a",borderRadius:"4px",transition:"width 0.3s"}}/>
                       </div>
                       <span style={{width:"80px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#27b589":"#c94a4a",flexShrink:0}}>
@@ -650,7 +650,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
                         <span style={{fontSize:"11px",fontWeight:"700",color:cor}}>{wr}%</span>
                         <p style={{margin:0,color:"#444",fontSize:"9px"}}>{s.total} ops</p>
                       </div>
-                      <div style={{flex:1,height:"6px",background:"#1a1a2e",borderRadius:"3px",overflow:"hidden"}}>
+                      <div style={{flex:1,height:"4px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
                         <div style={{height:"100%",width:barW+"%",background:pos?"#27b589":"#c94a4a",borderRadius:"4px"}}/>
                       </div>
                       <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#27b589":"#c94a4a",flexShrink:0}}>
@@ -697,7 +697,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
               <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Curva de Capital por Estratégia</p>
             </div>
             <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
-              <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block",marginBottom:"14px"}}>
+              <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block",marginTop:"12px",marginBottom:"14px"}}>
                 <line x1={PL} y1={yScale(0)} x2={W-PR} y2={yScale(0)} stroke="#ffffff0a" strokeWidth="1"/>
                 {curves.map(({n,pts,color})=>{
                   const path = pts.map((v,i)=>`${i===0?"M":"L"}${PL+i*xStep},${yScale(v)}`).join(" ");

@@ -337,7 +337,7 @@ function AppInterno() {
     switch(pagina){
       case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina}/>;
       case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
-      case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry}/>;
+      case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
       case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
       case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig}/></Suspense>;
       case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries}/></Suspense>;
@@ -362,7 +362,9 @@ function AppInterno() {
   return (
     <div style={{display:"flex",minHeight:"100vh",background:"#0d0d1a",fontFamily:"Inter,sans-serif"}}>
       {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance}/>}
-      <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+      <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}
+        onTouchStart={e=>{if(isMobile)window._swipeX=e.touches[0].clientX;}}
+        onTouchEnd={e=>{if(isMobile&&window._swipeX&&(window._swipeX-e.changedTouches[0].clientX)>60){setSidebarOpen(false);window._swipeX=null;}}}>
         <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(8,8,16,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #1a1a2e",padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
@@ -377,7 +379,7 @@ function AppInterno() {
           {renderPage()}
         </div>
       </main>
-      <style>{`*{-webkit-tap-highlight-color:transparent}body{margin:0;background:#0d0d1a}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0d0d14}::-webkit-scrollbar-thumb{background:#1e1e2e;border-radius:3px}`}</style>
+      <style>{`*{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}body{margin:0;background:#0d0d1a;overflow-x:hidden;}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0d0d14}::-webkit-scrollbar-thumb{background:#1e1e2e;border-radius:3px}@media(max-width:768px){button,a{min-height:40px;}input,select{font-size:16px !important;}}`}</style>
     </div>
   );
 }
