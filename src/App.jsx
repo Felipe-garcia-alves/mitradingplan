@@ -260,6 +260,8 @@ function AppInterno() {
 
   // ── SAVE FUNCTIONS ──
   const saveEntry = async (k, dados) => {
+    // Atualização otimista — atualiza UI imediatamente
+    setEntries(prev => ({...prev, [k]: dados}));
     try {
       await supabase.from("diario").upsert(
         { usuario_id:uid, data_key:k, dados },

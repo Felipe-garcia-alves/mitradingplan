@@ -61,6 +61,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     const totalB3     = updatedTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
     const totalForex  = updatedTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
     const totalCripto = updatedTrades.filter(t=>t.mercado==="Cripto").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalAmericano = updatedTrades.filter(t=>t.mercado==="Americano").reduce((s,t)=>s+(t.resultado||0),0);
     const totalPts   = updatedTrades.reduce((s,t)=>s+(t.pontos||0),0);
     const wins       = updatedTrades.filter(t=>t.tipo==="WIN").length;
     const winRate    = updatedTrades.length > 0 ? Math.round((wins/updatedTrades.length)*100) : null;
@@ -68,6 +69,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     if (totalB3     !== 0) data2.totalB3     = totalB3;     else delete data2.totalB3;
     if (totalForex  !== 0) data2.totalForex  = totalForex;  else delete data2.totalForex;
     if (totalCripto !== 0) data2.totalCripto = totalCripto; else delete data2.totalCripto;
+    if (totalAmericano !== 0) data2.totalAmericano = totalAmericano; else delete data2.totalAmericano;
     if (winRate    !== null) data2.winRate = winRate;
     await saveEntry(dateKey, data2);
     setEditingTrade(null);
@@ -128,6 +130,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     const totalB3     = allTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
     const totalForex  = allTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
     const totalCripto = allTrades.filter(t=>t.mercado==="Cripto").reduce((s,t)=>s+(t.resultado||0),0);
+    const totalAmericano = allTrades.filter(t=>t.mercado==="Americano").reduce((s,t)=>s+(t.resultado||0),0);
     const totalPts   = allTrades.reduce((s,t)=>s+(t.pontos||0),0);
     const wins       = allTrades.filter(t=>t.tipo==="WIN").length;
     const winRate    = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
@@ -143,6 +146,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
     if (totalB3     !== 0) data.totalB3     = totalB3;
     if (totalForex  !== 0) data.totalForex  = totalForex;
     if (totalCripto !== 0) data.totalCripto = totalCripto;
+    if (totalAmericano !== 0) data.totalAmericano = totalAmericano;
     if (winRate    !== null) data.winRate = winRate;
 
     await saveEntry(selectedDate, data);
@@ -203,6 +207,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
               <option value="B3">B3</option>
               <option value="Forex">Forex</option>
               <option value="Cripto">Cripto</option>
+              <option value="Americano">Americano</option>
             </select>
             <input style={{...inp,width:"95px"}} type="number" placeholder="Pontos" value={novoTrade.pontos} onChange={e=>setNovoTrade(p=>({...p,pontos:e.target.value}))}/>
             <input style={{...inp,width:"95px"}} type="number" placeholder={novoTrade.mercado==="B3"?"R$":novoTrade.mercado==="Cripto"?"$":"$"} value={novoTrade.resultado} onChange={e=>setNovoTrade(p=>({...p,resultado:e.target.value}))}/>
@@ -321,10 +326,15 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias })
                                 <select value={ed.mercado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,mercado:e.target.value}}))} style={{...inpE,width:"85px"}}>
                                   <option value="B3">B3</option>
                                   <option value="Forex">Forex</option>
+                                  <option value="Cripto">Cripto</option>
+                                  <option value="Americano">Americano</option>
                                 </select>
                                 <input type="number" placeholder="Pontos" value={ed.pontos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,pontos:e.target.value}}))} style={{...inpE,width:"90px"}}/>
                                 <input type="number" placeholder={ed.mercado==="B3"?"R$":"$"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:e.target.value}}))} style={{...inpE,width:"90px"}}/>
-                                <input type="text" placeholder="Estratégia" value={ed.estrategia} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,estrategia:e.target.value}}))} style={{...inpE,flex:1,minWidth:"100px"}}/>
+                                <select value={ed.estrategia||""} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,estrategia:e.target.value}}))} style={{...inpE,flex:1,minWidth:"120px"}}>
+                                  <option value="">Estratégia</option>
+                                  {estrategias.map(e=><option key={e.id} value={e.nome}>{e.nome}</option>)}
+                                </select>
                               </div>
                               <input type="text" placeholder="Observação" value={ed.observacao} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,observacao:e.target.value}}))} style={{...inpE,width:"100%",boxSizing:"border-box",marginBottom:"8px"}}/>
                               <div style={{display:"flex",gap:"8px"}}>
