@@ -13,6 +13,7 @@ export default function Login() {
   const [msg,     setMsg]     = useState("");
   const [loading, setLoading] = useState(false);
   const [showTermos, setShowTermos] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
 
   async function handleSubmit() {
     setErro(""); setMsg(""); setLoading(true);
