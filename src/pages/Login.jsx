@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import Termos from "./Termos";
 
 export default function Login() {
   const [modo,    setModo]    = useState("login");
@@ -11,7 +12,7 @@ export default function Login() {
   const [erro,    setErro]    = useState("");
   const [msg,     setMsg]     = useState("");
   const [loading, setLoading] = useState(false);
-  const [resetMode, setResetMode] = useState(false);
+  const [showTermos, setShowTermos] = useState(false);
 
   async function handleSubmit() {
     setErro(""); setMsg(""); setLoading(true);
@@ -147,9 +148,15 @@ export default function Login() {
           <p style={{textAlign:"center",color:"#ccc",fontSize:"12px",marginTop:"20px",lineHeight:"1.6"}}>
             Seus dados são privados e protegidos.<br/>
             Ao criar conta você concorda com os{" "}
-            <span onClick={()=>window.open("/termos","_blank")} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Termos de Uso</span>
+            <span onClick={()=>setShowTermos(true)} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Termos de Uso</span>
             {" "}e a{" "}
-            <span onClick={()=>window.open("/termos","_blank")} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Política de Privacidade</span>.
+            <span onClick={()=>setShowTermos(true)} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Política de Privacidade</span>.
+
+      {showTermos && (
+        <div style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.85)",overflowY:"auto"}}>
+          <Termos onVoltar={()=>setShowTermos(false)}/>
+        </div>
+      )}
           </p>
         </div>
       </div>
