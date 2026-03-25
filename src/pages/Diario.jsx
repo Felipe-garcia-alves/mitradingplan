@@ -29,7 +29,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const [emocoes,    setEmocoes]    = useState([]);
   const [observacao, setObservacao] = useState("");
   const [trades,     setTrades]     = useState([]);
-  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:""});
+  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:""});
+  const [pendingImages, setPendingImages] = useState([]);
   const [showEstSug, setShowEstSug] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null); // { dateKey, index, data }
   const [editorImg, setEditorImg]   = useState(null);  // { src, tradeIdx } — editor aberto
@@ -107,10 +108,14 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       tipo: novoTrade.tipo,
       observacao: novoTrade.observacao,
       horario: novoTrade.horario,
+      contratos: novoTrade.contratos !== "" ? parseInt(novoTrade.contratos) : null,
+      qualidade: novoTrade.qualidade || null,
       imagens: [],
+      _pendingFiles: pendingImages.map(p=>p.file),
     };
     setTrades(prev => [...prev, t]);
-    setNovoTrade({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:""});
+    setNovoTrade({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:""});
+    setPendingImages([]);
     setShowEstSug(false);
   }
 
@@ -161,7 +166,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     const allTrades = [
       ...existingTrades,
       ...trades.map(t => {
-        const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||"", horario:t.horario||""};
+        const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||"", horario:t.horario||"", contratos:t.contratos||null, qualidade:t.qualidade||null};
         if (t.resultado !== null) tr.resultado = t.resultado;
         if (t.pontos    !== null) tr.pontos    = t.pontos;
         return tr;
@@ -273,8 +278,36 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 </div>
               )}
             </div>
+            {/* Contratos */}
+            <input style={{...inp,width:"74px"}} type="number" placeholder="Lotes" min="1" value={novoTrade.contratos} onChange={e=>setNovoTrade(p=>({...p,contratos:e.target.value}))} title="Contratos/lotes"/>
+            {/* Qualidade do setup */}
+            <select value={novoTrade.qualidade} onChange={e=>setNovoTrade(p=>({...p,qualidade:e.target.value}))} style={{...inp,width:"72px"}} title="Qualidade do setup">
+              <option value="">Setup</option>
+              <option value="A+">A+</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+            {/* Foto */}
+            <label title="Anexar print" style={{cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:"40px",height:"40px",borderRadius:"8px",border:"1px solid #2a2a3a",background:"transparent",flexShrink:0,color:"#f0f0f0",fontSize:"16px"}}>
+              <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
+                const files = Array.from(e.target.files);
+                setPendingImages(prev=>[...prev,...files.map(f=>({file:f,preview:URL.createObjectURL(f)}))]);
+              }}/>
+              📎
+            </label>
             <button onClick={addTrade} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer",whiteSpace:"nowrap"}}>+ Add</button>
           </div>
+          {pendingImages.length > 0 && (
+            <div style={{display:"flex",gap:"8px",marginTop:"8px",flexWrap:"wrap"}}>
+              {pendingImages.map((img,i)=>(
+                <div key={i} style={{position:"relative",width:"72px",height:"52px",borderRadius:"7px",overflow:"hidden",border:"1px solid #1a1a2e"}}>
+                  <img src={img.preview} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  <button onClick={()=>setPendingImages(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:"2px",right:"2px",background:"rgba(0,0,0,0.7)",border:"none",color:"#fff",borderRadius:"50%",width:"16px",height:"16px",fontSize:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>
             <input style={{...inp,width:"100px"}} type="time" value={novoTrade.horario} onChange={e=>setNovoTrade(p=>({...p,horario:e.target.value}))} title="Horário da operação"/>
             <input style={{...inp,flex:1}} type="text" placeholder="Observação desta operação (opcional)" value={novoTrade.observacao} onChange={e=>setNovoTrade(p=>({...p,observacao:e.target.value}))}/>
@@ -293,7 +326,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   {t.resultado !== null && <span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"14px",fontWeight:"600",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$ ":"$ "}{t.resultado?.toFixed(2)}</span>}
                   {t.horario && <span style={{color:"#555",fontSize:"12px",fontFamily:"monospace"}}>{t.horario}</span>}
                   {t.estrategia && <span style={{color:"#888",fontSize:"13px",background:"rgba(255,255,255,0.05)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
-                  {t.observacao && <span style={{color:"#666",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
+                  {t.contratos && <span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"monospace"}}>{t.contratos}×</span>}
+                {t.qualidade && <span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(0,212,170,0.15)","A":"rgba(39,181,137,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(224,86,86,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
+                {t.observacao && <span style={{color:"#666",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                   {/* Image upload button */}
                   <label style={{marginLeft:"auto",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px",padding:"5px 10px",borderRadius:"7px",border:"1px solid #2a2a3a",color:"#666",fontSize:"12px",background:"transparent",flexShrink:0}}>
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) handleImageFile(e.target.files[0],t.id);}}/>
@@ -411,6 +446,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                             <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
                             {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
                             {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"13px",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
+                            {t.contratos&&<span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"monospace"}}>{t.contratos}×</span>}
+                            {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(0,212,170,0.15)","A":"rgba(39,181,137,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(224,86,86,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
                             {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
                             {t.observacao&&<span style={{color:"#777",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                             {/* Image thumbnails */}
