@@ -271,26 +271,29 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               <option value="WIN">WIN</option>
               <option value="LOSS">LOSS</option>
             </select>
-            <select value={novoTrade.mercado} onChange={e=>setNovoTrade(p=>({...p,mercado:e.target.value}))} style={{...inp,width:"95px"}}>
+            <select value={novoTrade.mercado} onChange={e=>setNovoTrade(p=>({...p,mercado:e.target.value}))} style={{...inp,width:"110px"}}>
               <option value="B3">B3</option>
               <option value="Forex">Forex</option>
               <option value="Cripto">Cripto</option>
               <option value="Americano">Americano</option>
             </select>
+            {/* Lotes — logo após mercado */}
+            <input style={{...inp,width:"90px"}} type="number" placeholder="Lotes" min="1" value={novoTrade.contratos} onChange={e=>setNovoTrade(p=>({...p,contratos:e.target.value}))} title="Contratos/lotes"/>
             <input style={{...inp,width:"95px"}} type="number" placeholder="Pontos" value={novoTrade.pontos} onChange={e=>setNovoTrade(p=>({...p,pontos:e.target.value}))}/>
             <input style={{...inp,width:"95px"}} type="number" placeholder={novoTrade.mercado==="B3"?"R$":novoTrade.mercado==="Cripto"?"$":"$"} value={novoTrade.resultado} onChange={e=>setNovoTrade(p=>({...p,resultado:e.target.value}))}/>
             {/* Estrategia com autocomplete */}
             <div style={{position:"relative",flex:1,minWidth:"120px"}}>
+              {/* Hint ABOVE the field */}
+              {novoTrade.estrategia && estWinRate[novoTrade.estrategia]?.total >= 3 && (
+                <div style={{position:"absolute",top:"-20px",left:0,fontSize:"10px",color:"#555",whiteSpace:"nowrap",background:"#0d0d14",padding:"1px 6px",borderRadius:"4px",border:"1px solid #1a1a2e"}}>
+                  {estWinRate[novoTrade.estrategia]?.total}ops · {Math.round((estWinRate[novoTrade.estrategia]?.wins/estWinRate[novoTrade.estrategia]?.total)*100)}% WR → <span style={{color:{"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"}[sugerirExecucao(novoTrade.estrategia)]||"#888",fontWeight:"700"}}>{sugerirExecucao(novoTrade.estrategia)||"—"}</span>
+                </div>
+              )}
               <input style={{...inp,width:"100%",boxSizing:"border-box"}} type="text" placeholder="Estratégia" value={novoTrade.estrategia}
                 onChange={e=>{const sug=sugerirExecucao(e.target.value);setNovoTrade(p=>({...p,estrategia:e.target.value,qualidade:sug||p.qualidade}));setShowEstSug(true);}}
                 onFocus={()=>setShowEstSug(true)}
                 onBlur={()=>setTimeout(()=>setShowEstSug(false),150)}
               />
-              {novoTrade.estrategia && estWinRate[novoTrade.estrategia]?.total >= 3 && (
-                <div style={{position:"absolute",bottom:"-18px",left:0,fontSize:"10px",color:"#555",whiteSpace:"nowrap"}}>
-                  {estWinRate[novoTrade.estrategia]?.total}ops · {Math.round((estWinRate[novoTrade.estrategia]?.wins/estWinRate[novoTrade.estrategia]?.total)*100)}% WR → sugestão: <span style={{color:{"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"}[sugerirExecucao(novoTrade.estrategia)]||"#888"}}>{sugerirExecucao(novoTrade.estrategia)||"—"}</span>
-                </div>
-              )}
               {showEstSug && estNomes.filter(n=>n.toLowerCase().includes(novoTrade.estrategia.toLowerCase())).length>0 && (
                 <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"#1a1a2e",border:"1px solid #2a2a3a",borderRadius:"8px",zIndex:50,overflow:"hidden"}}>
                   {estNomes.filter(n=>n.toLowerCase().includes(novoTrade.estrategia.toLowerCase())).map(n=>(
@@ -303,10 +306,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 </div>
               )}
             </div>
-            {/* Contratos */}
-            <input style={{...inp,width:"74px"}} type="number" placeholder="Lotes" min="1" value={novoTrade.contratos} onChange={e=>setNovoTrade(p=>({...p,contratos:e.target.value}))} title="Contratos/lotes"/>
+
             {/* Qualidade do setup */}
-            <select value={novoTrade.qualidade} onChange={e=>setNovoTrade(p=>({...p,qualidade:e.target.value}))} style={{...inp,width:"72px"}} title="Execução: A+ excelente · A boa · B ok · C ruim">
+            <select value={novoTrade.qualidade} onChange={e=>setNovoTrade(p=>({...p,qualidade:e.target.value}))} style={{...inp,width:"100px"}} title="Execução: A+ excelente · A boa · B ok · C ruim">
               <option value="">Execução</option>
               <option value="A+">A+</option>
               <option value="A">A</option>
@@ -317,7 +319,17 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             <label title="Anexar print" style={{cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:"40px",height:"40px",borderRadius:"8px",border:"1px solid #2a2a3a",background:"transparent",flexShrink:0,color:"#f0f0f0",fontSize:"16px"}}>
               <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
                 const files = Array.from(e.target.files);
-                setPendingImages(prev=>[...prev,...files.map(f=>({file:f,preview:URL.createObjectURL(f)}))]);
+                if (files.length > 0) {
+                  // Open editor immediately for first file
+                  const firstFile = files[0];
+                  const previewUrl = URL.createObjectURL(firstFile);
+                  setEditorImg({
+                    src: previewUrl,
+                    isNew: true,
+                    file: firstFile,
+                    otherFiles: files.slice(1).map(f=>({file:f,preview:URL.createObjectURL(f)}))
+                  });
+                }
               }}/>
               📎
             </label>
@@ -520,8 +532,16 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           src={editorImg.src}
           onClose={()=>setEditorImg(null)}
           onSave={async(file)=>{
-            if(editorImg.saved) await handleSavedImageUpload(file, editorImg.dateKey, editorImg.tradeIdx);
-            else await handleImageFile(file, editorImg.tradeId);
+            if (editorImg.isNew) {
+              // Add annotated image + any other files to pending
+              const preview = URL.createObjectURL(file);
+              const others = editorImg.otherFiles || [];
+              setPendingImages(prev=>[...prev, {file, preview}, ...others]);
+            } else if(editorImg.saved) {
+              await handleSavedImageUpload(file, editorImg.dateKey, editorImg.tradeIdx);
+            } else {
+              await handleImageFile(file, editorImg.tradeId);
+            }
           }}
         />
       )}

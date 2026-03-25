@@ -683,38 +683,62 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
         const curves = estratNames.map((n,i) => {
           let acc = 0;
           const pts = allDates.map(d => { acc += estratDays[n][d]||0; return acc; });
-          return { n, pts, color: colors2[i%colors2.length] };
-        });
-        const W=600, H=140, PT=10, PB=10, PL=10, PR=10;
+          return { n, pts, last: acc, color: colors2[i%colors2.length] };
+        }).sort((a,b)=>b.last-a.last);
+
+        const W=700, H=200, PT=20, PB=30, PL=52, PR=16;
         const allVals = curves.flatMap(c=>c.pts);
         const minV = Math.min(0,...allVals), maxV = Math.max(1,...allVals);
         const range = maxV-minV||1;
-        const xStep = (W-PL-PR)/(allDates.length-1||1);
+        const xStep = allDates.length > 1 ? (W-PL-PR)/(allDates.length-1) : 0;
         const yScale = v => PT + (H-PT-PB)*(1-(v-minV)/range);
+        const zero = yScale(0);
+        const yTicks = [minV, minV+range*0.5, maxV].map(v=>({v, y:yScale(v)}));
+        const step = Math.max(1, Math.floor(allDates.length/5));
+        const xLabels = allDates.filter((_,i)=>i===0||i===allDates.length-1||i%step===0);
+
         return (
           <div style={{marginBottom:"36px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
               <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Curva de Capital por Estratégia</p>
+              <span style={{color:"#333",fontSize:"11px"}}>resultado acumulado R$</span>
             </div>
-            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
-              <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block",marginTop:"12px",marginBottom:"14px"}}>
-                <line x1={PL} y1={yScale(0)} x2={W-PR} y2={yScale(0)} stroke="#ffffff0a" strokeWidth="1"/>
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px 20px 14px"}}>
+              <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block",marginBottom:"14px"}}>
+                {yTicks.map(({v,y},i)=>(
+                  <g key={i}>
+                    <line x1={PL} y1={y} x2={W-PR} y2={y} stroke={v===0?"#ffffff18":"#ffffff08"} strokeWidth="1" strokeDasharray={v===0?"none":"3,4"}/>
+                    <text x={PL-6} y={y+4} textAnchor="end" fill="#444" fontSize="9">{v>=0?"+":""}{Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":v.toFixed(0)}</text>
+                  </g>
+                ))}
                 {curves.map(({n,pts,color})=>{
-                  const path = pts.map((v,i)=>`${i===0?"M":"L"}${PL+i*xStep},${yScale(v)}`).join(" ");
-                  return <path key={n} d={path} fill="none" stroke={color} strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>;
-                })}
-              </svg>
-              <div style={{display:"flex",flexWrap:"wrap",gap:"12px"}}>
-                {curves.map(({n,pts,color})=>{
-                  const last = pts[pts.length-1]||0;
+                  if (pts.length < 2) return null;
+                  const pathD = pts.map((v,i)=>`${i===0?"M":"L"}${PL+i*xStep},${yScale(v)}`).join(" ");
+                  const areaD = `M${PL},${zero} `+pts.map((v,i)=>`L${PL+i*xStep},${yScale(v)}`).join(" ")+` L${PL+(pts.length-1)*xStep},${zero} Z`;
                   return (
-                    <div key={n} style={{display:"flex",alignItems:"center",gap:"6px",cursor:"pointer"}} onClick={()=>setPanelEst(n)}>
-                      <div style={{width:"10px",height:"10px",borderRadius:"50%",background:color,flexShrink:0}}/>
-                      <span style={{fontSize:"12px",color:"#aaa"}}>{n}</span>
-                      <span style={{fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:last>=0?"#27b589":"#c94a4a"}}>{last>=0?"+":""}R${last.toFixed(0)}</span>
-                    </div>
+                    <g key={n}>
+                      <path d={areaD} fill={color} opacity="0.07"/>
+                      <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+                      <circle cx={PL+(pts.length-1)*xStep} cy={yScale(pts[pts.length-1])} r="3" fill={color}/>
+                    </g>
                   );
                 })}
+                {xLabels.map(d=>{
+                  const i = allDates.indexOf(d);
+                  return <text key={d} x={PL+i*xStep} y={H-4} textAnchor="middle" fill="#444" fontSize="9">{d.slice(5)}</text>;
+                })}
+              </svg>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"8px 14px"}}>
+                {curves.map(({n,last,color})=>(
+                  <div key={n} style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",padding:"6px 10px",borderRadius:"8px",border:"1px solid #1a1a2e",transition:"border-color 0.15s"}}
+                    onClick={()=>setPanelEst(n)}
+                    onMouseEnter={e=>e.currentTarget.style.borderColor=color+"55"}
+                    onMouseLeave={e=>e.currentTarget.style.borderColor="#1a1a2e"}>
+                    <div style={{width:"22px",height:"3px",borderRadius:"2px",background:color,flexShrink:0}}/>
+                    <span style={{fontSize:"12px",color:"#aaa"}}>{n}</span>
+                    <span style={{fontSize:"12px",fontWeight:"800",fontFamily:"monospace",color:last>=0?"#27b589":"#c94a4a"}}>{last>=0?"+":""}R${Math.abs(last)<1000?last.toFixed(0):(last/1000).toFixed(1)+"k"}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
