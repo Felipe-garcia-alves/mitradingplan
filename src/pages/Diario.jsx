@@ -93,6 +93,26 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const todayEntry = entries[selectedDate];
   const estNomes = [...new Set((estrategias||[]).map(e=>e.nome).filter(Boolean))];
 
+  // Calcula win rate por estrategia a partir do historico
+  const estWinRate = {};
+  Object.values(entries||{}).forEach(entry => {
+    (entry.trades||[]).forEach(t => {
+      if (!t.estrategia) return;
+      if (!estWinRate[t.estrategia]) estWinRate[t.estrategia] = {wins:0,total:0};
+      estWinRate[t.estrategia].total++;
+      if (t.tipo==="WIN") estWinRate[t.estrategia].wins++;
+    });
+  });
+  function sugerirExecucao(nomeEst) {
+    const s = estWinRate[nomeEst];
+    if (!s || s.total < 3) return "";
+    const wr = Math.round((s.wins/s.total)*100);
+    if (wr >= 70) return "A+";
+    if (wr >= 55) return "A";
+    if (wr >= 40) return "B";
+    return "C";
+  }
+
   function toggleEmocao(em) {
     setEmocoes(prev => prev.includes(em) ? prev.filter(e=>e!==em) : [...prev, em]);
   }
@@ -262,14 +282,19 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             {/* Estrategia com autocomplete */}
             <div style={{position:"relative",flex:1,minWidth:"120px"}}>
               <input style={{...inp,width:"100%",boxSizing:"border-box"}} type="text" placeholder="Estratégia" value={novoTrade.estrategia}
-                onChange={e=>{setNovoTrade(p=>({...p,estrategia:e.target.value}));setShowEstSug(true);}}
+                onChange={e=>{const sug=sugerirExecucao(e.target.value);setNovoTrade(p=>({...p,estrategia:e.target.value,qualidade:sug||p.qualidade}));setShowEstSug(true);}}
                 onFocus={()=>setShowEstSug(true)}
                 onBlur={()=>setTimeout(()=>setShowEstSug(false),150)}
               />
+              {novoTrade.estrategia && estWinRate[novoTrade.estrategia]?.total >= 3 && (
+                <div style={{position:"absolute",bottom:"-18px",left:0,fontSize:"10px",color:"#555",whiteSpace:"nowrap"}}>
+                  {estWinRate[novoTrade.estrategia]?.total}ops · {Math.round((estWinRate[novoTrade.estrategia]?.wins/estWinRate[novoTrade.estrategia]?.total)*100)}% WR → sugestão: <span style={{color:{"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"}[sugerirExecucao(novoTrade.estrategia)]||"#888"}}>{sugerirExecucao(novoTrade.estrategia)||"—"}</span>
+                </div>
+              )}
               {showEstSug && estNomes.filter(n=>n.toLowerCase().includes(novoTrade.estrategia.toLowerCase())).length>0 && (
                 <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"#1a1a2e",border:"1px solid #2a2a3a",borderRadius:"8px",zIndex:50,overflow:"hidden"}}>
                   {estNomes.filter(n=>n.toLowerCase().includes(novoTrade.estrategia.toLowerCase())).map(n=>(
-                    <div key={n} onMouseDown={()=>{setNovoTrade(p=>({...p,estrategia:n}));setShowEstSug(false);}} style={{padding:"9px 12px",cursor:"pointer",color:"#ccc",fontSize:"13px"}}
+                    <div key={n} onMouseDown={()=>{const sug=sugerirExecucao(n);setNovoTrade(p=>({...p,estrategia:n,qualidade:sug||p.qualidade}));setShowEstSug(false);}} style={{padding:"9px 12px",cursor:"pointer",color:"#ccc",fontSize:"13px"}}
                       onMouseEnter={e=>e.currentTarget.style.background="#2a2a3a"}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                       {n}
@@ -281,8 +306,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             {/* Contratos */}
             <input style={{...inp,width:"74px"}} type="number" placeholder="Lotes" min="1" value={novoTrade.contratos} onChange={e=>setNovoTrade(p=>({...p,contratos:e.target.value}))} title="Contratos/lotes"/>
             {/* Qualidade do setup */}
-            <select value={novoTrade.qualidade} onChange={e=>setNovoTrade(p=>({...p,qualidade:e.target.value}))} style={{...inp,width:"72px"}} title="Qualidade do setup">
-              <option value="">Setup</option>
+            <select value={novoTrade.qualidade} onChange={e=>setNovoTrade(p=>({...p,qualidade:e.target.value}))} style={{...inp,width:"72px"}} title="Execução: A+ excelente · A boa · B ok · C ruim">
+              <option value="">Execução</option>
               <option value="A+">A+</option>
               <option value="A">A</option>
               <option value="B">B</option>
