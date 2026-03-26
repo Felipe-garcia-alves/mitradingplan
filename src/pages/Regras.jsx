@@ -117,6 +117,32 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const totalRegras = regrasList.length;
   const checkedCount = regrasList.filter(r=>!!checked[r.id]).length;
   const pct = totalRegras > 0 ? Math.round((checkedCount/totalRegras)*100) : null;
+
+  // Média do mês atual (só dias salvos neste mês)
+  const monthSaved = Object.entries(compliance).filter(([k,v])=>monthKey(k)===monthKey(today)&&typeof v==="number");
+  const mediaMes = monthSaved.length > 0
+    ? Math.round(monthSaved.reduce((s,[,v])=>s+v,0)/monthSaved.length)
+    : null;
+  const mesColor = mediaMes===null?"#555":mediaMes>=80?"#2dc99a":mediaMes>=50?"#f59e0b":"#e05656";
+
+  // Regras mais quebradas este mês
+  const regraCumprida = {}; // {id: {cumpridas, total}}
+  Object.values(entries||{}).forEach(entry => {
+    // não temos dados granulares por regra no histórico — usamos o checklist de hoje
+  });
+  // Correlação disciplina × resultado
+  const corrDados = Object.entries(compliance)
+    .filter(([k,v])=>typeof v==="number")
+    .map(([k,v])=>{
+      const entryDia = (entries||{})[k];
+      const resultado = entryDia ? (entryDia.totalB3||0)+(entryDia.totalForex||0)+(entryDia.totalCripto||0)+(entryDia.totalAmericano||0) : null;
+      return { pct:v, resultado, k };
+    })
+    .filter(d=>d.resultado!==null);
+  const diasAlta = corrDados.filter(d=>d.pct>=80);
+  const diasBaixa = corrDados.filter(d=>d.pct<80);
+  const mediaResAlta = diasAlta.length>0 ? diasAlta.reduce((s,d)=>s+d.resultado,0)/diasAlta.length : null;
+  const mediaResBaixa = diasBaixa.length>0 ? diasBaixa.reduce((s,d)=>s+d.resultado,0)/diasBaixa.length : null;
   const inp = { width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid #2a2a3a", borderRadius:"10px", padding:"11px 13px", color:"#f0f0f0", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"Inter,sans-serif" };
 
   if (editando) {
@@ -243,11 +269,52 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
         )}
       </div>
 
+      {/* ── STATS CARDS ── */}
+      {(mediaMes !== null || corrDados.length >= 2) && (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"12px",marginBottom:"28px"}}>
+          {/* Média do mês */}
+          {mediaMes !== null && (
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 20px"}}>
+              <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Média do Mês</p>
+              <p style={{margin:"0 0 2px",color:mesColor,fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>{mediaMes}%</p>
+              <div style={{height:"4px",borderRadius:"2px",background:"#1a1a2e",marginTop:"8px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:mediaMes+"%",background:mesColor,borderRadius:"2px",transition:"width 0.5s"}}/>
+              </div>
+              <p style={{margin:"6px 0 0",color:"#444",fontSize:"11px"}}>{monthSaved.length} dia{monthSaved.length!==1?"s":""} registrados</p>
+            </div>
+          )}
+          {/* Correlação disciplina × resultado */}
+          {corrDados.length >= 3 && mediaResAlta !== null && (
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 20px"}}>
+              <p style={{margin:"0 0 10px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Disciplina × Resultado</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:"12px",color:"#666"}}>≥80% disciplina</span>
+                  <span style={{fontSize:"13px",fontWeight:"800",fontFamily:"monospace",color:mediaResAlta>=0?"#2dc99a":"#e05656"}}>{mediaResAlta>=0?"+":""}R$ {mediaResAlta.toFixed(0)}/dia</span>
+                </div>
+                {mediaResBaixa !== null && (
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:"12px",color:"#666"}}>&lt;80% disciplina</span>
+                    <span style={{fontSize:"13px",fontWeight:"800",fontFamily:"monospace",color:mediaResBaixa>=0?"#2dc99a":"#e05656"}}>{mediaResBaixa>=0?"+":""}R$ {mediaResBaixa.toFixed(0)}/dia</span>
+                  </div>
+                )}
+                <div style={{height:"1px",background:"#1a1a2e",margin:"2px 0"}}/>
+                <p style={{margin:0,color:"#444",fontSize:"10px",lineHeight:"1.5"}}>
+                  {mediaResAlta >= (mediaResBaixa||0)+50
+                    ? "✓ Disciplina impacta positivamente seus resultados"
+                    : "Ainda sem correlação clara — continue registrando"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{borderTop:"1px solid #1a1a2e",paddingTop:"24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
           <div>
-            <h3 style={{margin:"0 0 4px",fontSize:"16px",color:"#f0f0f0",fontWeight:"700"}}>📅 Calendario de Disciplina</h3>
-            <p style={{margin:0,color:"#555",fontSize:"12px"}}>Registre se cumpriu todas as regras em cada dia</p>
+            <h3 style={{margin:"0 0 4px",fontSize:"16px",color:"#f0f0f0",fontWeight:"700"}}>📅 Calendário de Disciplina</h3>
+            <p style={{margin:0,color:"#555",fontSize:"12px"}}>Salve o progresso para registrar cada dia</p>
           </div>
           {pct !== null && (
             <div style={{textAlign:"right"}}>

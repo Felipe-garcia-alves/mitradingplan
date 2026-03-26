@@ -344,7 +344,7 @@ function AppInterno() {
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
       case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
       case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig}/></Suspense>;
-      case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries}/></Suspense>;
+      case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries} setPagina={setPagina}/></Suspense>;
       case "crescimento": return <Suspense fallback={<Spinner/>}><Crescimento entries={entries} config={config}/></Suspense>;
       case "patrimonio":  return <Suspense fallback={<Spinner/>}><Patrimonio entries={entries} config={config}/></Suspense>;
       case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario} setPagina={setPagina}/></Suspense>;
@@ -390,6 +390,24 @@ function AppInterno() {
           <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
         </div>
         <div style={{flex:1,padding:isMobile?"16px 12px":"28px 24px",maxWidth:"1200px",width:"100%",boxSizing:"border-box"}}>
+          {/* Lembrete de disciplina — aparece se hoje ainda não foi salvo */}
+          {(() => {
+            const today = new Date().toISOString().slice(0,10);
+            const salvouHoje = compliance[today] !== undefined;
+            if (salvouHoje || pagina === "regras") return null;
+            return (
+              <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:"10px",padding:"10px 16px",marginBottom:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <span style={{fontSize:"14px"}}>🔔</span>
+                  <p style={{margin:0,color:"#f59e0b",fontSize:"13px",fontWeight:"600"}}>Você ainda não registrou sua disciplina hoje</p>
+                </div>
+                <button onClick={()=>setPagina("regras")}
+                  style={{background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"7px",padding:"5px 12px",color:"#f59e0b",fontSize:"12px",fontWeight:"700",cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}}>
+                  Registrar agora
+                </button>
+              </div>
+            );
+          })()}
           {renderPage()}
         </div>
       </main>
