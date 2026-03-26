@@ -206,7 +206,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
     );
   }
 
-  const colors = ["#00d4aa","#0099ff","#f59e0b","#a78bfa","#f472b6","#34d399","#fb923c"];
+  const colors = ["#00d4aa","#f59e0b","#a78bfa","#f472b6","#34d399","#e05656","#60a5fa"];
 
   return (
     <div style={{fontFamily:"Inter,sans-serif"}}>
@@ -468,18 +468,18 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                       <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
-                      <span style={{color:"#666",fontSize:"12px"}}>{t.mercado}</span>
+                      <span style={{color:"#aaa",fontSize:"12px"}}>{t.mercado}</span>
                     </div>
-                    <span style={{color:"#555",fontSize:"11px"}}>{t._date.split("-").reverse().join("/")}</span>
+                    <span style={{color:"#888",fontSize:"11px"}}>{t._date.split("-").reverse().join("/")}</span>
                   </div>
                   <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
-                    {t.pontos!=null&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace",fontWeight:"600"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
+                    {t.pontos!=null&&<span style={{color:"#f0f0f0",fontSize:"13px",fontFamily:"monospace",fontWeight:"600"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
                     {t.resultado!=null&&<span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"13px",fontFamily:"monospace",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</span>}
                   </div>
-                  {t.observacao&&<p style={{margin:"6px 0 0",color:"#555",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</p>}
+                  {t.observacao&&<p style={{margin:"6px 0 0",color:"#888",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</p>}
                 </div>
               ))}
-              {ops.length===0&&<p style={{color:"#333",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação no período selecionado.</p>}
+              {ops.length===0&&<p style={{color:"#555",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação no período selecionado.</p>}
             </div>
           </div>
           </>
@@ -508,7 +508,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
 
       {filtered.length === 0 && (
         <div style={{textAlign:"center",padding:"60px 20px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",marginBottom:"36px"}}>
-          <p style={{color:"#666",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
+          <p style={{color:"#888",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
           <p style={{color:"#222",fontSize:"12px",margin:"6px 0 0"}}>Registre operações no Diário para ver as métricas.</p>
         </div>
       )}
@@ -667,7 +667,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
 
       {/* ── SEÇÃO: CURVA DE CAPITAL POR ESTRATÉGIA ── */}
       {Object.keys(estratStats).length >= 2 && (() => {
-        const colors2 = ["#00d4aa","#0099ff","#f59e0b","#a78bfa","#f472b6","#34d399","#fb923c"];
+        const colors2 = ["#00d4aa","#f59e0b","#a78bfa","#f472b6","#34d399","#e05656","#60a5fa"];
         const estratDays = {};
         filtered.forEach(([d,e]) => {
           (e.trades||[]).forEach(t => {
@@ -766,7 +766,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
         });
         const entries2 = Object.entries(seqStats);
         if (entries2.length === 0) return null;
-        const colors2 = ["#00d4aa","#0099ff","#f59e0b","#a78bfa","#f472b6","#34d399","#fb923c"];
+        const colors2 = ["#00d4aa","#f59e0b","#a78bfa","#f472b6","#34d399","#e05656","#60a5fa"];
         return (
           <div style={{marginBottom:"36px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
