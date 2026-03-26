@@ -130,6 +130,23 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   Object.values(entries||{}).forEach(entry => {
     // não temos dados granulares por regra no histórico — usamos o checklist de hoje
   });
+  // Regras mais quebradas no mês
+  const detalhes = compliance._detalhes || {};
+  const regraBreaks = {}; // { ruleId: { quebradas, total } }
+  const mesAtual = monthKey(today);
+  Object.entries(detalhes).forEach(([k, rulesChecked]) => {
+    if (!k.startsWith(mesAtual)) return;
+    regrasList.forEach(r => {
+      if (!regraBreaks[r.id]) regraBreaks[r.id] = { quebradas:0, total:0, title:r.title };
+      regraBreaks[r.id].total++;
+      if (!rulesChecked[r.id]) regraBreaks[r.id].quebradas++;
+    });
+  });
+  const topQuebradas = Object.values(regraBreaks)
+    .filter(r=>r.total>0&&r.quebradas>0)
+    .sort((a,b)=>b.quebradas-a.quebradas)
+    .slice(0,4);
+
   // Correlação disciplina × resultado
   const corrDados = Object.entries(compliance)
     .filter(([k,v])=>typeof v==="number")
@@ -251,7 +268,16 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
       <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"28px"}}>
         <button onClick={async()=>{
           const updated={...compliance};
-          updated[today] = pct; // salva a porcentagem
+          // Salva porcentagem + quais regras foram marcadas (para análise de regras mais quebradas)
+          const regraSalva = {
+            pct,
+            checked: regrasList.reduce((acc,r)=>({...acc,[r.id]:!!checked[r.id]||false}),{})
+          };
+          updated[today] = regraSalva.pct;
+          // Salva detalhes de cada regra em chave separada
+          const detalhes = {...(compliance._detalhes||{})};
+          detalhes[today] = regraSalva.checked;
+          updated._detalhes = detalhes;
           await saveCompliance(updated);
           setMsg("✓ Disciplina salva!"); setTimeout(()=>setMsg(""),2500);
         }} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 24px",fontWeight:"700",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
@@ -283,6 +309,32 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               <p style={{margin:"6px 0 0",color:"#444",fontSize:"11px"}}>{monthSaved.length} dia{monthSaved.length!==1?"s":""} registrados</p>
             </div>
           )}
+          {/* Regras mais quebradas */}
+          {topQuebradas.length > 0 && (
+            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 20px"}}>
+              <p style={{margin:"0 0 12px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Regras Mais Quebradas — {MONTH_NAMES[month]}</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                {topQuebradas.map((r,i)=>{
+                  const pctQ = Math.round((r.quebradas/r.total)*100);
+                  const cor = pctQ>=60?"#e05656":pctQ>=30?"#f59e0b":"#888";
+                  return (
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                      <div style={{flex:1,overflow:"hidden"}}>
+                        <p style={{margin:0,color:"#ccc",fontSize:"12px",fontWeight:"600",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.title}</p>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+                        <div style={{width:"60px",height:"4px",borderRadius:"2px",background:"#1a1a2e",overflow:"hidden"}}>
+                          <div style={{height:"100%",width:pctQ+"%",background:cor,borderRadius:"2px"}}/>
+                        </div>
+                        <span style={{color:cor,fontSize:"11px",fontWeight:"700",minWidth:"28px",textAlign:"right"}}>{r.quebradas}×</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{margin:"10px 0 0",color:"#333",fontSize:"10px"}}>baseado nos dias já registrados</p>
+            </div>
+          )}
           {/* Correlação disciplina × resultado */}
           {corrDados.length >= 3 && mediaResAlta !== null && (
             <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px 20px"}}>
@@ -312,10 +364,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
 
       <div style={{borderTop:"1px solid #1a1a2e",paddingTop:"24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
-          <div>
-            <h3 style={{margin:"0 0 4px",fontSize:"16px",color:"#f0f0f0",fontWeight:"700"}}>📅 Calendário de Disciplina</h3>
-            <p style={{margin:0,color:"#555",fontSize:"12px"}}>Salve o progresso para registrar cada dia</p>
-          </div>
+          <div><h3 style={{margin:0,fontSize:"15px",color:"#aaa",fontWeight:"600",letterSpacing:"0.5px"}}>Calendário</h3></div>
           {pct !== null && (
             <div style={{textAlign:"right"}}>
               <p style={{margin:"0 0 2px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Hoje — progresso</p>
@@ -325,16 +374,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           )}
         </div>
 
-        <div onClick={()=>toggleDay(today)} style={{background:todayComplied?"rgba(0,212,170,0.1)":"rgba(255,255,255,0.03)",border:"1px solid "+(todayComplied?"#00d4aa44":"#2a2a3a"),borderRadius:"10px",padding:"12px 18px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"10px",marginBottom:"20px",transition:"all 0.2s"}}>
-          <div style={{width:"20px",height:"20px",borderRadius:"5px",border:"2px solid "+(todayComplied?"#2dc99a":"#555"),background:todayComplied?"#2dc99a":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
-            {todayComplied && <span style={{color:"#000",fontSize:"11px",fontWeight:"900"}}>✓</span>}
-          </div>
-          <span style={{color:todayComplied?"#2dc99a":"#888",fontWeight:"600",fontSize:"13px"}}>
-            {todayComplied?"✓ Cumpri todas as regras hoje":"Marcar: cumpri todas as regras hoje"}
-          </span>
-          {todayComplied && <span style={{color:"#00d4aa66",fontSize:"11px"}}>({formatDateFull(today)})</span>}
-        </div>
-
+        
         <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"16px"}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px",marginBottom:"8px"}}>
             {["Dom","Seg","Ter","Qua","Qui","Sex","Sab"].map(d=>(
