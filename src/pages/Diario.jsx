@@ -316,11 +316,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               <option value="C">C</option>
             </select>
             {/* Foto */}
-            <label title="Anexar print" style={{cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:"40px",height:"40px",borderRadius:"8px",border:"1px solid #2a2a3a",background:"transparent",flexShrink:0,color:"#f0f0f0",fontSize:"16px"}}>
+            <label title="Anexar print" style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"5px",padding:"9px 12px",borderRadius:"8px",border:"1px solid #2a2a3a",background:"rgba(255,255,255,0.02)",flexShrink:0,color:"#aaa",fontSize:"12px",fontWeight:"600",transition:"all 0.15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#aaa";}}>
               <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
                 const files = Array.from(e.target.files);
                 if (files.length > 0) {
-                  // Open editor immediately for first file
                   const firstFile = files[0];
                   const previewUrl = URL.createObjectURL(firstFile);
                   setEditorImg({
@@ -331,18 +332,31 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   });
                 }
               }}/>
-              📎
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Foto
             </label>
             <button onClick={addTrade} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer",whiteSpace:"nowrap"}}>+ Add</button>
           </div>
           {pendingImages.length > 0 && (
-            <div style={{display:"flex",gap:"8px",marginTop:"8px",flexWrap:"wrap"}}>
-              {pendingImages.map((img,i)=>(
-                <div key={i} style={{position:"relative",width:"72px",height:"52px",borderRadius:"7px",overflow:"hidden",border:"1px solid #1a1a2e"}}>
-                  <img src={img.preview} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  <button onClick={()=>setPendingImages(prev=>prev.filter((_,j)=>j!==i))} style={{position:"absolute",top:"2px",right:"2px",background:"rgba(0,0,0,0.7)",border:"none",color:"#fff",borderRadius:"50%",width:"16px",height:"16px",fontSize:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>✕</button>
-                </div>
-              ))}
+            <div style={{marginTop:"10px",padding:"12px 14px",background:"rgba(0,212,170,0.03)",border:"1px solid #00d4aa1a",borderRadius:"10px"}}>
+              <p style={{margin:"0 0 8px",color:"#00d4aa",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>
+                {pendingImages.length} imagem{pendingImages.length!==1?"s":""} anexada{pendingImages.length!==1?"s":""}
+              </p>
+              <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                {pendingImages.map((img,i)=>(
+                  <div key={i} style={{width:"96px",borderRadius:"8px",overflow:"hidden",border:"1px solid #2a2a3a",boxShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>
+                    <img src={img.preview} style={{width:"100%",height:"68px",objectFit:"cover",display:"block"}}/>
+                    <div style={{display:"flex",background:"#0d0d14",borderTop:"1px solid #1a1a2e"}}>
+                      <button onClick={()=>setPendingImages(prev=>prev.filter((_,j)=>j!==i))}
+                        style={{flex:1,background:"transparent",border:"none",color:"#c94a4a88",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif"}}
+                        onMouseEnter={e=>e.currentTarget.style.color="#ff4d4d"}
+                        onMouseLeave={e=>e.currentTarget.style.color="#c94a4a88"}>
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>
@@ -367,20 +381,34 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 {t.qualidade && <span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(0,212,170,0.15)","A":"rgba(39,181,137,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(224,86,86,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
                 {t.observacao && <span style={{color:"#666",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                   {/* Image upload button */}
-                  <label style={{marginLeft:"auto",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px",padding:"5px 10px",borderRadius:"7px",border:"1px solid #2a2a3a",color:"#666",fontSize:"12px",background:"transparent",flexShrink:0}}>
+                  <label style={{marginLeft:"auto",cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"5px 10px",borderRadius:"7px",border:"1px solid #2a2a3a",color:"#666",fontSize:"11px",fontWeight:"600",background:"transparent",flexShrink:0,transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#666";}}>
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) handleImageFile(e.target.files[0],t.id);}}/>
-                    {uploadingIdx===t.id ? "⏳" : "📎"}
+                    {uploadingIdx===t.id
+                      ? <span style={{fontSize:"11px"}}>⏳</span>
+                      : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
+                    Foto
                   </label>
                   <button onClick={()=>removeTrade(t.id)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"15px",padding:"2px 6px",flexShrink:0}}>✕</button>
                 </div>
-                {/* Image thumbnails */}
+                {/* Image thumbnails — pending trade */}
                 {(t.imagens||[]).length > 0 && (
-                  <div style={{display:"flex",gap:"8px",padding:"0 14px 10px",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:"8px",padding:"6px 12px 10px",flexWrap:"wrap",borderTop:"1px solid #1a1a2e"}}>
                     {t.imagens.map((url,ii)=>(
-                      <ImageThumb key={ii} url={url}
-                        onEdit={()=>setEditorImg({src:url,pending:true,tradeId:t.id,url})}
-                        onDelete={()=>setTrades(prev=>prev.map(tr=>tr.id===t.id?{...tr,imagens:tr.imagens.filter(u=>u!==url)}:tr))}
-                      />
+                      <div key={ii} style={{width:"88px",borderRadius:"8px",overflow:"hidden",border:"1px solid #2a2a3a",boxShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>
+                        <img src={url} alt="" style={{width:"100%",height:"62px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
+                        <div style={{display:"flex",background:"#0d0d14",borderTop:"1px solid #1a1a2e"}}>
+                          <button onClick={()=>setEditorImg({src:url,pending:true,tradeId:t.id,url})}
+                            style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #1a1a2e",color:"#888",cursor:"pointer",padding:"4px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif"}}
+                            onMouseEnter={e=>e.currentTarget.style.color="#00d4aa"}
+                            onMouseLeave={e=>e.currentTarget.style.color="#888"}>Editar</button>
+                          <button onClick={()=>setTrades(prev=>prev.map(tr=>tr.id===t.id?{...tr,imagens:tr.imagens.filter(u=>u!==url)}:tr))}
+                            style={{flex:1,background:"transparent",border:"none",color:"#c94a4a88",cursor:"pointer",padding:"4px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif"}}
+                            onMouseEnter={e=>e.currentTarget.style.color="#ff4d4d"}
+                            onMouseLeave={e=>e.currentTarget.style.color="#c94a4a88"}>Excluir</button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -477,34 +505,65 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                             </div>
                           );
                         }
+                        const temImagens = (t.imagens||[]).length > 0;
                         return (
-                          <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",borderRadius:"8px",background:"rgba(255,255,255,0.02)",marginBottom:"5px",group:true}}>
-                            <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
-                            <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
-                            {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
-                            {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"13px",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
-                            {t.contratos&&<span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"monospace"}}>{t.contratos}×</span>}
-                            {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(0,212,170,0.15)","A":"rgba(39,181,137,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(224,86,86,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
-                            {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
-                            {t.observacao&&<span style={{color:"#777",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
-                            {/* Image thumbnails */}
-                            {(t.imagens||[]).map((url,ii)=>(
-                              <ImageThumb key={ii} url={url}
-                                onEdit={()=>setEditorImg({src:url,saved:true,dateKey:ds,tradeIdx:i,url})}
-                                onDelete={()=>handleDeleteImage(ds,i,url)}
-                              />
-                            ))}
-                            {/* Upload image button */}
-                            <label style={{cursor:"pointer",padding:"4px 8px",borderRadius:"6px",border:"1px solid #2a2a3a",color:"#555",fontSize:"12px",background:"transparent",flexShrink:0}}>
-                              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handleSavedImageUpload(e.target.files[0],ds,i);}}/>
-                              {uploadingIdx===i?"⏳":"📎"}
-                            </label>
-                            <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} title="Editar operação" style={{marginLeft:"auto",background:"none",border:"1px solid #2a2a3a",borderRadius:"5px",color:"#555",cursor:"pointer",fontSize:"12px",padding:"3px 8px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
-                              onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
-                              onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#555";}}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              Editar
-                            </button>
+                          <div key={i} style={{borderRadius:"8px",background:"rgba(255,255,255,0.02)",marginBottom:"5px",overflow:"hidden"}}>
+                            {/* Info row */}
+                            <div style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",flexWrap:"wrap"}}>
+                              <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
+                              <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
+                              {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
+                              {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"13px",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
+                              {t.contratos&&<span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"monospace"}}>{t.contratos}×</span>}
+                              {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(0,212,170,0.15)","A":"rgba(39,181,137,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(224,86,86,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
+                              {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
+                              {t.observacao&&<span style={{color:"#777",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
+                              <div style={{marginLeft:"auto",display:"flex",gap:"6px",alignItems:"center",flexShrink:0}}>
+                                {temImagens&&<span style={{color:"#555",fontSize:"11px",background:"rgba(255,255,255,0.04)",padding:"2px 7px",borderRadius:"4px",display:"flex",alignItems:"center",gap:"3px"}}>
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                  {t.imagens.length}
+                                </span>}
+                                <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"4px 9px",borderRadius:"6px",border:"1px solid #2a2a3a",color:"#555",fontSize:"11px",fontWeight:"600",background:"transparent",transition:"all 0.15s"}}
+                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
+                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#555";}}>
+                                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handleSavedImageUpload(e.target.files[0],ds,i);}}/>
+                                  {uploadingIdx===i
+                                    ?<span style={{fontSize:"10px"}}>⏳</span>
+                                    :<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
+                                  Foto
+                                </label>
+                                <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} style={{background:"none",border:"1px solid #2a2a3a",borderRadius:"5px",color:"#555",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
+                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
+                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#555";}}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                  Editar
+                                </button>
+                              </div>
+                            </div>
+                            {/* Image gallery strip */}
+                            {temImagens&&(
+                              <div style={{padding:"6px 12px 10px",display:"flex",gap:"8px",flexWrap:"wrap",borderTop:"1px solid #1a1a2e"}}>
+                                {t.imagens.map((url,ii)=>(
+                                  <div key={ii} style={{width:"100px",borderRadius:"8px",overflow:"hidden",border:"1px solid #2a2a3a",boxShadow:"0 2px 8px rgba(0,0,0,0.35)"}}>
+                                    <img src={url} alt="" style={{width:"100%",height:"70px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
+                                    <div style={{display:"flex",background:"#0d0d14",borderTop:"1px solid #1a1a2e"}}>
+                                      <button onClick={()=>setEditorImg({src:url,saved:true,dateKey:ds,tradeIdx:i,url})}
+                                        style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #1a1a2e",color:"#888",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif",transition:"color 0.15s"}}
+                                        onMouseEnter={e=>e.currentTarget.style.color="#00d4aa"}
+                                        onMouseLeave={e=>e.currentTarget.style.color="#888"}>
+                                        Editar
+                                      </button>
+                                      <button onClick={()=>handleDeleteImage(ds,i,url)}
+                                        style={{flex:1,background:"transparent",border:"none",color:"#c94a4a88",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif",transition:"color 0.15s"}}
+                                        onMouseEnter={e=>e.currentTarget.style.color="#ff4d4d"}
+                                        onMouseLeave={e=>e.currentTarget.style.color="#c94a4a88"}>
+                                        Excluir
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

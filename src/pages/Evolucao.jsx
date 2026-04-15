@@ -55,7 +55,7 @@ function DateFilter({ inicio, fim, onChange }) {
   );
 }
 
-export default function Evolucao({ entries, compliance, estrategias, setPagina }) {
+export default function Evolucao({ entries, compliance, estrategias, setPagina, config }) {
   const now     = new Date();
   const ini1m   = new Date(now.getFullYear(), now.getMonth(), 1);
   const [inicio, setInicio] = useState(dayKey(ini1m));
@@ -100,6 +100,19 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
   const allTrades = filtered.flatMap(([,e])=>e.trades||[]).filter(t=>filtroMercado==="todos"||t.mercado===filtroMercado);
   const wins      = allTrades.filter(t=>t.tipo==="WIN").length;
   const winRate   = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
+
+  // % relativo à banca no início do período selecionado
+  const entriesAntesPeriodo = Object.entries(entries).filter(([d]) => d < inicio);
+  const bancaIniB3    = (config?.bancaB3    || 3000) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalB3||0),0);
+  const bancaIniFx    = (config?.bancaForex ||  200) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalForex||0),0);
+  const bancaIniCr    = (config?.bancaCripto||    0) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalCripto||0),0);
+  const bancaIniAm    = (config?.bancaAmericano||0) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalAmericano||0),0);
+  const bancaRef =
+    (filtroMercado==="todos"||filtroMercado==="B3"        ? Math.max(bancaIniB3,  1) : 0) +
+    (filtroMercado==="todos"||filtroMercado==="Forex"     ? Math.max(bancaIniFx,  1) : 0) +
+    (filtroMercado==="todos"||filtroMercado==="Cripto"    ? Math.max(bancaIniCr,  1) : 0) +
+    (filtroMercado==="todos"||filtroMercado==="Americano" ? Math.max(bancaIniAm,  1) : 0);
+  const pctBanca = bancaRef > 0 && filtered.length > 0 ? parseFloat((totalResult / bancaRef * 100).toFixed(1)) : null;
 
   // Curva de capital
   let acc = 0;
@@ -249,6 +262,11 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina }
           onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
           
           <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Resultado Total</p>
+          {pctBanca!==null&&(
+            <span style={{position:"absolute",top:"16px",right:"14px",background:pctBanca>=0?"rgba(0,212,170,0.1)":"rgba(255,77,77,0.1)",color:pctBanca>=0?"#00d4aa":"#ff4d4d",fontSize:"11px",fontWeight:"700",padding:"3px 9px",borderRadius:"10px",border:"1px solid "+(pctBanca>=0?"#00d4aa22":"#ff4d4d22"),fontFamily:"monospace"}}>
+              {pctBanca>=0?"+":""}{pctBanca}% da banca
+            </span>
+          )}
           <p style={{margin:"0 0 4px",color:totalResult>=0?"#27b589":"#c94a4a",fontSize:"32px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
             {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
           </p>

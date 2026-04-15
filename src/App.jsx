@@ -339,7 +339,7 @@ function AppInterno() {
 
   const renderPage = () => {
     switch(pagina){
-      case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina}/>;
+      case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina} config={config}/>;
       case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
       case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
@@ -349,7 +349,7 @@ function AppInterno() {
       case "patrimonio":  return <Suspense fallback={<Spinner/>}><Patrimonio entries={entries} config={config}/></Suspense>;
       case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario} setPagina={setPagina}/></Suspense>;
       case "termos":      return <Termos onVoltar={()=>setPagina("config")}/>;
-      default:            return <Evolucao entries={entries}/>;
+      default:            return <Evolucao entries={entries} config={config}/>;
     }
   };
 
