@@ -89,12 +89,13 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const complianceColor = compliancePct===null?"#666":compliancePct>=80?"#00d4aa":compliancePct>=50?"#f59e0b":"#ff4d4d";
 
   // Aggregates
-  const totalB3    = filtroMercado==="todos"||filtroMercado==="B3"    ? filtered.reduce((s,[,e])=>s+(e.totalB3||0),    0) : 0;
-  const totalForex = filtroMercado==="todos"||filtroMercado==="Forex"  ? filtered.reduce((s,[,e])=>s+(e.totalForex||0),  0) : 0;
-  const totalCripto= filtroMercado==="todos"||filtroMercado==="Cripto" ? filtered.reduce((s,[,e])=>s+(e.totalCripto||0), 0) : 0;
-  const totalPts   = filtered.reduce((s,[,e])=>s+(e.totalPts||0), 0);
-  const totalResult= totalB3 + totalForex + totalCripto;
-  const diasOp     = filtered.filter(([,e])=>e.numTrades>0).length;
+  const totalB3        = filtroMercado==="todos"||filtroMercado==="B3"        ? filtered.reduce((s,[,e])=>s+(e.totalB3||0),        0) : 0;
+  const totalForex     = filtroMercado==="todos"||filtroMercado==="Forex"     ? filtered.reduce((s,[,e])=>s+(e.totalForex||0),     0) : 0;
+  const totalCripto    = filtroMercado==="todos"||filtroMercado==="Cripto"    ? filtered.reduce((s,[,e])=>s+(e.totalCripto||0),    0) : 0;
+  const totalAmericano = filtroMercado==="todos"||filtroMercado==="Americano" ? filtered.reduce((s,[,e])=>s+(e.totalAmericano||0), 0) : 0;
+  const totalPts       = filtered.reduce((s,[,e])=>s+(e.totalPts||0), 0);
+  const totalResult    = totalB3 + totalForex + totalCripto + totalAmericano;
+  const diasOp         = filtered.filter(([,e])=>e.numTrades>0).length;
 
   // Win rate
   const allTrades = filtered.flatMap(([,e])=>e.trades||[]).filter(t=>filtroMercado==="todos"||t.mercado===filtroMercado);
@@ -102,16 +103,21 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const winRate   = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
 
   // % relativo à banca no início do período selecionado
+  // Só inclui mercados que o usuário realmente configurou (evita divisão por valor fictício)
   const entriesAntesPeriodo = Object.entries(entries).filter(([d]) => d < inicio);
-  const bancaIniB3    = (config?.bancaB3    || 3000) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalB3||0),0);
-  const bancaIniFx    = (config?.bancaForex ||  200) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalForex||0),0);
-  const bancaIniCr    = (config?.bancaCripto||    0) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalCripto||0),0);
-  const bancaIniAm    = (config?.bancaAmericano||0) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalAmericano||0),0);
+  const bancaIniB3    = (config?.bancaB3    || 3000) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalB3||0),        0);
+  const bancaIniFx    = (config?.bancaForex ||  200) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalForex||0),     0);
+  const bancaIniCr    = (config?.bancaCripto!==undefined ? config.bancaCripto : null);
+  const bancaIniCrVal = bancaIniCr !== null ? bancaIniCr + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalCripto||0),0) : null;
+  const bancaIniAm    = (config?.bancaAmericano!==undefined ? config.bancaAmericano : null);
+  const bancaIniAmVal = bancaIniAm !== null ? bancaIniAm + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalAmericano||0),0) : null;
   const bancaRef =
-    (filtroMercado==="todos"||filtroMercado==="B3"        ? Math.max(bancaIniB3,  1) : 0) +
-    (filtroMercado==="todos"||filtroMercado==="Forex"     ? Math.max(bancaIniFx,  1) : 0) +
-    (filtroMercado==="todos"||filtroMercado==="Cripto"    ? Math.max(bancaIniCr,  1) : 0) +
-    (filtroMercado==="todos"||filtroMercado==="Americano" ? Math.max(bancaIniAm,  1) : 0);
+    (filtroMercado==="todos"||filtroMercado==="B3"        ? bancaIniB3              : 0) +
+    (filtroMercado==="todos"||filtroMercado==="Forex"     ? bancaIniFx              : 0) +
+    (filtroMercado==="Cripto"    && bancaIniCrVal!==null  ? bancaIniCrVal           : 0) +
+    (filtroMercado==="todos"     && bancaIniCrVal!==null  ? bancaIniCrVal           : 0) +
+    (filtroMercado==="Americano" && bancaIniAmVal!==null  ? bancaIniAmVal           : 0) +
+    (filtroMercado==="todos"     && bancaIniAmVal!==null  ? bancaIniAmVal           : 0);
   const pctBanca = bancaRef > 0 && filtered.length > 0 ? parseFloat((totalResult / bancaRef * 100).toFixed(1)) : null;
 
   // Curva de capital
@@ -263,8 +269,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           
           <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Resultado Total</p>
           {pctBanca!==null&&(
-            <span style={{position:"absolute",top:"16px",right:"14px",background:pctBanca>=0?"rgba(0,212,170,0.1)":"rgba(255,77,77,0.1)",color:pctBanca>=0?"#00d4aa":"#ff4d4d",fontSize:"11px",fontWeight:"700",padding:"3px 9px",borderRadius:"10px",border:"1px solid "+(pctBanca>=0?"#00d4aa22":"#ff4d4d22"),fontFamily:"monospace"}}>
-              {pctBanca>=0?"+":""}{pctBanca}% da banca
+            <span style={{position:"absolute",top:"14px",right:"14px",background:pctBanca>=0?"rgba(0,212,170,0.12)":"rgba(255,77,77,0.12)",color:pctBanca>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",padding:"5px 14px",borderRadius:"12px",border:"1px solid "+(pctBanca>=0?"#00d4aa33":"#ff4d4d33"),fontFamily:"monospace",letterSpacing:"-0.5px"}}>
+              {pctBanca>=0?"+":""}{pctBanca}%
             </span>
           )}
           <p style={{margin:"0 0 4px",color:totalResult>=0?"#27b589":"#c94a4a",fontSize:"32px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
