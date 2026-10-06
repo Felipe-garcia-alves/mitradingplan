@@ -40,13 +40,18 @@ function Num({ n }) {
     color:C.mut,fontSize:"11px",fontWeight:"700",marginRight:"8px",flexShrink:0}}>{n}</span>;
 }
 
-function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe }) {
-  const soAbertura = nome==="WIN";
-  const preAbertura = soAbertura || d.mercado == null || d.gap == null;
+function amplitude(d) {
   const cesta = d.componentes?.cesta || [];
   const aFavor = d.variacao_pct==null ? 0 : cesta.filter(c=>c.retorno_pct!=null &&
     ((c.retorno_pct>0 && d.variacao_pct>0) || (c.retorno_pct<0 && d.variacao_pct<0))).length;
-  const ampAlta = cesta.length>0 && aFavor/cesta.length >= 0.75;
+  const alta = cesta.length>0 && aFavor/cesta.length >= 0.75;
+  return { cesta, aFavor, alta };
+}
+
+function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe }) {
+  const soAbertura = nome==="WIN";
+  const preAbertura = soAbertura || d.mercado == null || d.gap == null;
+  const { cesta, aFavor, alta:ampAlta } = amplitude(d);
   const suspeito = d.checagem_ok === false;
   const abaixo = d.gap != null && d.gap < 0;
   const cor = suspeito ? C.dim : preAbertura ? (d.variacao_pct>=0?C.up:C.down) : (abaixo?C.up:C.down);
@@ -73,22 +78,22 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
         </span>
       </div>
 
+      {soAbertura ? <div style={{height:"14px"}}/> : (<>
       <div style={{marginTop:"14px",display:"flex",flexDirection:"column",gap:"7px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Justo (IBOV)" : "Justo"}</span>
+          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>Justo</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:C.txt}}>{fmt(d.justo,casas)}</span>
         </div>
-        {!soAbertura && (
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
           <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>Mercado</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:d.mercado==null?C.faint:C.txt}}>
             {d.mercado==null ? "B3 fechada" : fmt(d.mercado,casas)}
           </span>
         </div>
-        )}
       </div>
 
       <div style={{height:"1px",background:C.line2,margin:"14px 0 12px"}}/>
+      </>)}
 
       <div style={{display:"flex",alignItems:"baseline",gap:"9px",flexWrap:"wrap"}}>
         <span style={{fontFamily:"monospace",fontWeight:"800",fontSize:"38px",lineHeight:1,
@@ -333,29 +338,26 @@ export default function Macro() {
 
   const estrelas = win.evento_estrelas || 0;
   const trioSuspenso = estrelas >= 3;
-  const suspeito = win.checagem_ok === false;
-  const preAbertura = win.mercado == null;
-  const abaixo = win.gap != null && win.gap < 0;
+  const v = win.variacao_pct;
+  const amp = amplitude(win);
+  const xy = `${amp.aFavor} de ${amp.cesta.length}`;
 
   let vTitulo, vTexto, vCor;
-  if (suspeito) {
-    vCor = C.warn; vTitulo = "Dado suspeito — checagem falhou";
-    vTexto = "A cesta e o EWZ discordam além do limite. Provável cotação travada ou negócio solto em papel ilíquido. Leitura não confiável.";
-  } else if (win.nivel === 3) {
-    vCor = C.dim; vTitulo = "Sinal fraco — nível 3";
-    vTexto = "ADRs sem negócio no pre-market. Restou estimativa indireta. Trate como ausência de informação, não como leitura.";
-  } else if (preAbertura) {
-    vCor = win.variacao_pct>=0 ? C.up : C.down;
-    vTitulo = win.variacao_pct>=0 ? "Abertura implícita de alta" : "Abertura implícita de baixa";
-    vTexto = "B3 ainda fechada. O número é onde o índice deveria abrir segundo as ADRs já negociadas lá fora.";
+  if (win.nivel === 3 || v == null || amp.cesta.length === 0) {
+    vCor = C.dim; vTitulo = "Sem leitura";
+    vTexto = "ADRs sem negócio no pre-market. Nada a dizer sobre a abertura.";
+  } else if (win.checagem_ok === false) {
+    vCor = C.warn; vTitulo = "Dado suspeito";
+    vTexto = "A cesta e o EWZ discordam além do limite. Trate como se não houvesse leitura.";
+  } else if (!amp.alta) {
+    vCor = C.warn; vTitulo = "Leitura fraca";
+    vTexto = `ADRs divididas (${xy} a favor). O movimento da noite não tem direção clara.`;
   } else {
-    vCor = abaixo ? C.up : C.down;
-    vTitulo = abaixo ? "Viés de alta" : "Viés de baixa";
-    vTexto = abaixo
-      ? "Mercado abaixo do preço justo. Arbitragem tende a empurrar para cima enquanto o desconto existir."
-      : "Mercado acima do preço justo. Arbitragem tende a empurrar para baixo enquanto o prêmio existir.";
+    vCor = v>=0 ? C.up : C.down;
+    vTitulo = v>=0 ? "Viés de alta" : "Viés de baixa";
+    vTexto = `As ADRs brasileiras ${v>=0?"subiram":"caíram"} ${fmt(Math.abs(v),2)}% desde o fechamento de ontem, com ${xy} apontando o mesmo lado.`;
   }
-  if (trioSuspenso) vTexto += " Evento de alto impacto hoje: a leitura tem prazo de validade.";
+  if (trioSuspenso) vTexto += " Evento de alto impacto hoje — a leitura tem prazo de validade.";
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
