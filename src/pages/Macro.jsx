@@ -31,7 +31,7 @@ function Selo({ tipo }) {
     border:"1px solid "+cor+"55",color:cor,whiteSpace:"nowrap"}}>{txt}</span>;
 }
 
-function Card({ d, nome, desc, casas, selo }) {
+function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe }) {
   const preAbertura = d.mercado == null || d.gap == null;
   const suspeito = d.checagem_ok === false;
   const abaixo = d.gap != null && d.gap < 0;
@@ -45,7 +45,7 @@ function Card({ d, nome, desc, casas, selo }) {
     : (abaixo ? "↑ viés de alta" : "↓ viés de baixa");
   const origemTxt = { local:"Brasil específico", global:"Puxado pelo global" }[d.origem] || "Indeterminado";
   const origemCor = d.origem==="local" ? C.up : C.mut;
-  const mg = d.mapa_global || {};
+  const semChecagem = d.checagem_ok==null || d.checagem_delta==null;
 
   return (
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"18px 20px 16px"}}>
@@ -85,19 +85,21 @@ function Card({ d, nome, desc, casas, selo }) {
       <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid "+C.line2,
         display:"flex",flexDirection:"column",gap:"4px"}}>
         <span style={{fontSize:"10px",letterSpacing:"1.3px",textTransform:"uppercase",color:C.faint}}>Origem do movimento</span>
-        <span style={{fontSize:"14px",fontWeight:"700",color:origemCor}}>{origemTxt}</span>
+        <span style={{fontSize:"14px",fontWeight:"700",color:origemDetalhe==null?C.mut:origemCor}}>
+          {origemDetalhe==null ? "Sem dado" : origemTxt}
+        </span>
         <span style={{fontFamily:"monospace",fontSize:"11.5px",color:C.mut}}>
-          Brasil {sinal(mg.brasil,2)}%  ·  EUA {sinal(mg.eua,2)}%
+          {origemDetalhe==null ? "sem leitura de mapa global" : origemDetalhe}
         </span>
       </div>
 
       <div style={{marginTop:"13px",paddingTop:"11px",borderTop:"1px solid "+C.line2,
         display:"flex",flexDirection:"column",gap:"5px"}}>
-        <Linha k="Cobertura da cesta" v={d.cobertura_pct!=null?fmt(d.cobertura_pct,0)+"%":"—"}/>
+        {temCesta && <Linha k="Cobertura da cesta" v={d.cobertura_pct!=null?fmt(d.cobertura_pct,0)+"%":"—"}/>}
         <Linha k="Nível do sinal" v={"nível "+(d.nivel??"—")}/>
-        <Linha k="Checagem EWZ"
-          v={d.checagem_ok==null ? "—" : (d.checagem_ok?"✓ ":"⚠ ")+sinal(d.checagem_delta,2)+" p.p."}
-          cor={d.checagem_ok===false?C.warn:d.checagem_ok?C.up:C.mut}/>
+        <Linha k={"Checagem "+checagem}
+          v={semChecagem ? "sem dado" : (d.checagem_ok?"✓ ":"⚠ ")+sinal(d.checagem_delta,2)+" p.p."}
+          cor={semChecagem?C.mut:d.checagem_ok===false?C.warn:C.up}/>
       </div>
     </div>
   );
@@ -125,9 +127,16 @@ function MapaGlobal({ mg }) {
     ? (cells.slice(0,3).map(c=>mg[c[1]]).filter(v=>v!=null).reduce((a,b)=>a+b,0) /
        Math.max(1,cells.slice(0,3).filter(c=>mg[c[1]]!=null).length))
     : null;
-  const liderando = br!=null && resto!=null && Math.abs(br-resto)>0.25;
-  const veredito = !alinhado ? "Mundo brigando"
-    : (todosUp?"Mundo alinhado ↑":"Mundo alinhado ↓") + (liderando?" · Brasil destoando":" · Brasil em linha");
+  const mesmoLado = br!=null && resto!=null && ((br>=0)===(resto>=0));
+  const dif = (br!=null && resto!=null) ? br-resto : null;
+  let nota = "";
+  if (dif==null) nota = "";
+  else if (Math.abs(dif) <= 0.25) nota = " · Brasil em linha";
+  else if (!mesmoLado) nota = " · Brasil destoando";
+  else if (Math.abs(br) > Math.abs(resto)) nota = " · Brasil liderando";
+  else nota = " · Brasil atrasado";
+  const veredito = !alinhado ? "Mundo brigando" + nota
+    : (todosUp?"Mundo alinhado ↑":"Mundo alinhado ↓") + nota;
   const vcor = !alinhado ? C.warn : todosUp ? C.up : C.down;
 
   return (
@@ -284,9 +293,11 @@ export default function Macro() {
       )}
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(290px,1fr))",gap:"14px"}}>
-        <Card d={win} nome="WIN" desc="mini índice" casas={0}
+        <Card d={win} nome="WIN" desc="mini índice" casas={0} checagem="EWZ" temCesta={true}
+              origemDetalhe={win.mapa_global?.brasil!=null ? `Brasil ${sinal(win.mapa_global.brasil,2)}%  ·  EUA ${sinal(win.mapa_global.eua,2)}%` : null}
               selo={win.nivel===3?"sem":win.idade_dado_seg>900?"del":"live"}/>
-        <Card d={wdo||DEMO.WDO} nome="WDO" desc="mini dólar" casas={1}
+        <Card d={wdo||DEMO.WDO} nome="WDO" desc="mini dólar" casas={1} checagem="USD/MXN" temCesta={false}
+              origemDetalhe={null}
               selo={(wdo?.idade_dado_seg??0)>900?"del":"live"}/>
       </div>
 
