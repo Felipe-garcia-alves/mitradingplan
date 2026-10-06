@@ -58,11 +58,11 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
 
       <div style={{marginTop:"14px",display:"flex",flexDirection:"column",gap:"7px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>Justo</span>
+          <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Justo (IBOV)" : "Justo"}</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:C.txt}}>{fmt(d.justo,casas)}</span>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>Mercado</span>
+          <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Mercado (IBOV)" : "Mercado"}</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:d.mercado==null?C.faint:C.txt}}>
             {d.mercado==null ? "B3 fechada" : fmt(d.mercado,casas)}
           </span>
@@ -81,6 +81,11 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
         <span style={{fontSize:"11px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
           border:"1px solid "+(suspeito?C.warn:cor)+"66",color:suspeito?C.warn:cor}}>{chip}</span>
       </div>
+      {nome==="WIN" && !preAbertura && (
+        <p style={{margin:"6px 0 0",fontSize:"10px",color:C.faint}}>
+          em pontos de Ibovespa à vista — o WIN negocia acima disso pelo carrego
+        </p>
+      )}
 
       <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid "+C.line2,
         display:"flex",flexDirection:"column",gap:"4px"}}>
