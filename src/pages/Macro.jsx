@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 
 const C = {
   card:"#12121f", card2:"#1a1a2e", line:"#1e1e2e", line2:"#17172a",
-  txt:"#f0f0f0", mut:"#888", dim:"#555", faint:"#3a3a4a",
+  txt:"#f0f0f0", mut:"#a3adb9", dim:"#8b96a4", faint:"#737e8c",
   up:"#00d4aa", down:"#ff4d4d", warn:"#f59e0b", blue:"#0099ff",
 };
 
@@ -31,6 +31,12 @@ function Selo({ tipo }) {
     border:"1px solid "+cor+"55",color:cor,whiteSpace:"nowrap"}}>{txt}</span>;
 }
 
+function Num({ n }) {
+  return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
+    width:"20px",height:"20px",borderRadius:"50%",border:"1px solid "+C.dim,
+    color:C.mut,fontSize:"11px",fontWeight:"700",marginRight:"8px",flexShrink:0}}>{n}</span>;
+}
+
 function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe }) {
   const preAbertura = d.mercado == null || d.gap == null;
   const suspeito = d.checagem_ok === false;
@@ -50,19 +56,22 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
   return (
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"18px 20px 16px"}}>
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
-        <span style={{fontSize:"14px",fontWeight:"800",letterSpacing:"2px",color:C.txt}}>{nome}</span>
-        <span style={{fontSize:"11px",color:C.faint,display:"flex",alignItems:"center",gap:"7px"}}>
+        <span style={{display:"flex",alignItems:"center"}}>
+          {nome==="WIN" && <Num n={2}/>}
+          <span style={{fontSize:"14px",fontWeight:"800",letterSpacing:"2px",color:C.txt}}>{nome}</span>
+        </span>
+        <span style={{fontSize:"12px",color:C.faint,display:"flex",alignItems:"center",gap:"7px"}}>
           <Selo tipo={selo}/> {desc}
         </span>
       </div>
 
       <div style={{marginTop:"14px",display:"flex",flexDirection:"column",gap:"7px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Justo (IBOV)" : "Justo"}</span>
+          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Justo (IBOV)" : "Justo"}</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:C.txt}}>{fmt(d.justo,casas)}</span>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Mercado (IBOV)" : "Mercado"}</span>
+          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Mercado (IBOV)" : "Mercado"}</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:d.mercado==null?C.faint:C.txt}}>
             {d.mercado==null ? "B3 fechada" : fmt(d.mercado,casas)}
           </span>
@@ -77,23 +86,33 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
         {heroUnid && <span style={{fontFamily:"monospace",fontSize:"14px",color:C.mut}}>{heroUnid}</span>}
       </div>
       <div style={{marginTop:"9px",display:"flex",alignItems:"center",gap:"9px",flexWrap:"wrap"}}>
-        <span style={{fontSize:"10.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>{posicao}</span>
-        <span style={{fontSize:"11px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
+        <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>{posicao}</span>
+        <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
           border:"1px solid "+(suspeito?C.warn:cor)+"66",color:suspeito?C.warn:cor}}>{chip}</span>
       </div>
       {nome==="WIN" && !preAbertura && (
-        <p style={{margin:"6px 0 0",fontSize:"10px",color:C.faint}}>
+        <p style={{margin:"6px 0 0",fontSize:"11px",color:C.faint}}>
           em pontos de Ibovespa à vista — o WIN negocia acima disso pelo carrego
         </p>
+      )}
+      {d.variacao_pct != null && !preAbertura && (
+        <div style={{marginTop:"8px",fontFamily:"monospace",fontSize:"13px",color:C.mut}}>
+          Abertura implícita: <span style={{color:d.variacao_pct>=0?C.up:C.down,fontWeight:"700"}}>
+            {sinal(d.variacao_pct,2)}%
+          </span>
+        </div>
       )}
 
       <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid "+C.line2,
         display:"flex",flexDirection:"column",gap:"4px"}}>
-        <span style={{fontSize:"10px",letterSpacing:"1.3px",textTransform:"uppercase",color:C.faint}}>Origem do movimento</span>
+        <span style={{display:"flex",alignItems:"center"}}>
+          {nome==="WIN" && <Num n={3}/>}
+          <span style={{fontSize:"11px",letterSpacing:"1.3px",textTransform:"uppercase",color:C.faint}}>Origem do movimento</span>
+        </span>
         <span style={{fontSize:"14px",fontWeight:"700",color:origemDetalhe==null?C.mut:origemCor}}>
           {origemDetalhe==null ? "Sem dado" : origemTxt}
         </span>
-        <span style={{fontFamily:"monospace",fontSize:"11.5px",color:C.mut}}>
+        <span style={{fontFamily:"monospace",fontSize:"12.5px",color:C.mut}}>
           {origemDetalhe==null ? "sem leitura de mapa global" : origemDetalhe}
         </span>
       </div>
@@ -112,7 +131,7 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
 
 function Linha({ k, v, cor }) {
   return (
-    <div style={{display:"flex",justifyContent:"space-between",gap:"10px",fontSize:"11.5px",color:C.mut}}>
+    <div style={{display:"flex",justifyContent:"space-between",gap:"10px",fontSize:"12.5px",color:C.mut}}>
       <span>{k}</span>
       <span style={{fontFamily:"monospace",color:cor||C.txt}}>{v}</span>
     </div>
@@ -148,7 +167,7 @@ function MapaGlobal({ mg }) {
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
       <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
         <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-          textTransform:"uppercase",color:C.txt}}>Mapa global</h3>
+          textTransform:"uppercase",color:C.txt,display:"flex",alignItems:"center"}}><Num n={4}/>Mapa global</h3>
         <span style={{fontSize:"12px",fontWeight:"800",letterSpacing:"0.8px",
           textTransform:"uppercase",color:vcor}}>{veredito}</span>
       </div>
@@ -160,7 +179,7 @@ function MapaGlobal({ mg }) {
           return (
             <div key={key} style={{border:"1px solid "+(me?C.up+"55":C.line2),borderRadius:"10px",
               padding:"10px 12px",display:"flex",flexDirection:"column",gap:"5px"}}>
-              <span style={{fontSize:"10px",letterSpacing:"1.2px",textTransform:"uppercase",
+              <span style={{fontSize:"11px",letterSpacing:"1.2px",textTransform:"uppercase",
                 color:me?C.up:C.faint}}>{lbl}</span>
               <span style={{fontFamily:"monospace",fontSize:"17px",fontWeight:"700",
                 color:v==null?C.faint:v>=0?C.up:C.down}}>{v==null?"s/d":sinal(v,2)+"%"}</span>
@@ -179,22 +198,22 @@ function Trio({ score, suspenso }) {
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
       <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
         <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-          textTransform:"uppercase",color:C.txt}}>Score do trio</h3>
-        <span style={{fontSize:"10px",letterSpacing:"1px",textTransform:"uppercase",color:C.warn,
+          textTransform:"uppercase",color:C.txt,display:"flex",alignItems:"center"}}><Num n={5}/>Score do trio</h3>
+        <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.warn,
           border:"1px solid "+C.warn+"55",borderRadius:"20px",padding:"3px 10px"}}>Em medição</span>
       </div>
       <div style={{display:"flex",alignItems:"baseline",gap:"12px",marginTop:"13px",flexWrap:"wrap"}}>
         <span style={{fontFamily:"monospace",fontSize:"26px",fontWeight:"800",
           letterSpacing:"-1px",color:cor}}>{sinal(score,2)}</span>
-        <span style={{fontSize:"11px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
+        <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
           border:"1px solid "+cor+"66",color:cor}}>
           {suspenso ? "suspenso · evento ★★★" : score>=0 ? "viés de alta" : "viés de baixa"}
         </span>
         <span style={{display:"flex",gap:"6px",alignItems:"center"}}>
-          <Selo tipo="del"/><span style={{fontSize:"11px",color:C.faint}}>VIX · CL · minério</span>
+          <Selo tipo="del"/><span style={{fontSize:"12px",color:C.faint}}>VIX · CL · minério</span>
         </span>
       </div>
-      <p style={{margin:"10px 0 0",fontSize:"12.5px",lineHeight:1.5,color:C.mut}}>
+      <p style={{margin:"10px 0 0",fontSize:"13.5px",lineHeight:1.5,color:C.mut}}>
         Soma crua, sua convenção: VIX invertido, petróleo e minério a favor do índice.
         Fica isolado do preço justo até a medição dos 60 pregões decidir se entra na leitura principal.
       </p>
@@ -275,11 +294,12 @@ export default function Macro() {
 
       <div style={{background:C.card,border:"1px solid "+C.line,borderLeft:"3px solid "+vCor,
         borderRadius:"10px",padding:"14px 18px",display:"flex",gap:"13px",alignItems:"center"}}>
+        <Num n={1}/>
         <span style={{width:"8px",height:"8px",borderRadius:"50%",background:vCor,flexShrink:0}}/>
         <div>
           <p style={{margin:0,fontSize:"13px",fontWeight:"800",letterSpacing:"1.2px",
             textTransform:"uppercase",color:vCor}}>{vTitulo}</p>
-          <p style={{margin:"4px 0 0",fontSize:"12.5px",lineHeight:1.45,color:C.mut}}>{vTexto}</p>
+          <p style={{margin:"4px 0 0",fontSize:"13.5px",lineHeight:1.45,color:C.mut}}>{vTexto}</p>
         </div>
       </div>
 
@@ -289,7 +309,7 @@ export default function Macro() {
           <span style={{fontSize:"13px",letterSpacing:"2px",
             color:estrelas>=2?C.warn:C.faint}}>{"★".repeat(estrelas)+"☆".repeat(3-estrelas)}</span>
           <span style={{fontSize:"13px",fontWeight:"700",color:C.txt}}>{win.evento}</span>
-          <span style={{flexBasis:"100%",fontSize:"11.5px",color:C.mut}}>
+          <span style={{flexBasis:"100%",fontSize:"12.5px",color:C.mut}}>
             {estrelas>=3 ? "Leitura com prazo de validade · amplitude ampliada · score do trio suspenso."
              : estrelas===2 ? "Impacto médio · amplitude ampliada."
              : "Impacto baixo. Nada muda na leitura."}
@@ -310,13 +330,13 @@ export default function Macro() {
       <Trio score={win.score_trio} suspenso={trioSuspenso}/>
 
       <div style={{display:"flex",flexWrap:"wrap",gap:"8px 16px",alignItems:"center",
-        fontSize:"11px",color:C.faint,paddingTop:"4px"}}>
+        fontSize:"12px",color:C.faint,paddingTop:"4px"}}>
         <span style={{display:"flex",gap:"6px",alignItems:"center"}}><Selo tipo="live"/> tempo real</span>
         <span style={{display:"flex",gap:"6px",alignItems:"center"}}><Selo tipo="del"/> atrasado 15 min</span>
         <span style={{display:"flex",gap:"6px",alignItems:"center"}}><Selo tipo="fech"/> fechado — número definitivo</span>
       </div>
 
-      <p style={{margin:0,fontSize:"11.5px",lineHeight:1.5,color:C.faint,
+      <p style={{margin:0,fontSize:"12.5px",lineHeight:1.5,color:C.faint,
         borderTop:"1px solid "+C.line2,paddingTop:"12px"}}>
         Este painel não dá entrada. Ele modula tamanho e convicção do trade que o seu operacional
         já escolheu, e nunca cancela stop.
