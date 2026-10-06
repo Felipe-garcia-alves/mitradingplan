@@ -48,20 +48,13 @@ function amplitude(d) {
   return { cesta, aFavor, alta };
 }
 
-function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe }) {
-  const soAbertura = nome==="WIN";
-  const preAbertura = soAbertura || d.mercado == null || d.gap == null;
+function Card({ d, nome, desc, selo, checagem, temCesta, origemDetalhe }) {
+  const ehWin = nome==="WIN";
   const { cesta, aFavor, alta:ampAlta } = amplitude(d);
   const suspeito = d.checagem_ok === false;
-  const abaixo = d.gap != null && d.gap < 0;
-  const cor = suspeito ? C.dim : preAbertura ? (d.variacao_pct>=0?C.up:C.down) : (abaixo?C.up:C.down);
-  const heroNum = preAbertura ? sinal(d.variacao_pct,2)+"%" : sinal(d.gap, casas);
-  const heroUnid = preAbertura ? "" : "pts";
-  const posicao = preAbertura ? "Abertura implícita"
-    : abaixo ? "Abaixo do justo" : "Acima do justo";
-  const chip = suspeito ? "verificar"
-    : preAbertura ? (d.variacao_pct>=0?"↑ viés de alta":"↓ viés de baixa")
-    : (abaixo ? "↑ viés de alta" : "↓ viés de baixa");
+  const cor = suspeito ? C.dim : d.variacao_pct>=0 ? C.up : C.down;
+  const heroNum = sinal(d.variacao_pct,2)+"%";
+  const chip = suspeito ? "verificar" : d.variacao_pct>=0 ? "↑ viés de alta" : "↓ viés de baixa";
   const origemTxt = { local:"Brasil específico", global:"Puxado pelo global" }[d.origem] || "Indeterminado";
   const origemCor = d.origem==="local" ? C.up : C.mut;
   const semChecagem = d.checagem_ok==null || d.checagem_delta==null;
@@ -78,18 +71,10 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
         </span>
       </div>
 
-      {soAbertura ? <div style={{height:"14px"}}/> : (<>
-      <div style={{marginTop:"14px",display:"flex",flexDirection:"column",gap:"7px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>Justo</span>
-          <span style={{fontFamily:"monospace",fontSize:"15px",color:C.txt}}>{fmt(d.justo,casas)}</span>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>Mercado</span>
-          <span style={{fontFamily:"monospace",fontSize:"15px",color:d.mercado==null?C.faint:C.txt}}>
-            {d.mercado==null ? "B3 fechada" : fmt(d.mercado,casas)}
-          </span>
-        </div>
+      {ehWin ? <div style={{height:"14px"}}/> : (<>
+      <div style={{marginTop:"14px",display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+        <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>USD/BRL offshore</span>
+        <span style={{fontFamily:"monospace",fontSize:"15px",color:C.txt}}>{d.justo==null ? "—" : fmt(d.justo/1000,4)}</span>
       </div>
 
       <div style={{height:"1px",background:C.line2,margin:"14px 0 12px"}}/>
@@ -98,14 +83,13 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
       <div style={{display:"flex",alignItems:"baseline",gap:"9px",flexWrap:"wrap"}}>
         <span style={{fontFamily:"monospace",fontWeight:"800",fontSize:"38px",lineHeight:1,
           letterSpacing:"-1.5px",color:cor}}>{heroNum}</span>
-        {heroUnid && <span style={{fontFamily:"monospace",fontSize:"14px",color:C.mut}}>{heroUnid}</span>}
       </div>
       <div style={{marginTop:"9px",display:"flex",alignItems:"center",gap:"9px",flexWrap:"wrap"}}>
-        <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>{posicao}</span>
+        <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Abertura implícita</span>
         <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
           border:"1px solid "+(suspeito?C.warn:cor)+"66",color:suspeito?C.warn:cor}}>{chip}</span>
       </div>
-      {soAbertura && (
+      {ehWin && (
         <div style={{marginTop:"10px",display:"flex",alignItems:"center",gap:"9px",flexWrap:"wrap"}}>
           <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Amplitude</span>
           {cesta.length>0 ? (<>
@@ -117,13 +101,6 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
           </>) : (
             <span style={{fontFamily:"monospace",fontSize:"13px",color:C.mut}}>sem dado</span>
           )}
-        </div>
-      )}
-      {d.variacao_pct != null && !preAbertura && (
-        <div style={{marginTop:"8px",fontFamily:"monospace",fontSize:"13px",color:C.mut}}>
-          Abertura implícita: <span style={{color:d.variacao_pct>=0?C.up:C.down,fontWeight:"700"}}>
-            {sinal(d.variacao_pct,2)}%
-          </span>
         </div>
       )}
 
@@ -275,7 +252,7 @@ function Trio({ score, suspenso, trio }) {
         <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
           textTransform:"uppercase",color:C.txt,display:"flex",alignItems:"center"}}><Num n={5}/>Score do trio</h3>
         <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.warn,
-          border:"1px solid "+C.warn+"55",borderRadius:"20px",padding:"3px 10px"}}>Em medição</span>
+          border:"1px solid "+C.warn+"55",borderRadius:"20px",padding:"3px 10px"}}>Medido · 47,9%</span>
       </div>
       <div style={{marginTop:"13px",display:"flex",flexDirection:"column",gap:"6px"}}>
         {pernas.map(([k,v])=>(
@@ -298,7 +275,8 @@ function Trio({ score, suspenso, trio }) {
       </div>
       <p style={{margin:"10px 0 0",fontSize:"13.5px",lineHeight:1.5,color:C.mut}}>
         Soma crua, sua convenção: VIX invertido, petróleo e minério a favor do índice.
-        Fica isolado do preço justo até a medição dos 60 pregões decidir se entra na leitura principal.
+        Medido em 57 pregões (out/2026): 47,9% de acerto na direção da abertura — sem sinal detectável.
+        Mantido na tela a seu pedido, para testes próprios. Não entra na leitura principal.
       </p>
     </div>
   );
@@ -398,10 +376,10 @@ export default function Macro() {
       )}
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(290px,1fr))",gap:"14px"}}>
-        <Card d={win} nome="WIN" desc="mini índice" casas={0} checagem="EWZ" temCesta={true}
+        <Card d={win} nome="WIN" desc="mini índice" checagem="EWZ" temCesta={true}
               origemDetalhe={win.mapa_global?.brasil!=null ? `Brasil ${sinal(win.mapa_global.brasil,2)}%  ·  EUA ${sinal(win.mapa_global.eua,2)}%` : null}
               selo={win.nivel===3?"sem":win.idade_dado_seg>900?"del":"live"}/>
-        <Card d={wdo||DEMO.WDO} nome="WDO" desc="mini dólar" casas={1} checagem="USD/MXN" temCesta={false}
+        <Card d={wdo||DEMO.WDO} nome="WDO" desc="mini dólar" checagem="USD/MXN" temCesta={false}
               origemDetalhe={null}
               selo={(wdo?.idade_dado_seg??0)>900?"del":"live"}/>
       </div>
