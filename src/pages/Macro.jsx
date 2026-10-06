@@ -13,8 +13,11 @@ const DEMO = {
         score_trio:1.61, origem:"local", idade_dado_seg:18,
         mapa_global:{asia:0.12, europa:0.09, eua:0.02, brasil:0.571},
         evento:"Estoques de petróleo EUA", evento_estrelas:1,
-        componentes:[{symbol:"VALE",peso:11,retorno_pct:0.40},{symbol:"PBR",peso:5,retorno_pct:0.95},
-                     {symbol:"ITUB",peso:7,retorno_pct:0.30}] },
+        componentes:{
+          cesta:[{symbol:"VALE",peso:11,retorno_pct:0.40,idade_min:3},{symbol:"PBR",peso:5,retorno_pct:0.95,idade_min:3},
+                 {symbol:"ITUB",peso:7,retorno_pct:0.30,idade_min:4},{symbol:"BBD",peso:3,retorno_pct:-0.12,idade_min:22}],
+          descartados_velhos:["SUZ"], sem_dado:["GGB"],
+          trio:{vix:-0.40, petroleo:0.81, minerio:0.40} } },
   WDO:{ instrumento:"WDO", justo:5382, mercado:5391, gap:9, variacao_pct:-0.13,
         nivel:1, cobertura_pct:100, checagem_ok:true, origem:"local", idade_dado_seg:18 },
 };
@@ -38,7 +41,12 @@ function Num({ n }) {
 }
 
 function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe }) {
-  const preAbertura = d.mercado == null || d.gap == null;
+  const soAbertura = nome==="WIN";
+  const preAbertura = soAbertura || d.mercado == null || d.gap == null;
+  const cesta = d.componentes?.cesta || [];
+  const aFavor = d.variacao_pct==null ? 0 : cesta.filter(c=>c.retorno_pct!=null &&
+    ((c.retorno_pct>0 && d.variacao_pct>0) || (c.retorno_pct<0 && d.variacao_pct<0))).length;
+  const ampAlta = cesta.length>0 && aFavor/cesta.length >= 0.75;
   const suspeito = d.checagem_ok === false;
   const abaixo = d.gap != null && d.gap < 0;
   const cor = suspeito ? C.dim : preAbertura ? (d.variacao_pct>=0?C.up:C.down) : (abaixo?C.up:C.down);
@@ -70,12 +78,14 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
           <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Justo (IBOV)" : "Justo"}</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:C.txt}}>{fmt(d.justo,casas)}</span>
         </div>
+        {!soAbertura && (
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>{nome==="WIN" ? "Mercado (IBOV)" : "Mercado"}</span>
+          <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>Mercado</span>
           <span style={{fontFamily:"monospace",fontSize:"15px",color:d.mercado==null?C.faint:C.txt}}>
             {d.mercado==null ? "B3 fechada" : fmt(d.mercado,casas)}
           </span>
         </div>
+        )}
       </div>
 
       <div style={{height:"1px",background:C.line2,margin:"14px 0 12px"}}/>
@@ -90,10 +100,19 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
         <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
           border:"1px solid "+(suspeito?C.warn:cor)+"66",color:suspeito?C.warn:cor}}>{chip}</span>
       </div>
-      {nome==="WIN" && !preAbertura && (
-        <p style={{margin:"6px 0 0",fontSize:"11px",color:C.faint}}>
-          em pontos de Ibovespa à vista — o WIN negocia acima disso pelo carrego
-        </p>
+      {soAbertura && (
+        <div style={{marginTop:"10px",display:"flex",alignItems:"center",gap:"9px",flexWrap:"wrap"}}>
+          <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Amplitude</span>
+          {cesta.length>0 ? (<>
+            <span style={{fontFamily:"monospace",fontSize:"13px",color:C.txt}}>{aFavor} de {cesta.length} ADRs a favor</span>
+            <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
+              border:"1px solid "+(ampAlta?C.up:C.warn)+"66",color:ampAlta?C.up:C.warn}}>
+              {ampAlta ? "confiança alta" : "confiança baixa"}
+            </span>
+          </>) : (
+            <span style={{fontFamily:"monospace",fontSize:"13px",color:C.mut}}>sem dado</span>
+          )}
+        </div>
       )}
       {d.variacao_pct != null && !preAbertura && (
         <div style={{marginTop:"8px",fontFamily:"monospace",fontSize:"13px",color:C.mut}}>
@@ -105,10 +124,7 @@ function Card({ d, nome, desc, casas, selo, checagem, temCesta, origemDetalhe })
 
       <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid "+C.line2,
         display:"flex",flexDirection:"column",gap:"4px"}}>
-        <span style={{display:"flex",alignItems:"center"}}>
-          {nome==="WIN" && <Num n={3}/>}
-          <span style={{fontSize:"11px",letterSpacing:"1.3px",textTransform:"uppercase",color:C.faint}}>Origem do movimento</span>
-        </span>
+        <span style={{fontSize:"11px",letterSpacing:"1.3px",textTransform:"uppercase",color:C.faint}}>Origem do movimento</span>
         <span style={{fontSize:"14px",fontWeight:"700",color:origemDetalhe==null?C.mut:origemCor}}>
           {origemDetalhe==null ? "Sem dado" : origemTxt}
         </span>
@@ -134,6 +150,52 @@ function Linha({ k, v, cor }) {
     <div style={{display:"flex",justifyContent:"space-between",gap:"10px",fontSize:"12.5px",color:C.mut}}>
       <span>{k}</span>
       <span style={{fontFamily:"monospace",color:cor||C.txt}}>{v}</span>
+    </div>
+  );
+}
+
+function Adrs({ comp, calculadoEm }) {
+  const cesta = comp?.cesta || [];
+  const fora = [...(comp?.descartados_velhos || []), ...(comp?.sem_dado || [])];
+  const base = calculadoEm ? new Date(calculadoEm) : new Date();
+  const hora = m => m==null ? "—" :
+    new Date(base.getTime() - m*60000).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const col = "minmax(70px,1fr) 60px 80px 90px";
+
+  return (
+    <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
+      <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
+        textTransform:"uppercase",color:C.txt,display:"flex",alignItems:"center"}}><Num n={3}/>As ADRs</h3>
+      <div style={{marginTop:"13px",display:"flex",flexDirection:"column"}}>
+        <div style={{display:"grid",gridTemplateColumns:col,gap:"10px",paddingBottom:"7px",
+          borderBottom:"1px solid "+C.line2,fontSize:"11px",letterSpacing:"1.2px",
+          textTransform:"uppercase",color:C.faint}}>
+          <span>Símbolo</span><span style={{textAlign:"right"}}>Peso</span>
+          <span style={{textAlign:"right"}}>Variação</span><span style={{textAlign:"right"}}>Cotação</span>
+        </div>
+        {cesta.length===0 && (
+          <span style={{padding:"9px 0",fontSize:"12.5px",color:C.mut}}>sem dado</span>
+        )}
+        {cesta.map(c=>(
+          <div key={c.symbol} style={{display:"grid",gridTemplateColumns:col,gap:"10px",alignItems:"center",
+            padding:"7px 0",borderBottom:"1px solid "+C.line2,fontFamily:"monospace",fontSize:"13px"}}>
+            <span style={{color:C.txt,fontWeight:"700"}}>{c.symbol}</span>
+            <span style={{textAlign:"right",color:C.mut}}>{fmt(c.peso,0)}</span>
+            <span style={{textAlign:"right",fontWeight:"700",
+              color:c.retorno_pct==null?C.mut:c.retorno_pct>0?C.up:c.retorno_pct<0?C.down:C.mut}}>
+              {c.retorno_pct==null ? "s/d" : sinal(c.retorno_pct,2)+"%"}
+            </span>
+            <span style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:"6px",color:C.mut}}>
+              {c.idade_min>15 && <Selo tipo="del"/>}{hora(c.idade_min)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {fora.length>0 && (
+        <p style={{margin:"10px 0 0",fontSize:"12.5px",color:C.faint}}>
+          <span style={{fontFamily:"monospace"}}>{fora.join(" · ")}</span> — fora do cálculo
+        </p>
+      )}
     </div>
   );
 }
@@ -192,8 +254,16 @@ function MapaGlobal({ mg }) {
   );
 }
 
-function Trio({ score, suspenso }) {
+function Trio({ score, suspenso, trio }) {
   const cor = suspenso ? C.dim : score>=0 ? C.up : C.down;
+  const t = trio || {};
+  const petroleo = t.petroleo ?? t.oil;
+  const minerio  = t.minerio ?? t.min;
+  const pernas = [
+    ["VIX (invertido)", t.vix==null ? null : -t.vix],
+    ["Petróleo", petroleo],
+    ["Minério", minerio],
+  ];
   return (
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
       <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
@@ -202,7 +272,15 @@ function Trio({ score, suspenso }) {
         <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.warn,
           border:"1px solid "+C.warn+"55",borderRadius:"20px",padding:"3px 10px"}}>Em medição</span>
       </div>
-      <div style={{display:"flex",alignItems:"baseline",gap:"12px",marginTop:"13px",flexWrap:"wrap"}}>
+      <div style={{marginTop:"13px",display:"flex",flexDirection:"column",gap:"6px"}}>
+        {pernas.map(([k,v])=>(
+          <Linha key={k} k={k} v={v==null ? "sem dado" : sinal(v,2)}
+            cor={v==null ? C.mut : v>0 ? C.up : v<0 ? C.down : C.mut}/>
+        ))}
+      </div>
+      <div style={{display:"flex",alignItems:"baseline",gap:"12px",marginTop:"12px",paddingTop:"11px",
+        borderTop:"1px solid "+C.line2,flexWrap:"wrap"}}>
+        <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Total</span>
         <span style={{fontFamily:"monospace",fontSize:"26px",fontWeight:"800",
           letterSpacing:"-1px",color:cor}}>{sinal(score,2)}</span>
         <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
@@ -326,8 +404,9 @@ export default function Macro() {
               selo={(wdo?.idade_dado_seg??0)>900?"del":"live"}/>
       </div>
 
+      <Adrs comp={win.componentes} calculadoEm={win.calculado_em}/>
       <MapaGlobal mg={win.mapa_global || {}}/>
-      <Trio score={win.score_trio} suspenso={trioSuspenso}/>
+      <Trio score={win.score_trio} suspenso={trioSuspenso} trio={win.componentes?.trio}/>
 
       <div style={{display:"flex",flexWrap:"wrap",gap:"8px 16px",alignItems:"center",
         fontSize:"12px",color:C.faint,paddingTop:"4px"}}>
