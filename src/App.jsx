@@ -5,6 +5,7 @@ import Login       from "./pages/Login";
 import Onboarding  from "./pages/Onboarding";
 import Termos      from "./pages/Termos";
 import Evolucao    from "./pages/Evolucao";
+import Macro from "./pages/Macro";
 import Diario      from "./pages/Diario";
 import Historico   from "./pages/Historico";
 import Estrategias from "./pages/Estrategias";
@@ -335,11 +336,12 @@ function AppInterno() {
     } catch(e){ console.error(e); }
   };
 
-  const TITLES = {evolucao:"Evolução",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações",termos:"Termos & Privacidade"};
+  const TITLES = {evolucao:"Evolução",macro:"Macro",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações",termos:"Termos & Privacidade"};
 
   const renderPage = () => {
     switch(pagina){
       case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina} config={config}/>;
+      case "macro":       return <Macro/>;
       case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
       case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
