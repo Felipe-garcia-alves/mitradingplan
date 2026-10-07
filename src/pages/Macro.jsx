@@ -230,10 +230,11 @@ function Trio({ score, suspenso, trio }) {
   const t = trio || {};
   const petroleo = t.petroleo ?? t.oil;
   const minerio  = t.minerio ?? t.min;
+  const dataNY = em => new Date(em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",timeZone:"America/New_York"});
   const pernas = [
     ["VIX (invertido)", t.vix==null ? null : -t.vix],
     ["Petróleo", petroleo],
-    ["Minério", minerio],
+    [t.minerio_em ? "Minério (TIO=F)" : "Minério", minerio, t.minerio_em],
   ];
   return (
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
@@ -242,10 +243,16 @@ function Trio({ score, suspenso, trio }) {
           textTransform:"uppercase",color:C.txt}}>Score do trio</h3>
       </div>
       <div style={{marginTop:"13px",display:"flex",flexDirection:"column",gap:"6px"}}>
-        {pernas.map(([k,v])=>(
-          <Linha key={k} k={k} v={v==null ? "sem dado" : sinal(v,2)}
+        {pernas.map(([k,v,em])=>(
+          <Linha key={k} k={em ? <>{k} <Selo tipo="fech"/></> : k}
+            v={v==null ? "sem dado" : sinal(v,2)+(em ? " · ajuste de "+dataNY(em) : "")}
             cor={v==null ? C.mut : v>0 ? C.up : v<0 ? C.down : C.mut}/>
         ))}
+        {t.minerio_rolagem && (
+          <span style={{fontSize:"12px",color:C.warn,textAlign:"right"}}>
+            ⚠ possível rolagem de contrato no minério — variação acima de 3%
+          </span>
+        )}
       </div>
       <div style={{display:"flex",alignItems:"baseline",gap:"12px",marginTop:"12px",paddingTop:"11px",
         borderTop:"1px solid "+C.line2,flexWrap:"wrap"}}>
