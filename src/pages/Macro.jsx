@@ -95,8 +95,8 @@ function Card({ d, nome, desc, selo, checagem, temCesta, origemDetalhe }) {
           {cesta.length>0 ? (<>
             <span style={{fontFamily:"monospace",fontSize:"13px",color:C.txt}}>{aFavor} de {cesta.length} ADRs a favor</span>
             <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
-              border:"1px solid "+(ampAlta?C.up:C.warn)+"66",color:ampAlta?C.up:C.warn}}>
-              {ampAlta ? "confiança alta" : "confiança baixa"}
+              border:"1px solid "+(ampAlta&&!suspeito?C.up:C.warn)+"66",color:ampAlta&&!suspeito?C.up:C.warn}}>
+              {suspeito ? "não validado" : ampAlta ? "confiança alta" : "confiança baixa"}
             </span>
           </>) : (
             <span style={{fontFamily:"monospace",fontSize:"13px",color:C.mut}}>sem dado</span>
@@ -118,7 +118,9 @@ function Card({ d, nome, desc, selo, checagem, temCesta, origemDetalhe }) {
       <div style={{marginTop:"13px",paddingTop:"11px",borderTop:"1px solid "+C.line2,
         display:"flex",flexDirection:"column",gap:"5px"}}>
         {temCesta && <Linha k="Cobertura da cesta" v={d.cobertura_pct!=null?fmt(d.cobertura_pct,0)+"%":"—"}/>}
-        <Linha k="Nível do sinal" v={"nível "+(d.nivel??"—")}/>
+        <Linha k="Nível do sinal"
+          v={"nível "+(d.nivel??"—")+(d.checagem_ok===false?" · não validado":"")}
+          cor={d.checagem_ok===false?C.warn:undefined}/>
         <Linha k={"Checagem "+checagem}
           v={semChecagem ? "sem dado" : (d.checagem_ok?"✓ ":"⚠ ")+sinal(d.checagem_delta,2)+" p.p."}
           cor={semChecagem?C.mut:d.checagem_ok===false?C.warn:C.up}/>
