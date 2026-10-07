@@ -44,7 +44,7 @@ function amplitude(d) {
 
 function Card({ d, nome, desc, selo, checagem, temCesta, origemDetalhe }) {
   const ehWin = nome==="WIN";
-  const { cesta, aFavor, alta:ampAlta } = amplitude(d);
+  const { cesta, aFavor } = amplitude(d);
   const suspeito = d.checagem_ok === false;
   const cor = suspeito ? C.dim : d.variacao_pct>=0 ? C.up : C.down;
   const heroNum = sinal(d.variacao_pct,2)+"%";
@@ -85,10 +85,6 @@ function Card({ d, nome, desc, selo, checagem, temCesta, origemDetalhe }) {
           <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Amplitude</span>
           {cesta.length>0 ? (<>
             <span style={{fontFamily:"monospace",fontSize:"13px",color:C.txt}}>{aFavor} de {cesta.length} ADRs a favor</span>
-            <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
-              border:"1px solid "+(ampAlta&&!suspeito?C.up:C.warn)+"66",color:ampAlta&&!suspeito?C.up:C.warn}}>
-              {suspeito ? "não validado" : ampAlta ? "confiança alta" : "confiança baixa"}
-            </span>
           </>) : (
             <span style={{fontFamily:"monospace",fontSize:"13px",color:C.mut}}>sem dado</span>
           )}
@@ -244,8 +240,6 @@ function Trio({ score, suspenso, trio }) {
       <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
         <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
           textTransform:"uppercase",color:C.txt}}>Score do trio</h3>
-        <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.warn,
-          border:"1px solid "+C.warn+"55",borderRadius:"20px",padding:"3px 10px"}}>Medido · 47,9%</span>
       </div>
       <div style={{marginTop:"13px",display:"flex",flexDirection:"column",gap:"6px"}}>
         {pernas.map(([k,v])=>(
@@ -268,7 +262,6 @@ function Trio({ score, suspenso, trio }) {
       </div>
       <p style={{margin:"10px 0 0",fontSize:"13.5px",lineHeight:1.5,color:C.mut}}>
         Soma crua, sua convenção: VIX invertido, petróleo e minério a favor do índice.
-        Medido em 57 pregões (out/2026): 47,9% de acerto na direção da abertura — sem sinal detectável.
         Mantido na tela a seu pedido, para testes próprios. Não entra na leitura principal.
       </p>
     </div>
