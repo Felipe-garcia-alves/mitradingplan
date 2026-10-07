@@ -34,12 +34,6 @@ function Selo({ tipo }) {
     border:"1px solid "+cor+"55",color:cor,whiteSpace:"nowrap"}}>{txt}</span>;
 }
 
-function Num({ n }) {
-  return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
-    width:"20px",height:"20px",borderRadius:"50%",border:"1px solid "+C.dim,
-    color:C.mut,fontSize:"11px",fontWeight:"700",marginRight:"8px",flexShrink:0}}>{n}</span>;
-}
-
 function amplitude(d) {
   const cesta = d.componentes?.cesta || [];
   const aFavor = d.variacao_pct==null ? 0 : cesta.filter(c=>c.retorno_pct!=null &&
@@ -62,10 +56,7 @@ function Card({ d, nome, desc, selo, checagem, temCesta, origemDetalhe }) {
   return (
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"18px 20px 16px"}}>
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
-        <span style={{display:"flex",alignItems:"center"}}>
-          {nome==="WIN" && <Num n={2}/>}
-          <span style={{fontSize:"14px",fontWeight:"800",letterSpacing:"2px",color:C.txt}}>{nome}</span>
-        </span>
+        <span style={{fontSize:"14px",fontWeight:"800",letterSpacing:"2px",color:C.txt}}>{nome}</span>
         <span style={{fontSize:"12px",color:C.faint,display:"flex",alignItems:"center",gap:"7px"}}>
           <Selo tipo={selo}/> {desc}
         </span>
@@ -149,7 +140,7 @@ function Adrs({ comp, calculadoEm }) {
   return (
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
       <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-        textTransform:"uppercase",color:C.txt,display:"flex",alignItems:"center"}}><Num n={3}/>As ADRs</h3>
+        textTransform:"uppercase",color:C.txt}}>As ADRs</h3>
       <div style={{marginTop:"13px",display:"flex",flexDirection:"column"}}>
         <div style={{display:"grid",gridTemplateColumns:col,gap:"10px",paddingBottom:"7px",
           borderBottom:"1px solid "+C.line2,fontSize:"11px",letterSpacing:"1.2px",
@@ -213,7 +204,7 @@ function MapaGlobal({ mg }) {
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
       <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
         <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-          textTransform:"uppercase",color:C.txt,display:"flex",alignItems:"center"}}><Num n={4}/>Mapa global</h3>
+          textTransform:"uppercase",color:C.txt}}>Mapa global</h3>
         <span style={{fontSize:"12px",fontWeight:"800",letterSpacing:"0.8px",
           textTransform:"uppercase",color:vcor}}>{veredito}</span>
       </div>
@@ -252,7 +243,7 @@ function Trio({ score, suspenso, trio }) {
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
       <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
         <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-          textTransform:"uppercase",color:C.txt,display:"flex",alignItems:"center"}}><Num n={5}/>Score do trio</h3>
+          textTransform:"uppercase",color:C.txt}}>Score do trio</h3>
         <span style={{fontSize:"11px",letterSpacing:"1px",textTransform:"uppercase",color:C.warn,
           border:"1px solid "+C.warn+"55",borderRadius:"20px",padding:"3px 10px"}}>Medido · 47,9%</span>
       </div>
@@ -354,7 +345,6 @@ export default function Macro() {
 
       <div style={{background:C.card,border:"1px solid "+C.line,borderLeft:"3px solid "+vCor,
         borderRadius:"10px",padding:"14px 18px",display:"flex",gap:"13px",alignItems:"center"}}>
-        <Num n={1}/>
         <span style={{width:"8px",height:"8px",borderRadius:"50%",background:vCor,flexShrink:0}}/>
         <div>
           <p style={{margin:0,fontSize:"13px",fontWeight:"800",letterSpacing:"1.2px",
