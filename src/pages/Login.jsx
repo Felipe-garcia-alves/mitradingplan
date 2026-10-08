@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { supabase } from "../supabase";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "../firebase";
 import Termos from "./Termos";
 
 export default function Login() {
@@ -34,20 +32,13 @@ export default function Login() {
 
       } else {
         if (!nome.trim()) { setErro("Digite seu nome."); setLoading(false); return; }
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password: senha,
           options: { data: { nome } }
         });
         if (error) throw error;
-        // Cria o documento no Firestore com o uid do Supabase
-        if (data.user) {
-          await setDoc(doc(db, "usuarios", data.user.id), {
-            nome, email,
-            criadoEm: new Date().toISOString(),
-            config: { bancaB3: 3000, bancaForex: 200 }
-          });
-        }
+        // O perfil em public.usuarios é criado pela trigger on_auth_user_created
         setMsg("Cadastro realizado! Verifique seu email para confirmar a conta.");
         setLoading(false);
         return;

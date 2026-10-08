@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 
 export default function Config({ config, saveConfig, nomeUsuario, setPagina }) {
@@ -22,9 +22,10 @@ export default function Config({ config, saveConfig, nomeUsuario, setPagina }) {
     if (!senhaAtual || !senhaNova) { setMsgSenha("❌ Preencha os dois campos."); return; }
     if (senhaNova.length < 6) { setMsgSenha("❌ Nova senha deve ter ao menos 6 caracteres."); return; }
     try {
-      const cred = EmailAuthProvider.credential(user.email, senhaAtual);
-      await reauthenticateWithCredential(user, cred);
-      await updatePassword(user, senhaNova);
+      const { error: erroAuth } = await supabase.auth.signInWithPassword({ email: user.email, password: senhaAtual });
+      if (erroAuth) throw erroAuth;
+      const { error } = await supabase.auth.updateUser({ password: senhaNova });
+      if (error) throw error;
       setMsgSenha("✓ Senha alterada com sucesso!"); setSenhaAtual(""); setSenhaNova("");
       setTimeout(()=>setMsgSenha(""),3000);
     } catch(e) {
