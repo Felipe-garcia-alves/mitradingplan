@@ -46,6 +46,30 @@ async function yahooDiario(symbol: string) {
   };
 }
 
+// DCE:I = futuro de minerio de Dalian, contrato continuo. Sina (primaria) -> East Money (reserva).
+// Endpoints chineses respondem em 2-4 s a partir do sa-east-1; timeout de 10 s para nao travar a coleta.
+async function dalian() {
+  const t = () => AbortSignal.timeout(10000);
+  try {
+    const r = await fetch("https://hq.sinajs.cn/list=nf_I0",
+      { headers: { "User-Agent": UA, "Referer": "https://finance.sina.com.cn" }, signal: t() });
+    if (!r.ok) throw new Error(`sina HTTP ${r.status}`);
+    const txt = new TextDecoder("gb18030").decode(new Uint8Array(await r.arrayBuffer()));
+    const f = (txt.match(/="([^"]*)"/)?.[1] ?? "").split(",");
+    const ult = Number(f[8]), hora = f[1] ?? "", data = f[17] ?? "", ajAnt = Number(f[10]);
+    if (!(ult > 0) || !/^\d{6}$/.test(hora) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) throw new Error("sina formato inesperado");
+    const em = new Date(`${data}T${hora.slice(0, 2)}:${hora.slice(2, 4)}:${hora.slice(4, 6)}+08:00`).toISOString();
+    return { preco: ult, em, preMarket: false, fonte: "sina", conferencia_pct: ajAnt > 0 ? r2((ult / ajAnt - 1) * 100) : null };
+  } catch (_) { /* cai para o East Money */ }
+  const r = await fetch("https://push2.eastmoney.com/api/qt/stock/get?secid=114.im&fields=f43,f59,f86,f170",
+    { headers: { "User-Agent": UA }, signal: t() });
+  if (!r.ok) throw new Error(`DCE:I: eastmoney HTTP ${r.status}`);
+  const d = (await r.json())?.data;
+  if (!d || !(d.f43 > 0) || !d.f86) throw new Error("DCE:I: sina e eastmoney sem dado");
+  return { preco: d.f43 / 10 ** (d.f59 ?? 1), em: new Date(d.f86 * 1000).toISOString(), preMarket: false,
+           fonte: "eastmoney", conferencia_pct: d.f170 != null ? d.f170 / 100 : null };
+}
+
 const hojeBRT = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
 const r2 = (n: number, d = 3) => Number(n.toFixed(d));
 const idadeMin = (em: string | null) => em == null ? Infinity : (Date.now() - new Date(em).getTime()) / 60000;
@@ -75,7 +99,8 @@ Deno.serve(async (req) => {
   if (eA) return json({ erro: eA.message }, 500);
 
   const buscas = await Promise.allSettled((ativos ?? []).map(async (a: any) =>
-    ({ a, q: await (DIARIOS.has(a.symbol) ? yahooDiario(a.symbol) : yahoo(a.symbol)) })));
+    ({ a, q: await (a.symbol === "DCE:I" ? dalian()
+                  : DIARIOS.has(a.symbol) ? yahooDiario(a.symbol) : yahoo(a.symbol)) })));
   const precos: Record<string, any> = {}; const linhas: any[] = []; const falhas: string[] = [];
   for (let i = 0; i < buscas.length; i++) {
     const b = buscas[i];
@@ -147,13 +172,14 @@ Deno.serve(async (req) => {
 
   // ---- trio (convencao do Felipe): VIX invertido, petroleo e minerio a favor ----
   const vVix = varPct("^VIX"), vOil = varPct("CL=F");
-  // minerio = TIO=F (62% Fe CFR China), barra diaria: fechamento contra fechamento anterior,
-  // nao contra o snapshot de referencia. Descarta se o ultimo close tiver mais de 3 pregoes.
-  const tio = precos["TIO=F"];
-  const minFresco = !!(tio?.preco && tio?.anterior && tio?.em && pregoesDesde(tio.em) <= 3);
-  const vMin = minFresco ? r2((tio.preco / tio.anterior - 1) * 100) : null;
-  const minEm = minFresco ? tio.em : null;
-  const minRolagem = vMin != null && Math.abs(vMin) > 3;  // contrato mensal: a troca gera salto falso
+  // minerio = DCE:I (Dalian), ativo normal: preco agora contra o snapshot das 18:20 (Dalian fechado,
+  // pega o fim da sessao noturna). Isento de MAX_IDADE_MIN: fecha 04:00 BRT, leitura e 08:50.
+  // Descarta se o ultimo negocio tiver mais de 3 pregoes. TIO=F fica so como reserva inativa.
+  const dce = precos["DCE:I"], dceRef = ref["DCE:I"];
+  const minFresco = !!(dce?.preco && dceRef && dce?.em && pregoesDesde(dce.em) <= 3);
+  const vMin = minFresco ? r2((dce.preco / dceRef - 1) * 100) : null;
+  const minEm = minFresco ? dce.em : null;
+  const minSuspeito = vMin != null && Math.abs(vMin) > 5;  // acima do limite diario de oscilacao da DCE
   const trio = (vVix != null ? -vVix : 0) + (vOil ?? 0) + (vMin ?? 0);
   const trioCompleto = vVix != null && vOil != null && vMin != null;
 
@@ -207,7 +233,9 @@ Deno.serve(async (req) => {
       gap: justoWin && mercadoWin ? r2(mercadoWin - justoWin, 1) : null,
       componentes: { cesta: comp, descartados_velhos: velhos, sem_dado: semDado,
                      vix_ratio: vixRatio, trio: { vix: vVix, petroleo: vOil, minerio: vMin, completo: trioCompleto,
-                                                  minerio_em: minEm, minerio_rolagem: minRolagem },
+                                                  minerio_em: minEm, minerio_suspeito: minSuspeito,
+                                                  minerio_fonte: minFresco ? dce.fonte : null,
+                                                  minerio_conferencia_pct: minFresco ? dce.conferencia_pct : null },
                      falhas } },
     { ...base, instrumento: "WDO", origem: origemWdo, justo: r2(fxAgora * 1000, 1),
       cobertura_pct: null, checagem_ok: null, checagem_delta: null,

@@ -225,16 +225,22 @@ function MapaGlobal({ mg }) {
   );
 }
 
-function Trio({ score, suspenso, trio }) {
+function Trio({ score, suspenso, trio, calculadoEm }) {
   const cor = suspenso ? C.dim : score>=0 ? C.up : C.down;
   const t = trio || {};
   const petroleo = t.petroleo ?? t.oil;
   const minerio  = t.minerio ?? t.min;
   const dataNY = em => new Date(em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",timeZone:"America/New_York"});
+  const horaPequim = em => new Date(em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Asia/Shanghai"});
+  // DCE aberta no momento da coleta? diurna 09:00-15:00 e noturna 21:00-23:00 de Pequim (UTC+8, sem horario de verao), seg-sex
+  const dceAberta = em => { const p = new Date((em ? new Date(em) : new Date()).getTime() + 8*3600e3);
+    const w = p.getUTCDay(), m = p.getUTCHours()*60 + p.getUTCMinutes();
+    return w>=1 && w<=5 && ((m>=540 && m<900) || (m>=1260 && m<1380)); };
+  const ehDalian = !!t.minerio_fonte;
   const pernas = [
     ["VIX (invertido)", t.vix==null ? null : -t.vix],
     ["Petróleo", petroleo],
-    [t.minerio_em ? "Minério (TIO=F)" : "Minério", minerio, t.minerio_em],
+    [ehDalian ? "Minério (Dalian)" : t.minerio_em ? "Minério (TIO=F)" : "Minério", minerio, t.minerio_em],
   ];
   return (
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
@@ -244,13 +250,18 @@ function Trio({ score, suspenso, trio }) {
       </div>
       <div style={{marginTop:"13px",display:"flex",flexDirection:"column",gap:"6px"}}>
         {pernas.map(([k,v,em])=>(
-          <Linha key={k} k={em ? <>{k} <Selo tipo="fech"/></> : k}
-            v={v==null ? "sem dado" : sinal(v,2)+(em ? " · ajuste de "+dataNY(em) : "")}
+          <Linha key={k} k={em ? <>{k} <Selo tipo={ehDalian && dceAberta(calculadoEm) ? "live" : "fech"}/></> : k}
+            v={v==null ? "sem dado" : sinal(v,2)+(em ? (ehDalian ? " · últ. negócio "+horaPequim(em)+" Pequim" : " · ajuste de "+dataNY(em)) : "")}
             cor={v==null ? C.mut : v>0 ? C.up : v<0 ? C.down : C.mut}/>
         ))}
         {t.minerio_rolagem && (
           <span style={{fontSize:"12px",color:C.warn,textAlign:"right"}}>
             ⚠ possível rolagem de contrato no minério — variação acima de 3%
+          </span>
+        )}
+        {t.minerio_suspeito && (
+          <span style={{fontSize:"12px",color:C.warn,textAlign:"right"}}>
+            ⚠ minério com variação acima de 5% — além do limite diário da DCE, verificar
           </span>
         )}
       </div>
@@ -378,7 +389,7 @@ export default function Macro() {
 
       <Adrs comp={win.componentes} calculadoEm={win.calculado_em}/>
       <MapaGlobal mg={win.mapa_global || {}}/>
-      <Trio score={win.score_trio} suspenso={trioSuspenso} trio={win.componentes?.trio}/>
+      <Trio score={win.score_trio} suspenso={trioSuspenso} trio={win.componentes?.trio} calculadoEm={win.calculado_em}/>
 
       <div style={{display:"flex",flexWrap:"wrap",gap:"8px 16px",alignItems:"center",
         fontSize:"12px",color:C.faint,paddingTop:"4px"}}>
