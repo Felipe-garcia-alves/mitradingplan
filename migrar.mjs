@@ -1,13 +1,14 @@
+import "dotenv/config";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, getDocs, collection } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAw4ch3ezT_2wPa7TidnXRWRsuF4ojRv3Y",
-  authDomain: "mitrandinplan.firebaseapp.com",
-  projectId: "mitrandinplan",
-  storageBucket: "mitrandinplan.firebasestorage.app",
-  messagingSenderId: "1090271175226",
-  appId: "1:1090271175226:web:c8c51435f5f9e3732a0b03"
+  apiKey:            process.env.FIREBASE_API_KEY,
+  authDomain:        process.env.FIREBASE_AUTH_DOMAIN,
+  projectId:         process.env.FIREBASE_PROJECT_ID,
+  storageBucket:     process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_SENDER_ID,
+  appId:             process.env.FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

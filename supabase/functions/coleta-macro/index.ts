@@ -85,7 +85,11 @@ const pregoesDesde = (em: string) => {
 };
 
 Deno.serve(async (req) => {
-  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  // Prefere a secret key nova; cai para a legada enquanto ela existir.
+  // Quando as chaves legadas forem desativadas, SB_SECRET_KEY assume sozinha.
+  const SB_KEY = Deno.env.get("SB_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SB_KEY) throw new Error("Defina SB_SECRET_KEY nos secrets da function.");
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, SB_KEY);
   const json = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
 
   const tok = req.headers.get("x-macro-token");

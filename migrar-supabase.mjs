@@ -1,21 +1,26 @@
+import "dotenv/config";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { createClient } from "@supabase/supabase-js";
 
 // Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyAw4ch3ezT_2wPa7TidnXRWRsuF4ojRv3Y",
-  authDomain: "mitrandinplan.firebaseapp.com",
-  projectId: "mitrandinplan",
-  storageBucket: "mitrandinplan.firebasestorage.app",
-  messagingSenderId: "1090271175226",
-  appId: "1:1090271175226:web:c8c51435f5f9e3732a0b03"
+  apiKey:            process.env.FIREBASE_API_KEY,
+  authDomain:        process.env.FIREBASE_AUTH_DOMAIN,
+  projectId:         process.env.FIREBASE_PROJECT_ID,
+  storageBucket:     process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_SENDER_ID,
+  appId:             process.env.FIREBASE_APP_ID
 };
 
 // Supabase config (service_role para bypass RLS)
-const SUPABASE_URL  = "https://lbgoihpjmlwgcwzblnhe.supabase.co";
-const SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiZ29paHBqbWx3Z2N3emJsbmhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDEyMzU0MiwiZXhwIjoyMDg5Njk5NTQyfQ.0cdSqmzxO-rpW_wbjhQmzBE58p0vVXcyIVGS9tHC5Mk";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("Faltam SUPABASE_URL / SUPABASE_SERVICE_KEY. Defina no .env (nunca no codigo).");
+  process.exit(1);
+}
 // Mapeamento Firebase UID -> Supabase UUID
 // Adicione aqui todos os usuários
 const USUARIOS = [
