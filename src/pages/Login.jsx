@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { supabase } from "../supabase";
+import { useAuth } from "../context/AuthContext";
 import Termos from "./Termos";
 
 export default function Login() {
+  const { erroLink } = useAuth();
   const [modo,    setModo]    = useState("login");
   const [email,   setEmail]   = useState("");
   const [senha,   setSenha]   = useState("");
   const [nome,    setNome]    = useState("");
-  const [erro,    setErro]    = useState("");
+  const [erro,    setErro]    = useState(erroLink);
   const [msg,     setMsg]     = useState("");
   const [loading, setLoading] = useState(false);
   const [showTermos, setShowTermos] = useState(false);

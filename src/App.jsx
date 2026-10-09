@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { supabase } from "./supabase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login       from "./pages/Login";
+import NovaSenha   from "./pages/NovaSenha";
 import Onboarding  from "./pages/Onboarding";
 import Termos      from "./pages/Termos";
 import Evolucao    from "./pages/Evolucao";
@@ -419,7 +420,8 @@ function AppInterno() {
 }
 
 function Root() {
-  const { user } = useAuth();
+  const { user, recovery } = useAuth();
+  if (user && recovery) return <NovaSenha/>;
   return user ? <AppInterno/> : <Login/>;
 }
 
