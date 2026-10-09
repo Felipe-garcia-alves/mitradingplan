@@ -236,7 +236,17 @@ function Trio({ score, suspenso, trio, calculadoEm }) {
   const dceAberta = em => { const p = new Date((em ? new Date(em) : new Date()).getTime() + 8*3600e3);
     const w = p.getUTCDay(), m = p.getUTCHours()*60 + p.getUTCMinutes();
     return w>=1 && w<=5 && ((m>=540 && m<900) || (m>=1260 && m<1380)); };
+  const horaBRT = em => new Date(em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"America/Sao_Paulo"});
   const ehDalian = !!t.minerio_fonte;
+  const valorPerna = (v, em) => {
+    if (v==null) return "sem dado";
+    if (!em) return sinal(v,2);
+    if (!ehDalian) return sinal(v,2)+" · ajuste de "+dataNY(em);
+    // DCE fecha 04:00 e reabre 10:00 BRT: na janela das 08:50 está sempre fechada e
+    // variação 0 é o estado normal da leitura, não falha — deixar isso explícito.
+    if (v===0 && !dceAberta(calculadoEm)) return fmt(0,2)+" · parado desde "+horaBRT(em)+" BRT";
+    return sinal(v,2)+" · últ. negócio "+horaPequim(em)+" Pequim";
+  };
   const pernas = [
     ["VIX (invertido)", t.vix==null ? null : -t.vix],
     ["Petróleo", petroleo],
@@ -251,7 +261,7 @@ function Trio({ score, suspenso, trio, calculadoEm }) {
       <div style={{marginTop:"13px",display:"flex",flexDirection:"column",gap:"6px"}}>
         {pernas.map(([k,v,em])=>(
           <Linha key={k} k={em ? <>{k} <Selo tipo={ehDalian && dceAberta(calculadoEm) ? "live" : "fech"}/></> : k}
-            v={v==null ? "sem dado" : sinal(v,2)+(em ? (ehDalian ? " · últ. negócio "+horaPequim(em)+" Pequim" : " · ajuste de "+dataNY(em)) : "")}
+            v={valorPerna(v, em)}
             cor={v==null ? C.mut : v>0 ? C.up : v<0 ? C.down : C.mut}/>
         ))}
         {t.minerio_rolagem && (
