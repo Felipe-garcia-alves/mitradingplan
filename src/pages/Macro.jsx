@@ -43,10 +43,15 @@ const horaBRT = (iso) => iso
 /* A mesma janela da Edge Function: das 09:00 em diante o viés do dia está congelado.
    Um FEF2! digitado às 09h02 não é o que estava na tela às 08h55, e um log que aceita
    correção retroativa não serve para medir nada depois. */
-const janelaAberta = () => {
+const minutosBRT = () => {
   const brt = new Date(Date.now() - 3 * 3600 * 1000);
-  return brt.getUTCHours() * 60 + brt.getUTCMinutes() < 9 * 60;
+  return brt.getUTCHours() * 60 + brt.getUTCMinutes();
 };
+const janelaAberta = () => minutosBRT() < 9 * 60;
+/* Tolerância: o FEF2! aceita digitação até 09:10 para você não ficar trancado de fora num dia
+   de abertura atrasada. O que entrar depois das 09:00 marca o pregão como atrasado — na medição
+   esses dias aparecem identificados em vez de se misturarem com os normais. */
+const janelaFef2 = () => minutosBRT() < 9 * 60 + 10;
 
 /* Frescor pela idade da cotação, não por etiqueta fixa: a mesma fonte entrega ao vivo,
    atrasada ou fechada conforme a hora. "fech" não é defeito — é número definitivo. */
@@ -260,6 +265,7 @@ export default function Macro() {
       const pct = txt === "" ? null : Number(String(txt).replace(",", "."));
       const { error } = await supabase.from("macro_vies").update({
         fef2_manual: Number.isNaN(pct) ? null : pct,
+        fef2_atrasado: vies.fef2_atrasado || !janelaAberta(),
         pernas: c.pernas, resultado: c.resultado, direcao: c.direcao,
         intensidade: c.intensidade, completo: c.completo, atualizado_em: new Date().toISOString(),
       }).eq("data_pregao", vies.data_pregao);
@@ -269,6 +275,7 @@ export default function Macro() {
   }
 
   const aberta = janelaAberta();
+  const podeFef2 = janelaFef2();
 
   if (carregando) return (
     <div className="mx"><style>{CSS}</style><p style={{ color: "#7f8a97" }}>Carregando leitura…</p></div>
@@ -303,9 +310,9 @@ export default function Macro() {
       <header className="topo">
         <h1>Viés da Abertura</h1>
         <p>WIN e WDO · leitura dos 15 primeiros minutos</p>
-        <span className={"status " + (aberta ? "on" : "off")}>
-          {aberta
-            ? "viés em aberto · congela às 09:00"
+        <span className={"status " + (aberta || podeFef2 ? "on" : "off")}>
+          {aberta ? "viés em aberto · congela às 09:00"
+            : podeFef2 ? "viés congelado · FEF2! ainda aceita até 09:10"
             : `viés congelado · registrado às ${horaBRT(vies.atualizado_em)}`}
         </span>
       </header>
@@ -424,10 +431,13 @@ export default function Macro() {
             const manual = p.entrada === "manual";
             const selo = manual ? "man" : p.parado ? "parado" : p.ausente ? "sem" : frescor(p.preco_em);
             const legenda = manual
-              ? (!aberta ? "registro fechado às 09:00"
-                : salvando === "salvando" ? "salvando…"
+              ? (salvando === "salvando" ? "salvando…"
                 : salvando === "erro" ? "não salvou — tente de novo"
-                : salvando === "salvo" ? "salvo no log" : "você digita · TradingView")
+                : salvando === "salvo" ? "salvo no log"
+                : vies.fef2_atrasado ? "digitado fora da janela · dia marcado"
+                : !podeFef2 ? "registro fechado às 09:10"
+                : !aberta ? "tolerância até 09:10 — o dia fica marcado"
+                : "você digita · TradingView")
               : p.sinal === -1 ? `invertido · cotação ${horaBRT(p.preco_em)}`
               : p.parado ? "sem negócio no pré — conta 0"
               : p.ausente ? "sem cotação" : `cotação ${horaBRT(p.preco_em)}`;
@@ -442,7 +452,7 @@ export default function Macro() {
                 </span>
                 <span className="pv">
                   {manual
-                    ? (aberta
+                    ? (podeFef2
                       ? <input type="number" step="0.01" inputMode="decimal" value={fef2} placeholder="0,00"
                                onChange={(e) => digitar(e.target.value)} aria-label={`${p.rotulo} — variação em %`} />
                       : <span style={{ color: "#7f8a97" }}>{p.pct == null ? "—" : sg(p.pct)}</span>)
