@@ -495,10 +495,6 @@ export default function Macro() {
             );
           })}
         </div>
-        <p className="nota">
-          Cotação do momento, para quando você operar fora da abertura. Números crus de propósito —
-          sem régua, sem direção e sem soma: a equação foi testada para os 15 primeiros minutos e vale só lá.
-        </p>
       </section>
     </div>
   );
