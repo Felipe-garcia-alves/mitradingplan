@@ -76,13 +76,8 @@ const ACAO = {
 };
 
 const CSS = `
-/* A pagina pinta o proprio fundo: anula o padding do container do App e sangra ate as bordas,
-   para que o Macro fique identico ao protótipo em vez de um painel dentro da moldura do app. */
-.mx-page{--bg:#0a0a11;
-  margin:-28px -24px;padding:30px 24px 40px;background:var(--bg);
-  background-image:radial-gradient(760px 420px at 20% -8%,rgba(139,124,246,.055),transparent 62%);
-  min-height:calc(100vh - 110px)}
-@media(max-width:768px){.mx-page{margin:-16px -12px;padding:22px 16px 32px}}
+/* Sem fundo proprio: a pagina usa o fundo do app, igual as outras secoes. */
+.mx-page{padding-block:4px 8px}
 .mx{--surf:#13131f;--surf2:#191926;--line:#262639;--line2:#1f1f2e;--txt:#eceef2;--mut:#9aa3b0;
   --dim:#7f8a97;--faint:#636d7a;--up:#2fc79f;--down:#ef6462;--flat:#d6a73f;--blue:#5aa9f0;--roxo:#8b7cf6;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -189,10 +184,17 @@ const CSS = `
 .mx .ctx .selo{font-size:8px;padding:1px 4px;letter-spacing:.3px}
 .mx .s-fech{color:var(--dim);border-color:var(--line)}
 .mx .nota{margin:18px 0 0;font-size:12px;color:var(--faint);line-height:1.55}
-.mx .rodape{border-top:1px solid var(--line2);padding-top:20px;display:flex;flex-direction:column;gap:12px;
-  font-size:12px;color:var(--faint);line-height:1.55}
-.mx .legenda{display:flex;flex-wrap:wrap;gap:9px 18px;align-items:center;font-size:11px}
-.mx .legenda span{display:flex;align-items:center;gap:6px}
+.mx .alt-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.mx .alt-sub{margin:6px 0 0;font-size:12.5px;color:var(--dim);max-width:46ch}
+.mx .btn-alt{flex:none;padding:7px 15px;border-radius:8px;cursor:pointer;background:transparent;
+  border:1px solid var(--line);color:var(--mut);font-family:var(--mono);font-size:11px;letter-spacing:.6px;
+  transition:.15s}
+.mx .btn-alt:hover{border-color:var(--roxo);color:var(--roxo)}
+.mx .alt-corpo{margin-top:20px;padding-top:18px;border-top:1px solid var(--line2);
+  display:flex;flex-direction:column;gap:14px}
+.mx .alt-num{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.mx .alt-num b{font-family:var(--mono);font-size:26px;font-weight:300;letter-spacing:-1px;color:var(--mut)}
+.mx .alt-num span{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint)}
 .mx input:focus-visible{outline:2px solid var(--roxo);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.mx *{transition:none!important}}
 `;

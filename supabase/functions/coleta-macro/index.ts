@@ -146,28 +146,37 @@ async function calcularVies(db: any, precos: Record<string, any>, hoje: string) 
     .select("fef2_manual, pernas").eq("data_pregao", hoje).maybeSingle();
   const manuais: Record<string, number | null> = { "FEF2!": ant?.fef2_manual ?? null };
 
-  const pernas: any[] = [];
-  for (const c of cesta.filter((x: any) => x.rota === rota)) {
-    if (c.entrada === "manual") {
-      const v = manuais[c.symbol];
-      pernas.push({ symbol: c.symbol, rotulo: c.rotulo, sinal: c.sinal, entrada: "manual",
-                    pct: v, contribuicao: v == null ? null : r2(c.sinal * v, 2),
-                    preco_em: null, parado: false, ausente: v == null });
-      continue;
-    }
-    const q = precos[c.symbol];
-    const pct = q?.preco != null && q?.fech ? r2((q.preco / q.fech - 1) * 100, 2) : null;
-    // Sem negocio no pre: a ultima cotacao ainda e de um pregao anterior em Nova York.
-    const parado = pct != null && pct === 0 && diaNY(q?.em) !== hojeNY();
-    pernas.push({ symbol: c.symbol, rotulo: c.rotulo, sinal: c.sinal, entrada: "auto",
-                  pct, contribuicao: pct == null ? null : r2(c.sinal * pct, 2),
-                  preco_em: q?.em ?? null, parado, ausente: pct == null });
-  }
+  const montar = (qualRota: string) =>
+    cesta.filter((x: any) => x.rota === qualRota).map((c: any) => {
+      if (c.entrada === "manual") {
+        const v = manuais[c.symbol];
+        return { symbol: c.symbol, rotulo: c.rotulo, sinal: c.sinal, entrada: "manual",
+                 pct: v, contribuicao: v == null ? null : r2(c.sinal * v, 2),
+                 preco_em: null, parado: false, ausente: v == null };
+      }
+      const q = precos[c.symbol];
+      const pct = q?.preco != null && q?.fech ? r2((q.preco / q.fech - 1) * 100, 2) : null;
+      // Sem negocio no pre: a ultima cotacao ainda e de um pregao anterior em Nova York.
+      const parado = pct != null && pct === 0 && diaNY(q?.em) !== hojeNY();
+      return { symbol: c.symbol, rotulo: c.rotulo, sinal: c.sinal, entrada: "auto",
+               pct, contribuicao: pct == null ? null : r2(c.sinal * pct, 2),
+               preco_em: q?.em ?? null, parado, ausente: pct == null };
+    });
 
-  const soma = pernas.reduce((t, p) => t + (p.contribuicao ?? 0), 0);
-  const resultado = Math.round(soma * 10) / 10;
-  const { direcao, intensidade } = classificar(resultado);
-  const completo = pernas.every((p) => !p.ausente && !p.parado);
+  const fechar = (ps: any[]) => {
+    const resultado = Math.round(ps.reduce((t, p) => t + (p.contribuicao ?? 0), 0) * 10) / 10;
+    return { pernas: ps, resultado, ...classificar(resultado),
+             completo: ps.every((p) => !p.ausente && !p.parado) };
+  };
+
+  const pernas = montar(rota);
+  const { resultado, direcao, intensidade, completo } = fechar(pernas);
+
+  // A outra rota, so para consulta na tela. Nunca e o vies do dia.
+  const outra = rota === "macro" ? "adr" : "macro";
+  const alt = fechar(montar(outra));
+  const alternativa = { rota: outra, resultado: alt.resultado, direcao: alt.direcao,
+                        intensidade: alt.intensidade, completo: alt.completo, pernas: alt.pernas };
 
   // Contexto overnight: so leitura de ambiente, nao entra na conta. Mesma base de percentual.
   // Futuros, nao indices a vista: as 08h55 a bolsa americana esta fechada e o indice a vista
@@ -191,7 +200,7 @@ async function calcularVies(db: any, precos: Record<string, any>, hoje: string) 
   const linha = {
     data_pregao: hoje, rota, tem_noticia: temNoticia,
     evento_nome: ev?.nome ?? null, evento_hora: ev?.hora_brt ?? null,
-    resultado, direcao, intensidade, pernas, contexto,
+    resultado, direcao, intensidade, pernas, contexto, alternativa,
     fef2_manual: manuais["FEF2!"], completo, atualizado_em: new Date().toISOString(),
   };
   const { error } = await db.from("macro_vies").upsert(linha, { onConflict: "data_pregao" });
