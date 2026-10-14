@@ -17,6 +17,7 @@ const FAIXAS = [
 ];
 const MIN = -6, MAX = 6;
 const CORES = { positiva: "#2fc79f", negativa: "#ef6462", lateral: "#d6a73f" };
+const BANDEIRA = { BR: "🇧🇷", US: "🇺🇸", EU: "🇪🇺", CN: "🇨🇳", GB: "🇬🇧", JP: "🇯🇵" };
 
 /* Contexto ao vivo: os mesmos ativos, cotação do momento, para o resto do dia.
    Números crus de propósito — sem régua, sem direção, sem soma. A equação foi validada
@@ -122,9 +123,11 @@ const CSS = `
   white-space:nowrap;flex:none;border:1px solid color-mix(in srgb,var(--mc) 32%,transparent);
   color:var(--mc);background:color-mix(in srgb,var(--mc) 8%,transparent)}
 .mx .agenda{margin-top:14px;display:flex;flex-direction:column;gap:7px}
-.mx .ev{display:grid;grid-template-columns:48px 30px minmax(0,1fr) auto;gap:10px;align-items:baseline;font-size:12.5px}
+.mx .ev{display:grid;grid-template-columns:48px 46px minmax(0,1fr) auto;gap:10px;align-items:baseline;font-size:12.5px}
 .mx .ev em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--mut)}
-.mx .ev .pais{font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--faint)}
+.mx .ev .pais{font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--dim);
+  display:flex;align-items:baseline;gap:4px;white-space:nowrap}
+.mx .ev .pais span{font-size:12px;line-height:1}
 .mx .ev s{text-decoration:none;font-family:var(--mono);font-size:10.5px;letter-spacing:2px}
 .mx .cal-pe{margin-top:18px;padding-top:16px;border-top:1px solid var(--line2);
   display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
@@ -347,7 +350,10 @@ export default function Macro() {
             {agenda.map((e, i) => (
               <div key={i} className="ev">
                 <em>{String(e.hora_brt || "").slice(0, 5) || "—"}</em>
-                <span className="pais">{(e.pais || "BR").toUpperCase()}</span>
+                <span className="pais">
+                  <span>{BANDEIRA[(e.pais || "BR").toUpperCase()] || "🏳️"}</span>
+                  {(e.pais || "BR").toUpperCase()}
+                </span>
                 <span style={{ color: e.estrelas >= 3 ? "#eceef2" : "#9aa3b0", minWidth: 0 }}>{e.nome}</span>
                 <s style={{ color: e.estrelas >= 3 ? "#d6a73f" : "#636d7a" }}>
                   {"★".repeat(e.estrelas) + "☆".repeat(Math.max(0, 3 - e.estrelas))}
