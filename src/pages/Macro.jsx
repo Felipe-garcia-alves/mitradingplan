@@ -304,7 +304,9 @@ export default function Macro() {
         <h1>Viés da Abertura</h1>
         <p>WIN e WDO · leitura dos 15 primeiros minutos</p>
         <span className={"status " + (aberta ? "on" : "off")}>
-          {aberta ? "registro aberto · fecha às 09:00" : "registro fechado — leitura da manhã"}
+          {aberta
+            ? "viés em aberto · congela às 09:00"
+            : `viés congelado · registrado às ${horaBRT(vies.atualizado_em)}`}
         </span>
       </header>
 
