@@ -27,7 +27,7 @@ const CTX_ATIVOS = [
   ["CL=F", "CL1!", "petróleo WTI"],
   ["ES=F", "ES=F", "S&P 500 futuro"],
   ["NQ=F", "NQ=F", "Nasdaq futuro"],
-  ["DX=F", "DX=F", "dólar index futuro"],
+  ["DX-Y.NYB", "DXY", "dólar index"],
   ["EWZ", "EWZ", "ETF Brasil"],
   ["BRL=X", "USD/BRL", "câmbio à vista"],
 ];
@@ -166,7 +166,7 @@ const CSS = `
 @media(max-width:620px){.mx .perna{grid-template-columns:104px minmax(0,1fr) 72px;gap:11px}}
 .mx .pn{display:flex;flex-direction:column;min-width:0}
 .mx .pn b{font-family:var(--mono);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px}
-.mx .pn span{font-size:9.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx .pn span{font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mx .barra{position:relative;height:16px;background:var(--surf2);border-radius:4px;overflow:hidden}
 .mx .barra::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
 .mx .barra i{position:absolute;top:0;bottom:0;border-radius:3px;transition:.32s cubic-bezier(.3,.8,.4,1)}
@@ -190,9 +190,9 @@ const CSS = `
 .mx .ctx div{border:1px solid var(--line2);border-radius:10px;padding:11px 12px;
   display:flex;flex-direction:column;gap:5px;min-width:0}
 .mx .ctx .t{display:flex;align-items:center;justify-content:space-between;gap:6px}
-.mx .ctx em{font-style:normal;font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.5px}
+.mx .ctx em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--mut);letter-spacing:.5px;font-weight:500}
 .mx .ctx b{font-family:var(--mono);font-size:15px;font-weight:400}
-.mx .ctx small{font-size:9px;color:var(--faint);line-height:1.3}
+.mx .ctx small{font-size:10.5px;color:var(--dim);line-height:1.35}
 .mx .nota{margin:16px 0 0;font-size:11.5px;color:var(--faint);line-height:1.5}
 /* Frescor é informação de rodapé, não aviso: sem caixa, sem borda, num tom puxado para o
    cinza. Só "parado" mantém cor cheia — ali o dado está quebrado e precisa interromper a leitura. */

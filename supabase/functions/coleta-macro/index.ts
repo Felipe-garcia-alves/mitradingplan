@@ -185,7 +185,8 @@ async function calcularVies(db: any, precos: Record<string, any>, hoje: string) 
     ["ES=F", "ES=F", "S&P 500 futuro"],
     ["YM=F", "YM=F", "Dow futuro"],
     ["NQ=F", "NQ=F", "Nasdaq futuro"],
-    ["DX=F", "DX=F", "Dólar index futuro"],
+    // DX=F nao existe no Yahoo. O indice da ICE negocia desde 01:00 BRT e cobre a janela das 08h55.
+    ["DX-Y.NYB", "DXY", "Dólar index"],
     ["EWZ",  "EWZ",  "ETF Brasil · NYSE"],
   ];
   const contexto = CTX.map(([sym, rotulo, nome]) => {
