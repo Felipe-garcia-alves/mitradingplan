@@ -17,7 +17,30 @@ const FAIXAS = [
 ];
 const MIN = -6, MAX = 6;
 const CORES = { positiva: "#2fc79f", negativa: "#ef6462", lateral: "#d6a73f" };
-const BANDEIRA = { BR: "🇧🇷", US: "🇺🇸", EU: "🇪🇺", CN: "🇨🇳", GB: "🇬🇧", JP: "🇯🇵" };
+/* Bandeira em SVG, não emoji: o Windows não traz os glifos de bandeira e renderiza
+   o par de letras no lugar do desenho ("BR" vira o texto BR). */
+function Bandeira({ pais }) {
+  const p = (pais || "BR").toUpperCase();
+  const box = { width: 15, height: 11, viewBox: "0 0 28 20", "aria-hidden": true,
+                style: { borderRadius: 2, display: "block", flex: "none" } };
+  if (p === "BR") return (
+    <svg {...box}>
+      <rect width="28" height="20" fill="#009b3a" />
+      <path d="M14 2.6 25.4 10 14 17.4 2.6 10z" fill="#fedf00" />
+      <circle cx="14" cy="10" r="4.1" fill="#002776" />
+    </svg>
+  );
+  if (p === "US") return (
+    <svg {...box}>
+      <rect width="28" height="20" fill="#b22234" />
+      {[1, 3, 5, 7, 9, 11].map((i) => (
+        <rect key={i} y={i * 20 / 13} width="28" height={20 / 13} fill="#fff" />
+      ))}
+      <rect width="11.2" height={7 * 20 / 13} fill="#3c3b6e" />
+    </svg>
+  );
+  return <svg {...box}><rect width="28" height="20" fill="#2a2a3d" /></svg>;
+}
 
 /* Contexto ao vivo: os mesmos ativos, cotação do momento, para o resto do dia.
    Números crus de propósito — sem régua, sem direção, sem soma. A equação foi validada
@@ -126,8 +149,7 @@ const CSS = `
 .mx .ev{display:grid;grid-template-columns:48px 46px minmax(0,1fr) auto;gap:10px;align-items:baseline;font-size:12.5px}
 .mx .ev em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--mut)}
 .mx .ev .pais{font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--dim);
-  display:flex;align-items:baseline;gap:4px;white-space:nowrap}
-.mx .ev .pais span{font-size:12px;line-height:1}
+  display:flex;align-items:center;gap:5px;white-space:nowrap}
 .mx .ev s{text-decoration:none;font-family:var(--mono);font-size:10.5px;letter-spacing:2px}
 .mx .cal-pe{margin-top:18px;padding-top:16px;border-top:1px solid var(--line2);
   display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
@@ -351,7 +373,7 @@ export default function Macro() {
               <div key={i} className="ev">
                 <em>{String(e.hora_brt || "").slice(0, 5) || "—"}</em>
                 <span className="pais">
-                  <span>{BANDEIRA[(e.pais || "BR").toUpperCase()] || "🏳️"}</span>
+                  <Bandeira pais={e.pais} />
                   {(e.pais || "BR").toUpperCase()}
                 </span>
                 <span style={{ color: e.estrelas >= 3 ? "#eceef2" : "#9aa3b0", minWidth: 0 }}>{e.nome}</span>
