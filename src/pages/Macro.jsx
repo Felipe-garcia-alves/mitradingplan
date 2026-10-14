@@ -414,7 +414,9 @@ export default function Macro() {
           <p className="acao">{ACAO[mostra.direcao](mostra.intensidade.toLowerCase())}</p>
         ) : (
           <p className="acao" style={{ color: "#9aa3b0" }}>
-            Leitura do momento — fora da janela da abertura.
+            Cotação do momento, fora da janela da abertura. O viés registrado às{" "}
+            {horaBRT(vies.atualizado_em)} foi <b>{sg(calc.resultado, n1)}%</b>, {calc.direcao}
+            {calc.direcao === "lateral" ? "" : " " + calc.intensidade.toLowerCase()}.
           </p>
         )}
 
