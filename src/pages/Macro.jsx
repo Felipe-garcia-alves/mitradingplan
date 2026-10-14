@@ -82,10 +82,15 @@ const CSS = `
   --dim:#7f8a97;--faint:#636d7a;--up:#2fc79f;--down:#ef6462;--flat:#d6a73f;--blue:#5aa9f0;--roxo:#8b7cf6;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --ui:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
-  max-width:700px;margin:0 auto;font-family:var(--ui);
+  max-width:1120px;margin:0 auto;font-family:var(--ui);
   display:flex;flex-direction:column;gap:18px;color:var(--txt);font-size:14px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 .mx *{box-sizing:border-box}
+/* Veredito ocupa a largura toda — a régua ganha resolução. O resto vai em duas colunas:
+   esquerda o que entra (calendário e variação), direita o que sai (contribuição e contexto). */
+.mx .grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.mx .col{display:flex;flex-direction:column;gap:18px;min-width:0}
+@media(max-width:1000px){.mx .grade{grid-template-columns:minmax(0,1fr)}}
 .mx .lbl{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--faint);font-weight:600}
 .mx .card{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:26px 28px}
 .mx .card>h2{margin:0 0 20px;font-size:10px;letter-spacing:2.2px;text-transform:uppercase;font-weight:700;color:var(--faint)}
@@ -96,14 +101,14 @@ const CSS = `
 .mx .relogio{display:flex;gap:20px;text-align:right}
 .mx .relogio b{display:block;font-family:var(--mono);font-size:14px;font-weight:500;margin-top:3px}
 .mx .veredito{border-left:2px solid var(--cor)}
-.mx .vhead{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.mx .vhead{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
 .mx .vnum{font-family:var(--mono);font-weight:300;font-size:clamp(46px,10vw,62px);line-height:.9;letter-spacing:-2.5px;color:var(--cor)}
 .mx .chips{display:flex;flex-direction:column;gap:7px;min-width:124px}
 .mx .chip{font-size:10.5px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;padding:6px 14px;
   border-radius:7px;text-align:center;white-space:nowrap;color:var(--cor);
   border:1px solid color-mix(in srgb,var(--cor) 32%,transparent);background:color-mix(in srgb,var(--cor) 8%,transparent)}
 .mx .chip.ghost{color:var(--dim);border-color:var(--line);background:transparent}
-.mx .vacao{margin:24px 0 0;font-size:15.5px;line-height:1.55;padding-top:22px;border-top:1px solid var(--line2)}
+.mx .vacao{margin:24px 0 0;font-size:15.5px;line-height:1.55;padding-top:22px;border-top:1px solid var(--line2);max-width:72ch}
 .mx .vacao b{color:var(--cor);font-weight:600}
 .mx .regua-bloco{margin-top:24px;padding-top:22px;border-top:1px solid var(--line2)}
 .mx .regua-top{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1.8px;
@@ -210,6 +215,7 @@ export default function Macro() {
   const [fef2, setFef2] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(null); // null | "salvando" | "salvo" | "erro"
+  const [verAlt, setVerAlt] = useState(false);
   const digitando = useRef(false);
   const timer = useRef(null);
 
@@ -279,6 +285,7 @@ export default function Macro() {
 
   const cor = CORES[calc.direcao];
   const aberta = janelaAberta();
+  const alt = vies.alternativa && vies.alternativa.pernas ? vies.alternativa : null;
   const temNoticia = vies.tem_noticia;
   // contexto virou lista (ordem importa); aceita o formato antigo em objeto sem quebrar
   const ctx = Array.isArray(vies.contexto) ? vies.contexto
@@ -341,6 +348,9 @@ export default function Macro() {
           </div>
         </div>
       </section>
+
+      <div className="grade">
+      <div className="col">
 
       <section className="card">
         <h2>Calendário</h2>
@@ -428,6 +438,9 @@ export default function Macro() {
         </div>
       </section>
 
+      </div>
+      <div className="col">
+
       <section className="card">
         <h2>Contribuição de cada perna</h2>
         <div className="pernas">
@@ -492,20 +505,58 @@ export default function Macro() {
         </p>
       </section>
 
-      <footer className="rodape">
-        <div className="legenda">
-          <span><Selo tipo="live" /> tempo real</span>
-          <span><Selo tipo="del" /> atrasado</span>
-          <span><Selo tipo="fech" /> mercado fechado — número definitivo</span>
-          <span><Selo tipo="man" /> você digita</span>
-          <span><Selo tipo="parado" /> sem negócio — entra como zero</span>
-        </div>
-        <p style={{ margin: 0 }}>
-          Até 1,5% lateral · 1,5 a 2,5% fraca · 2,5 a 4,5% moderada · acima de 4,5% forte.
-          Classificação feita sobre o valor já arredondado em uma casa decimal.
-          A leitura vale das 09:00 às 09:15 e fica gravada para medição posterior.
-        </p>
-      </footer>
+      {alt?.pernas?.length > 0 && (
+        <section className="card">
+          <div className="alt-top">
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ margin: 0 }}>O outro lado</h2>
+              <p className="alt-sub">
+                {alt.rota === "macro"
+                  ? "Como estaria pelo trio, se hoje não houvesse notícia 3★."
+                  : "Como estaria pelas ADRs, se hoje houvesse notícia 3★."}
+                {" "}Não é o viés de hoje e não vai para o log.
+              </p>
+            </div>
+            <button className="btn-alt" onClick={() => setVerAlt((v) => !v)}>
+              {verAlt ? "ocultar" : "ver"}
+            </button>
+          </div>
+
+          {verAlt && (
+            <div className="alt-corpo">
+              <div className="alt-num">
+                <b>{sg(alt.resultado, n1)}%</b>
+                <span>{alt.direcao} · {alt.direcao === "lateral" ? "sem força" : alt.intensidade}</span>
+                {!alt.completo && <span style={{ color: "#ef6462" }}>· incompleta</span>}
+              </div>
+              <div className="pernas">
+                {alt.pernas.map((p) => {
+                  const v = p.contribuicao ?? 0;
+                  const w = Math.abs(v) / Math.max(1, ...alt.pernas.map((x) => Math.abs(x.contribuicao ?? 0))) * 50;
+                  return (
+                    <div key={p.symbol} className="perna">
+                      <span className="pn">
+                        <b style={{ color: "#9aa3b0" }}>{p.rotulo}</b>
+                        <span>{p.sinal === -1 ? "invertido" : p.parado ? "sem negócio" : p.ausente ? "sem dado" : "a favor"}</span>
+                      </span>
+                      <span className="barra">
+                        <i style={{ background: "#3a3a52", ...(v >= 0 ? { left: "50%", width: `${w}%` } : { right: "50%", width: `${w}%` }) }} />
+                      </span>
+                      <span className="pv" style={{ color: "#7f8a97" }}>
+                        {p.contribuicao == null ? "—" : sg(v)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      </div>
+      </div>
+
       </div>
     </div>
   );
