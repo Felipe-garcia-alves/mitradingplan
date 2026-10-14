@@ -1,418 +1,510 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../supabase";
 
-const C = {
-  card:"#12121f", card2:"#1a1a2e", line:"#1e1e2e", line2:"#17172a",
-  txt:"#f0f0f0", mut:"#a3adb9", dim:"#8b96a4", faint:"#737e8c",
-  up:"#00d4aa", down:"#ff4d4d", warn:"#f59e0b", blue:"#0099ff",
+/* Viés da Abertura — WIN e WDO, leitura dos 15 primeiros minutos (09:00 → 09:15).
+   O cálculo e a classificação aqui são idênticos aos da Edge Function coleta-macro:
+   soma com sinal, arredondamento em 1 casa, e só então a classificação. Se mudar um lado,
+   mude o outro — a tela e o log têm de contar a mesma história. */
+
+const FAIXAS = [
+  { de: -6,   ate: -4.5, t: "Forte",    c: "#ef6462" },
+  { de: -4.5, ate: -2.5, t: "Moderada", c: "#d2706b" },
+  { de: -2.5, ate: -1.5, t: "Fraca",    c: "#b08268" },
+  { de: -1.5, ate:  1.5, t: "Lateral",  c: "#d6a73f" },
+  { de:  1.5, ate:  2.5, t: "Fraca",    c: "#6aae95" },
+  { de:  2.5, ate:  4.5, t: "Moderada", c: "#48bd9c" },
+  { de:  4.5, ate:  6,   t: "Forte",    c: "#2fc79f" },
+];
+const MIN = -6, MAX = 6;
+const CORES = { positiva: "#2fc79f", negativa: "#ef6462", lateral: "#d6a73f" };
+
+/* Frescor pela idade da cotação, não por uma etiqueta fixa: a mesma fonte entrega
+   ao vivo, atrasada ou fechada conforme a hora. "fech" não é defeito — é número definitivo. */
+function frescor(em) {
+  if (!em) return "sem";
+  const min = (Date.now() - new Date(em).getTime()) / 60000;
+  if (min <= 3) return "live";
+  if (min <= 40) return "del";
+  return "fech";
+}
+
+const n1 = (x) => x.toFixed(1).replace(".", ",");
+const n2 = (x) => x.toFixed(2).replace(".", ",");
+const sg = (x, f = n2) => (x > 0 ? "+" : x < 0 ? "−" : "") + f(Math.abs(x));
+const hojeBRT = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+/* A mesma janela da Edge Function: das 09:00 em diante o viés do dia está congelado.
+   Um FEF2! digitado às 09h02 não é o que estava na tela às 08h55, e um log que aceita
+   correção retroativa não serve para medir nada depois. */
+const janelaAberta = () => {
+  const brt = new Date(Date.now() - 3 * 3600 * 1000);
+  return brt.getUTCHours() * 60 + brt.getUTCMinutes() < 9 * 60;
+};
+const horaBRT = (iso) => iso
+  ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })
+  : "—";
+
+function classificar(resultado) {
+  const m = Math.abs(resultado);
+  if (m < 1.5) return { direcao: "lateral", intensidade: "Lateral" };
+  return {
+    direcao: resultado > 0 ? "positiva" : "negativa",
+    intensidade: m < 2.5 ? "Fraca" : m < 4.5 ? "Moderada" : "Forte",
+  };
+}
+
+function calcular(vies, fef2) {
+  if (!vies) return null;
+  const pernas = (vies.pernas || []).map((p) => {
+    if (p.entrada !== "manual") return p;
+    const pct = fef2 === "" || fef2 == null || Number.isNaN(Number(fef2)) ? null : Number(fef2);
+    return { ...p, pct, contribuicao: pct == null ? null : Number((p.sinal * pct).toFixed(2)), ausente: pct == null };
+  });
+  const soma = pernas.reduce((t, p) => t + (p.contribuicao ?? 0), 0);
+  const resultado = Math.round(soma * 10) / 10;
+  return {
+    pernas, resultado, ...classificar(resultado),
+    completo: pernas.every((p) => !p.ausente && !p.parado),
+    faltando: pernas.filter((p) => p.ausente).map((p) => p.rotulo),
+    parados: pernas.filter((p) => p.parado).map((p) => p.rotulo),
+  };
+}
+
+const ACAO = {
+  positiva: (f) => <>Intenção de <b>compra</b> com força {f}. Busca regiões compradoras <b>abaixo da abertura</b>.</>,
+  negativa: (f) => <>Intenção de <b>venda</b> com força {f}. Busca regiões vendedoras <b>acima da abertura</b>.</>,
+  lateral: () => <>Sem intenção definida. <b>Opera as extremidades</b>, com as travas dos dois lados. Alvos curtos.</>,
 };
 
-const DEMO = {
-  WIN:{ instrumento:"WIN", justo:152345, mercado:151900, gap:-445, variacao_pct:0.571,
-        nivel:1, cobertura_pct:38, checagem_ok:true, checagem_delta:-0.02,
-        score_trio:1.61, origem:"local", idade_dado_seg:18,
-        mapa_global:{asia:0.12, europa:0.09, eua:0.02, brasil:0.571},
-        evento:"Estoques de petróleo EUA", evento_estrelas:1,
-        componentes:{
-          cesta:[{symbol:"VALE",peso:11,retorno_pct:0.40,idade_min:3},{symbol:"PBR",peso:5,retorno_pct:0.95,idade_min:3},
-                 {symbol:"ITUB",peso:7,retorno_pct:0.30,idade_min:4},{symbol:"BBD",peso:3,retorno_pct:-0.12,idade_min:22}],
-          descartados_velhos:["SUZ"], sem_dado:["GGB"],
-          trio:{vix:-0.40, petroleo:0.81, minerio:0.40} } },
-  WDO:{ instrumento:"WDO", justo:5382, mercado:5391, gap:9, variacao_pct:-0.13,
-        nivel:1, cobertura_pct:100, checagem_ok:true, origem:"local", idade_dado_seg:18 },
-};
-
-const fmt = (n,d=0)=> n==null ? "—" :
-  Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
-const sinal = (n,d=2)=> n==null ? "—" : (n>=0?"+":"−")+fmt(Math.abs(n),d);
+const CSS = `
+/* A pagina pinta o proprio fundo: anula o padding do container do App e sangra ate as bordas,
+   para que o Macro fique identico ao protótipo em vez de um painel dentro da moldura do app. */
+.mx-page{--bg:#0a0a11;
+  margin:-28px -24px;padding:30px 24px 40px;background:var(--bg);
+  background-image:radial-gradient(760px 420px at 20% -8%,rgba(139,124,246,.055),transparent 62%);
+  min-height:calc(100vh - 110px)}
+@media(max-width:768px){.mx-page{margin:-16px -12px;padding:22px 16px 32px}}
+.mx{--surf:#13131f;--surf2:#191926;--line:#262639;--line2:#1f1f2e;--txt:#eceef2;--mut:#9aa3b0;
+  --dim:#7f8a97;--faint:#636d7a;--up:#2fc79f;--down:#ef6462;--flat:#d6a73f;--blue:#5aa9f0;--roxo:#8b7cf6;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ui:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  max-width:700px;margin:0 auto;font-family:var(--ui);
+  display:flex;flex-direction:column;gap:18px;color:var(--txt);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+.mx *{box-sizing:border-box}
+.mx .lbl{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--faint);font-weight:600}
+.mx .card{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:26px 28px}
+.mx .card>h2{margin:0 0 20px;font-size:10px;letter-spacing:2.2px;text-transform:uppercase;font-weight:700;color:var(--faint)}
+@media(max-width:520px){.mx .card{padding:22px 18px}}
+.mx .topo{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px}
+.mx .topo h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.3px}
+.mx .topo p{margin:3px 0 0;font-size:13px;color:var(--dim)}
+.mx .relogio{display:flex;gap:20px;text-align:right}
+.mx .relogio b{display:block;font-family:var(--mono);font-size:14px;font-weight:500;margin-top:3px}
+.mx .veredito{border-left:2px solid var(--cor)}
+.mx .vhead{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.mx .vnum{font-family:var(--mono);font-weight:300;font-size:clamp(46px,10vw,62px);line-height:.9;letter-spacing:-2.5px;color:var(--cor)}
+.mx .chips{display:flex;flex-direction:column;gap:7px;min-width:124px}
+.mx .chip{font-size:10.5px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;padding:6px 14px;
+  border-radius:7px;text-align:center;white-space:nowrap;color:var(--cor);
+  border:1px solid color-mix(in srgb,var(--cor) 32%,transparent);background:color-mix(in srgb,var(--cor) 8%,transparent)}
+.mx .chip.ghost{color:var(--dim);border-color:var(--line);background:transparent}
+.mx .vacao{margin:24px 0 0;font-size:15.5px;line-height:1.55;padding-top:22px;border-top:1px solid var(--line2)}
+.mx .vacao b{color:var(--cor);font-weight:600}
+.mx .regua-bloco{margin-top:24px;padding-top:22px;border-top:1px solid var(--line2)}
+.mx .regua-top{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1.8px;
+  text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.mx .regua-pin{position:relative;height:22px}
+.mx .pin{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;
+  transition:left .34s cubic-bezier(.3,.8,.4,1)}
+.mx .pin i{font-style:normal;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--cor);white-space:nowrap}
+.mx .pin u{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--cor)}
+.mx .regua{display:flex;height:32px;border-radius:7px;overflow:hidden}
+.mx .faixa{display:grid;place-items:center;font-size:9.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  min-width:0;overflow:hidden;transition:.3s ease;background:color-mix(in srgb,var(--fc) 9%,var(--surf2));
+  color:color-mix(in srgb,var(--fc) 42%,var(--faint))}
+.mx .faixa.on{background:color-mix(in srgb,var(--fc) 82%,#0a0a11);color:#0a0a11;font-weight:700}
+.mx .escala{position:relative;height:15px;margin-top:5px}
+.mx .tick{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.mx .cal-topo{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.mx .cal-frase{margin:0;font-size:18px;font-weight:500;line-height:1.4;letter-spacing:-.2px}
+.mx .modo{font-family:var(--mono);font-size:10px;letter-spacing:1.4px;padding:5px 11px;border-radius:7px;
+  white-space:nowrap;border:1px solid color-mix(in srgb,var(--mc) 32%,transparent);color:var(--mc);
+  background:color-mix(in srgb,var(--mc) 8%,transparent)}
+.mx .cal-sub{margin:10px 0 0;font-size:12.5px;color:var(--dim)}
+.mx .eventos{margin-top:20px;padding-top:18px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:11px}
+.mx .evento{display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:14px;align-items:baseline;font-size:13px}
+.mx .evento em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--mut)}
+.mx .evento s{text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:2px;white-space:nowrap}
+.mx .eq{margin-top:20px;padding:12px 16px;border-radius:9px;background:var(--surf2);font-family:var(--mono);
+  font-size:12.5px;color:var(--mut);overflow-x:auto;white-space:nowrap}
+.mx .eq b{color:var(--txt);font-weight:600}
+.mx .campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.mx .campo{border:1px solid var(--line);border-radius:11px;padding:14px 15px 13px;background:var(--surf2);
+  display:flex;flex-direction:column;gap:11px;min-width:0}
+.mx .campo.manual{border-color:color-mix(in srgb,var(--blue) 34%,transparent);background:color-mix(in srgb,var(--blue) 5%,var(--surf2))}
+.mx .campo.parado{border-color:color-mix(in srgb,var(--down) 32%,transparent);background:color-mix(in srgb,var(--down) 5%,var(--surf2))}
+.mx .campo-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.mx .campo-top b{font-family:var(--mono);font-size:12.5px;font-weight:600}
+.mx .campo input{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--txt);
+  font-family:var(--mono);font-size:19px;font-weight:400;padding:2px 0 6px;text-align:right}
+.mx .campo input:focus{outline:none;border-bottom-color:var(--blue)}
+.mx .campo input:disabled{color:var(--dim);cursor:not-allowed}
+.mx .campo.manual:has(input:disabled){border-color:var(--line);background:var(--surf2)}
+.mx .campo .val{font-family:var(--mono);font-size:19px;text-align:right;padding:2px 0 6px;border-bottom:1px solid var(--line)}
+.mx .campo small{font-size:9.5px;color:var(--faint);font-family:var(--mono)}
+.mx .selo{font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:2px 6px;border-radius:4px;
+  border:1px solid;white-space:nowrap;font-style:normal}
+.mx .s-live{color:var(--up);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
+.mx .s-del{color:var(--flat);border-color:color-mix(in srgb,var(--flat) 35%,transparent)}
+.mx .s-man{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 35%,transparent)}
+.mx .s-parado{color:var(--down);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
+.mx .soma{margin-top:20px;padding:13px 16px;border-radius:9px;background:var(--surf2);text-align:center;
+  font-family:var(--mono);font-size:13px;color:var(--mut);overflow-x:auto;white-space:nowrap}
+.mx .soma b{color:var(--txt);font-weight:600}
+.mx .pernas{display:flex;flex-direction:column;gap:14px}
+.mx .perna{display:grid;grid-template-columns:96px minmax(0,1fr) 62px;gap:14px;align-items:center}
+.mx .perna .pn{display:flex;flex-direction:column;min-width:0}
+.mx .perna .pn b{font-family:var(--mono);font-size:12px;font-weight:600}
+.mx .perna .pn span{font-size:9.5px;color:var(--faint)}
+.mx .barra{position:relative;height:14px;background:var(--surf2);border-radius:4px;overflow:hidden}
+.mx .barra::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.mx .barra i{position:absolute;top:0;bottom:0;border-radius:3px;transition:.32s cubic-bezier(.3,.8,.4,1)}
+.mx .perna .pv{font-family:var(--mono);font-size:12.5px;font-weight:500;text-align:right}
+.mx .total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:20px;
+  padding-top:18px;border-top:1px solid var(--line2)}
+.mx .total .tv{font-family:var(--mono);font-size:20px;font-weight:400;color:var(--cor)}
+.mx .alerta{margin-top:18px;padding:13px 16px;border-radius:9px;font-size:12.5px;line-height:1.5;
+  background:color-mix(in srgb,var(--down) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--down) 26%,transparent);color:#f3a9a8}
+.mx .alerta b{color:var(--down);font-weight:600}
+.mx .aviso{padding:13px 16px;border-radius:9px;font-size:12.5px;line-height:1.5;
+  background:color-mix(in srgb,var(--flat) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--flat) 26%,transparent);color:#e8cf95}
+.mx .ctx{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:12px}
+.mx .ctx div{border:1px solid var(--line2);border-radius:10px;padding:12px 13px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.mx .ctx .ctx-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.mx .ctx em{font-style:normal;font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.6px}
+.mx .ctx b{font-family:var(--mono);font-size:15px;font-weight:400}
+.mx .ctx small{font-size:9.5px;color:var(--faint);line-height:1.3}
+.mx .ctx .selo{font-size:8px;padding:1px 4px;letter-spacing:.3px}
+.mx .s-fech{color:var(--dim);border-color:var(--line)}
+.mx .nota{margin:18px 0 0;font-size:12px;color:var(--faint);line-height:1.55}
+.mx .rodape{border-top:1px solid var(--line2);padding-top:20px;display:flex;flex-direction:column;gap:12px;
+  font-size:12px;color:var(--faint);line-height:1.55}
+.mx .legenda{display:flex;flex-wrap:wrap;gap:9px 18px;align-items:center;font-size:11px}
+.mx .legenda span{display:flex;align-items:center;gap:6px}
+.mx input:focus-visible{outline:2px solid var(--roxo);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.mx *{transition:none!important}}
+`;
 
 function Selo({ tipo }) {
-  const m = { live:[C.up,"live"], del:[C.warn,"15m"], fech:[C.dim,"fech"], sem:[C.dim,"s/ dado"] };
-  const [cor,txt] = m[tipo] || m.live;
-  return <span style={{display:"inline-block",fontFamily:"monospace",fontSize:"9.5px",
-    letterSpacing:"0.5px",padding:"1px 5px",borderRadius:"3px",
-    border:"1px solid "+cor+"55",color:cor,whiteSpace:"nowrap"}}>{txt}</span>;
-}
-
-function amplitude(d) {
-  const cesta = d.componentes?.cesta || [];
-  const aFavor = d.variacao_pct==null ? 0 : cesta.filter(c=>c.retorno_pct!=null &&
-    ((c.retorno_pct>0 && d.variacao_pct>0) || (c.retorno_pct<0 && d.variacao_pct<0))).length;
-  const alta = cesta.length>0 && aFavor/cesta.length >= 0.75;
-  return { cesta, aFavor, alta };
-}
-
-function Card({ d, nome, desc, selo, checagem, temCesta, origemDetalhe }) {
-  const ehWin = nome==="WIN";
-  const { cesta, aFavor } = amplitude(d);
-  const suspeito = d.checagem_ok === false;
-  const cor = suspeito ? C.dim : d.variacao_pct>=0 ? C.up : C.down;
-  const heroNum = sinal(d.variacao_pct,2)+"%";
-  const chip = suspeito ? "verificar" : d.variacao_pct>=0 ? "↑ viés de alta" : "↓ viés de baixa";
-  const origemTxt = { local:"Brasil específico", global:"Puxado pelo global" }[d.origem] || "Indeterminado";
-  const origemCor = d.origem==="local" ? C.up : C.mut;
-  const semChecagem = d.checagem_ok==null || d.checagem_delta==null;
-
-  return (
-    <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"18px 20px 16px"}}>
-      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
-        <span style={{fontSize:"14px",fontWeight:"800",letterSpacing:"2px",color:C.txt}}>{nome}</span>
-        <span style={{fontSize:"12px",color:C.faint,display:"flex",alignItems:"center",gap:"7px"}}>
-          <Selo tipo={selo}/> {desc}
-        </span>
-      </div>
-
-      {ehWin ? <div style={{height:"14px"}}/> : (<>
-      <div style={{marginTop:"14px",display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-        <span style={{fontSize:"12px",letterSpacing:"1px",textTransform:"uppercase",color:C.mut}}>USD/BRL offshore</span>
-        <span style={{fontFamily:"monospace",fontSize:"15px",color:C.txt}}>{d.justo==null ? "—" : fmt(d.justo/1000,4)}</span>
-      </div>
-
-      <div style={{height:"1px",background:C.line2,margin:"14px 0 12px"}}/>
-      </>)}
-
-      <div style={{display:"flex",alignItems:"baseline",gap:"9px",flexWrap:"wrap"}}>
-        <span style={{fontFamily:"monospace",fontWeight:"800",fontSize:"38px",lineHeight:1,
-          letterSpacing:"-1.5px",color:cor}}>{heroNum}</span>
-      </div>
-      <div style={{marginTop:"9px",display:"flex",alignItems:"center",gap:"9px",flexWrap:"wrap"}}>
-        <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Abertura implícita</span>
-        <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
-          border:"1px solid "+(suspeito?C.warn:cor)+"66",color:suspeito?C.warn:cor}}>{chip}</span>
-      </div>
-      {ehWin && (
-        <div style={{marginTop:"10px",display:"flex",alignItems:"center",gap:"9px",flexWrap:"wrap"}}>
-          <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Amplitude</span>
-          {cesta.length>0 ? (<>
-            <span style={{fontFamily:"monospace",fontSize:"13px",color:C.txt}}>{aFavor} de {cesta.length} ADRs a favor</span>
-          </>) : (
-            <span style={{fontFamily:"monospace",fontSize:"13px",color:C.mut}}>sem dado</span>
-          )}
-        </div>
-      )}
-
-      <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid "+C.line2,
-        display:"flex",flexDirection:"column",gap:"4px"}}>
-        <span style={{fontSize:"11px",letterSpacing:"1.3px",textTransform:"uppercase",color:C.faint}}>Origem do movimento</span>
-        <span style={{fontSize:"14px",fontWeight:"700",color:origemDetalhe==null?C.mut:origemCor}}>
-          {origemDetalhe==null ? "Sem dado" : origemTxt}
-        </span>
-        <span style={{fontFamily:"monospace",fontSize:"12.5px",color:C.mut}}>
-          {origemDetalhe==null ? "sem leitura de mapa global" : origemDetalhe}
-        </span>
-      </div>
-
-      <div style={{marginTop:"13px",paddingTop:"11px",borderTop:"1px solid "+C.line2,
-        display:"flex",flexDirection:"column",gap:"5px"}}>
-        {temCesta && <Linha k="Cobertura da cesta" v={d.cobertura_pct!=null?fmt(d.cobertura_pct,0)+"%":"—"}/>}
-        <Linha k="Nível do sinal"
-          v={"nível "+(d.nivel??"—")+(d.checagem_ok===false?" · não validado":"")}
-          cor={d.checagem_ok===false?C.warn:undefined}/>
-        <Linha k={"Checagem "+checagem}
-          v={semChecagem ? "sem dado" : (d.checagem_ok?"✓ ":"⚠ ")+sinal(d.checagem_delta,2)+" p.p."}
-          cor={semChecagem?C.mut:d.checagem_ok===false?C.warn:C.up}/>
-      </div>
-    </div>
-  );
-}
-
-function Linha({ k, v, cor }) {
-  return (
-    <div style={{display:"flex",justifyContent:"space-between",gap:"10px",fontSize:"12.5px",color:C.mut}}>
-      <span>{k}</span>
-      <span style={{fontFamily:"monospace",color:cor||C.txt}}>{v}</span>
-    </div>
-  );
-}
-
-function Adrs({ comp, calculadoEm }) {
-  const cesta = comp?.cesta || [];
-  const fora = [...(comp?.descartados_velhos || []), ...(comp?.sem_dado || [])];
-  const base = calculadoEm ? new Date(calculadoEm) : new Date();
-  const hora = m => m==null ? "—" :
-    new Date(base.getTime() - m*60000).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-  const col = "minmax(70px,1fr) 60px 80px 90px";
-
-  return (
-    <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
-      <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-        textTransform:"uppercase",color:C.txt}}>As ADRs</h3>
-      <div style={{marginTop:"13px",display:"flex",flexDirection:"column"}}>
-        <div style={{display:"grid",gridTemplateColumns:col,gap:"10px",paddingBottom:"7px",
-          borderBottom:"1px solid "+C.line2,fontSize:"11px",letterSpacing:"1.2px",
-          textTransform:"uppercase",color:C.faint}}>
-          <span>Símbolo</span><span style={{textAlign:"right"}}>Peso</span>
-          <span style={{textAlign:"right"}}>Variação</span><span style={{textAlign:"right"}}>Cotação</span>
-        </div>
-        {cesta.length===0 && (
-          <span style={{padding:"9px 0",fontSize:"12.5px",color:C.mut}}>sem dado</span>
-        )}
-        {cesta.map(c=>(
-          <div key={c.symbol} style={{display:"grid",gridTemplateColumns:col,gap:"10px",alignItems:"center",
-            padding:"7px 0",borderBottom:"1px solid "+C.line2,fontFamily:"monospace",fontSize:"13px"}}>
-            <span style={{color:C.txt,fontWeight:"700"}}>{c.symbol}</span>
-            <span style={{textAlign:"right",color:C.mut}}>{fmt(c.peso,0)}</span>
-            <span style={{textAlign:"right",fontWeight:"700",
-              color:c.retorno_pct==null?C.mut:c.retorno_pct>0?C.up:c.retorno_pct<0?C.down:C.mut}}>
-              {c.retorno_pct==null ? "s/d" : sinal(c.retorno_pct,2)+"%"}
-            </span>
-            <span style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:"6px",color:C.mut}}>
-              {c.idade_min>15 && <Selo tipo="del"/>}{hora(c.idade_min)}
-            </span>
-          </div>
-        ))}
-      </div>
-      {fora.length>0 && (
-        <p style={{margin:"10px 0 0",fontSize:"12.5px",color:C.faint}}>
-          <span style={{fontFamily:"monospace"}}>{fora.join(" · ")}</span> — fora do cálculo
-        </p>
-      )}
-    </div>
-  );
-}
-
-function MapaGlobal({ mg }) {
-  const cells = [
-    ["Ásia","asia","fech"], ["Europa","europa","del"],
-    ["EUA","eua","del"],    ["Brasil","brasil","live"],
-  ];
-  const vals = cells.map(c=>mg[c[1]]).filter(v=>v!=null);
-  const todosUp   = vals.length>0 && vals.every(v=>v>=0);
-  const todosDown = vals.length>0 && vals.every(v=>v<0);
-  const alinhado  = todosUp || todosDown;
-  const br = mg.brasil, resto = vals.length>1
-    ? (cells.slice(0,3).map(c=>mg[c[1]]).filter(v=>v!=null).reduce((a,b)=>a+b,0) /
-       Math.max(1,cells.slice(0,3).filter(c=>mg[c[1]]!=null).length))
-    : null;
-  const mesmoLado = br!=null && resto!=null && ((br>=0)===(resto>=0));
-  const dif = (br!=null && resto!=null) ? br-resto : null;
-  let nota = "";
-  if (dif==null) nota = "";
-  else if (Math.abs(dif) <= 0.25) nota = " · Brasil em linha";
-  else if (!mesmoLado) nota = " · Brasil destoando";
-  else if (Math.abs(br) > Math.abs(resto)) nota = " · Brasil liderando";
-  else nota = " · Brasil atrasado";
-  const veredito = !alinhado ? "Mundo brigando" + nota
-    : (todosUp?"Mundo alinhado ↑":"Mundo alinhado ↓") + nota;
-  const vcor = !alinhado ? C.warn : todosUp ? C.up : C.down;
-
-  return (
-    <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
-      <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
-        <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-          textTransform:"uppercase",color:C.txt}}>Mapa global</h3>
-        <span style={{fontSize:"12px",fontWeight:"800",letterSpacing:"0.8px",
-          textTransform:"uppercase",color:vcor}}>{veredito}</span>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",
-        gap:"10px",marginTop:"13px"}}>
-        {cells.map(([lbl,key,selo])=>{
-          const v = mg[key];
-          const me = key==="brasil";
-          return (
-            <div key={key} style={{border:"1px solid "+(me?C.up+"55":C.line2),borderRadius:"10px",
-              padding:"10px 12px",display:"flex",flexDirection:"column",gap:"5px"}}>
-              <span style={{fontSize:"11px",letterSpacing:"1.2px",textTransform:"uppercase",
-                color:me?C.up:C.faint}}>{lbl}</span>
-              <span style={{fontFamily:"monospace",fontSize:"17px",fontWeight:"700",
-                color:v==null?C.faint:v>=0?C.up:C.down}}>{v==null?"s/d":sinal(v,2)+"%"}</span>
-              <span><Selo tipo={v==null?"sem":selo}/></span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function Trio({ score, suspenso, trio, calculadoEm }) {
-  const cor = suspenso ? C.dim : score>=0 ? C.up : C.down;
-  const t = trio || {};
-  const petroleo = t.petroleo ?? t.oil;
-  const minerio  = t.minerio ?? t.min;
-  const dataNY = em => new Date(em).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",timeZone:"America/New_York"});
-  const horaPequim = em => new Date(em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Asia/Shanghai"});
-  // DCE aberta no momento da coleta? diurna 09:00-15:00 e noturna 21:00-23:00 de Pequim (UTC+8, sem horario de verao), seg-sex
-  const dceAberta = em => { const p = new Date((em ? new Date(em) : new Date()).getTime() + 8*3600e3);
-    const w = p.getUTCDay(), m = p.getUTCHours()*60 + p.getUTCMinutes();
-    return w>=1 && w<=5 && ((m>=540 && m<900) || (m>=1260 && m<1380)); };
-  const horaBRT = em => new Date(em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"America/Sao_Paulo"});
-  const ehDalian = !!t.minerio_fonte;
-  const valorPerna = (v, em) => {
-    if (v==null) return "sem dado";
-    if (!em) return sinal(v,2);
-    if (!ehDalian) return sinal(v,2)+" · ajuste de "+dataNY(em);
-    // DCE fecha 04:00 e reabre 10:00 BRT: na janela das 08:50 está sempre fechada e
-    // variação 0 é o estado normal da leitura, não falha — deixar isso explícito.
-    if (v===0 && !dceAberta(calculadoEm)) return fmt(0,2)+" · parado desde "+horaBRT(em)+" BRT";
-    return sinal(v,2)+" · últ. negócio "+horaPequim(em)+" Pequim";
-  };
-  const pernas = [
-    ["VIX (invertido)", t.vix==null ? null : -t.vix],
-    ["Petróleo", petroleo],
-    [ehDalian ? "Minério (Dalian)" : t.minerio_em ? "Minério (TIO=F)" : "Minério", minerio, t.minerio_em],
-  ];
-  return (
-    <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"14px",padding:"16px 20px"}}>
-      <div style={{display:"flex",flexWrap:"wrap",alignItems:"baseline",justifyContent:"space-between",gap:"8px"}}>
-        <h3 style={{margin:0,fontSize:"12px",fontWeight:"800",letterSpacing:"1.6px",
-          textTransform:"uppercase",color:C.txt}}>Score do trio</h3>
-      </div>
-      <div style={{marginTop:"13px",display:"flex",flexDirection:"column",gap:"6px"}}>
-        {pernas.map(([k,v,em])=>(
-          <Linha key={k} k={em ? <>{k} <Selo tipo={ehDalian && dceAberta(calculadoEm) ? "live" : "fech"}/></> : k}
-            v={valorPerna(v, em)}
-            cor={v==null ? C.mut : v>0 ? C.up : v<0 ? C.down : C.mut}/>
-        ))}
-        {t.minerio_rolagem && (
-          <span style={{fontSize:"12px",color:C.warn,textAlign:"right"}}>
-            ⚠ possível rolagem de contrato no minério — variação acima de 3%
-          </span>
-        )}
-        {t.minerio_suspeito && (
-          <span style={{fontSize:"12px",color:C.warn,textAlign:"right"}}>
-            ⚠ minério com variação acima de 5% — além do limite diário da DCE, verificar
-          </span>
-        )}
-      </div>
-      <div style={{display:"flex",alignItems:"baseline",gap:"12px",marginTop:"12px",paddingTop:"11px",
-        borderTop:"1px solid "+C.line2,flexWrap:"wrap"}}>
-        <span style={{fontSize:"11.5px",letterSpacing:"1.2px",textTransform:"uppercase",color:C.mut}}>Total</span>
-        <span style={{fontFamily:"monospace",fontSize:"26px",fontWeight:"800",
-          letterSpacing:"-1px",color:cor}}>{sinal(score,2)}</span>
-        <span style={{fontSize:"12px",fontWeight:"700",padding:"3px 10px",borderRadius:"20px",
-          border:"1px solid "+cor+"66",color:cor}}>
-          {suspenso ? "suspenso · evento ★★★" : score>=0 ? "viés de alta" : "viés de baixa"}
-        </span>
-        <span style={{display:"flex",gap:"6px",alignItems:"center"}}>
-          <Selo tipo="del"/><span style={{fontSize:"12px",color:C.faint}}>VIX · CL · minério</span>
-        </span>
-      </div>
-      <p style={{margin:"10px 0 0",fontSize:"13.5px",lineHeight:1.5,color:C.mut}}>
-        Soma crua, sua convenção: VIX invertido, petróleo e minério a favor do índice.
-        Mantido na tela a seu pedido, para testes próprios. Não entra na leitura principal.
-      </p>
-    </div>
-  );
+  const m = { live: "live", del: "15m", fech: "fech", man: "manual", parado: "parado", sem: "s/ dado" };
+  return <i className={"selo s-" + (tipo === "sem" ? "parado" : tipo)}>{m[tipo] || tipo}</i>;
 }
 
 export default function Macro() {
-  const [win, setWin] = useState(null);
-  const [wdo, setWdo] = useState(null);
-  const [demo, setDemo] = useState(false);
+  const [vies, setVies] = useState(null);
+  const [agenda, setAgenda] = useState([]);
+  const [fef2, setFef2] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(null); // null | "salvando" | "salvo" | "erro"
+  const digitando = useRef(false);
+  const timer = useRef(null);
 
-  async function carregar() {
-    try {
-      const { data } = await supabase
-        .from("macro_leitura").select("*")
-        .order("calculado_em", { ascending:false }).limit(20);
-      const ultWin = (data||[]).find(r=>r.instrumento==="WIN");
-      const ultWdo = (data||[]).find(r=>r.instrumento==="WDO");
-      if (ultWin) { setWin(ultWin); setWdo(ultWdo||DEMO.WDO); setDemo(false); }
-      else { setWin(DEMO.WIN); setWdo(DEMO.WDO); setDemo(true); }
-    } catch {
-      setWin(DEMO.WIN); setWdo(DEMO.WDO); setDemo(true);
-    }
+  const carregar = useCallback(async () => {
+    const hoje = hojeBRT();
+    const [{ data: v }, { data: ag }] = await Promise.all([
+      supabase.from("macro_vies").select("*").eq("data_pregao", hoje).maybeSingle(),
+      supabase.from("macro_calendario").select("nome, estrelas, hora_brt, pais")
+        .eq("data", hoje).order("hora_brt"),
+    ]);
+    setVies(v || null);
+    setAgenda(ag || []);
+    if (!digitando.current && v?.fef2_manual != null) setFef2(String(v.fef2_manual));
     setCarregando(false);
-  }
+  }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     carregar();
-    const ch = supabase.channel("macro-leitura")
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"macro_leitura"},carregar)
+    const ch = supabase.channel("macro-vies")
+      .on("postgres_changes", { event: "*", schema: "public", table: "macro_vies" }, carregar)
       .subscribe();
     const t = setInterval(carregar, 60000);
-    return ()=>{ supabase.removeChannel(ch); clearInterval(t); };
-  },[]);
+    return () => { supabase.removeChannel(ch); clearInterval(t); if (timer.current) clearTimeout(timer.current); };
+  }, [carregar]);
 
-  if (carregando || !win) return <p style={{color:C.dim,fontSize:"14px"}}>Carregando leitura…</p>;
+  const calc = useMemo(() => calcular(vies, fef2), [vies, fef2]);
 
-  const estrelas = win.evento_estrelas || 0;
-  const trioSuspenso = estrelas >= 3;
-  const v = win.variacao_pct;
-  const amp = amplitude(win);
-  const xy = `${amp.aFavor} de ${amp.cesta.length}`;
-
-  let vTitulo, vTexto, vCor;
-  if (win.nivel === 3 || v == null || amp.cesta.length === 0) {
-    vCor = C.dim; vTitulo = "Sem leitura";
-    vTexto = "ADRs sem negócio no pre-market. Nada a dizer sobre a abertura.";
-  } else if (win.checagem_ok === false) {
-    vCor = C.warn; vTitulo = "Dado suspeito";
-    vTexto = "A cesta e o EWZ discordam além do limite. Trate como se não houvesse leitura.";
-  } else if (!amp.alta) {
-    vCor = C.warn; vTitulo = "Leitura fraca";
-    vTexto = `ADRs divididas (${xy} a favor). O movimento da noite não tem direção clara.`;
-  } else {
-    vCor = v>=0 ? C.up : C.down;
-    vTitulo = v>=0 ? "Viés de alta" : "Viés de baixa";
-    vTexto = `As ADRs brasileiras ${v>=0?"subiram":"caíram"} ${fmt(Math.abs(v),2)}% desde o fechamento de ontem, com ${xy} apontando o mesmo lado.`;
+  // Grava o FEF2! e o viés recalculado. Sem botão: o que está na tela é o que fica no log.
+  function digitar(txt) {
+    digitando.current = true;
+    setFef2(txt);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      const c = calcular(vies, txt);
+      if (!vies || !c) return;
+      setSalvando("salvando");
+      const pct = txt === "" ? null : Number(String(txt).replace(",", "."));
+      const { error } = await supabase.from("macro_vies").update({
+        fef2_manual: Number.isNaN(pct) ? null : pct,
+        pernas: c.pernas, resultado: c.resultado, direcao: c.direcao,
+        intensidade: c.intensidade, completo: c.completo, atualizado_em: new Date().toISOString(),
+      }).eq("data_pregao", vies.data_pregao);
+      setSalvando(error ? "erro" : "salvo");
+      digitando.current = false;
+    }, 700);
   }
-  if (trioSuspenso) vTexto += " Evento de alto impacto hoje — a leitura tem prazo de validade.";
+
+  if (carregando) return (
+    <div className="mx-page"><style>{CSS}</style>
+      <div className="mx"><p style={{ color: "#7f8a97", fontSize: 14 }}>Carregando leitura…</p></div>
+    </div>
+  );
+
+  if (!vies) return (
+    <div className="mx-page">
+      <style>{CSS}</style>
+      <div className="mx">
+        <header className="topo">
+          <div><h1>Viés da Abertura</h1><p>WIN e WDO · leitura dos 15 primeiros minutos</p></div>
+        </header>
+        <div className="aviso">
+          Nenhuma coleta registrada para hoje ainda. O painel preenche sozinho quando a coleta das 08h50 rodar.
+        </div>
+      </div>
+    </div>
+  );
+
+  const cor = CORES[calc.direcao];
+  const aberta = janelaAberta();
+  const temNoticia = vies.tem_noticia;
+  // contexto virou lista (ordem importa); aceita o formato antigo em objeto sem quebrar
+  const ctx = Array.isArray(vies.contexto) ? vies.contexto
+    : Object.entries(vies.contexto || {}).map(([k, v]) => ({ symbol: k, rotulo: k, nome: "", ...v }));
+  const pos = Math.max(0, Math.min(100, (Math.max(MIN, Math.min(MAX, calc.resultado)) - MIN) / (MAX - MIN) * 100));
+  const alvo = calc.resultado < MIN ? 0 : calc.resultado > MAX ? FAIXAS.length - 1
+    : FAIXAS.findIndex((f, i) => calc.resultado >= f.de && (calc.resultado < f.ate || i === FAIXAS.length - 1));
+  const maxAbs = Math.max(1, ...calc.pernas.map((p) => Math.abs(p.contribuicao ?? 0)));
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+    <div className="mx-page">
+      <style>{CSS}</style>
+      <div className="mx" style={{ "--cor": cor }}>
 
-      {demo && (
-        <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",
-          borderRadius:"10px",padding:"11px 16px",display:"flex",alignItems:"center",gap:"10px"}}>
-          <span style={{fontSize:"14px"}}>⚠️</span>
-          <p style={{margin:0,color:C.warn,fontSize:"13px",fontWeight:"600"}}>
-            Dados de exemplo — a coleta ainda não gravou nenhuma leitura. Assim que a Fase 1 rodar, esta tela troca sozinha.
-          </p>
-        </div>
-      )}
-
-      <div style={{background:C.card,border:"1px solid "+C.line,borderLeft:"3px solid "+vCor,
-        borderRadius:"10px",padding:"14px 18px",display:"flex",gap:"13px",alignItems:"center"}}>
-        <span style={{width:"8px",height:"8px",borderRadius:"50%",background:vCor,flexShrink:0}}/>
+      <header className="topo">
         <div>
-          <p style={{margin:0,fontSize:"13px",fontWeight:"800",letterSpacing:"1.2px",
-            textTransform:"uppercase",color:vCor}}>{vTitulo}</p>
-          <p style={{margin:"4px 0 0",fontSize:"13.5px",lineHeight:1.45,color:C.mut}}>{vTexto}</p>
+          <h1>Viés da Abertura</h1>
+          <p>WIN e WDO · leitura dos 15 primeiros minutos</p>
         </div>
-      </div>
+        <div className="relogio">
+          <div><span className="lbl">Coleta</span><b style={{ color: "#8b7cf6" }}>{horaBRT(vies.atualizado_em)}</b></div>
+          <div><span className="lbl">Vale das</span><b>09:00 → 09:15</b></div>
+        </div>
+      </header>
 
-      {win.evento && (
-        <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:"10px",
-          padding:"11px 16px",display:"flex",flexWrap:"wrap",alignItems:"baseline",gap:"6px 14px"}}>
-          <span style={{fontSize:"13px",letterSpacing:"2px",
-            color:estrelas>=2?C.warn:C.faint}}>{"★".repeat(estrelas)+"☆".repeat(3-estrelas)}</span>
-          <span style={{fontSize:"13px",fontWeight:"700",color:C.txt}}>{win.evento}</span>
-          <span style={{flexBasis:"100%",fontSize:"12.5px",color:C.mut}}>
-            {estrelas>=3 ? "Leitura com prazo de validade · amplitude ampliada · score do trio suspenso."
-             : estrelas===2 ? "Impacto médio · amplitude ampliada."
-             : "Impacto baixo. Nada muda na leitura."}
+      <section className="card veredito">
+        <div className="vhead">
+          <span className="vnum">{sg(calc.resultado, n1)}%</span>
+          <div className="chips">
+            <span className="chip">{calc.direcao.toUpperCase()}</span>
+            <span className={"chip" + (calc.direcao === "lateral" ? " ghost" : "")}>
+              {calc.direcao === "lateral" ? "SEM FORÇA" : calc.intensidade.toUpperCase()}
+            </span>
+          </div>
+        </div>
+        <p className="vacao">{ACAO[calc.direcao](calc.intensidade.toLowerCase())}</p>
+
+        <div className="regua-bloco">
+          <div className="regua-top"><span>← negativa</span><span>lateral</span><span>positiva →</span></div>
+          <div className="regua-pin">
+            <div className="pin" style={{ left: pos + "%" }}>
+              <i>{(Math.abs(calc.resultado) > MAX
+                ? (calc.resultado > 0 ? "+" : "−") + n1(MAX) + "+"
+                : sg(calc.resultado, n1)) + "%"}</i>
+              <u />
+            </div>
+          </div>
+          <div className="regua">
+            {FAIXAS.map((f, i) => (
+              <div key={i} className={"faixa" + (i === alvo ? " on" : "")}
+                   style={{ flex: `0 0 ${(f.ate - f.de) / (MAX - MIN) * 100}%`, "--fc": f.c }}>{f.t}</div>
+            ))}
+          </div>
+          <div className="escala">
+            {[-4.5, -2.5, -1.5, 0, 1.5, 2.5, 4.5].map((v) => (
+              <span key={v} className="tick" style={{ left: `${(v - MIN) / (MAX - MIN) * 100}%` }}>
+                {v === 0 ? "0" : sg(v, n1)}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>Calendário</h2>
+        <div className="cal-topo">
+          <p className="cal-frase">
+            {temNoticia
+              ? `${vies.evento_nome} às 09h00. Notícia 3★ no Brasil.`
+              : "Sem notícia 3★ no Brasil às 09h00."}
+          </p>
+          <span className="modo" style={{ "--mc": temNoticia ? "#5aa9f0" : "#2fc79f" }}>
+            {temNoticia ? "MODO ADR" : "MODO MACRO"}
           </span>
         </div>
-      )}
+        <p className="cal-sub">
+          {agenda.length} evento{agenda.length === 1 ? "" : "s"} no Brasil hoje ·{" "}
+          {temNoticia ? "1 de 3 estrelas na abertura" : "nenhum de 3 estrelas na abertura"}
+        </p>
+        {agenda.length > 0 && (
+          <div className="eventos">
+            {agenda.map((e, i) => (
+              <div key={i} className="evento">
+                <em>{String(e.hora_brt || "").slice(0, 5) || "—"}</em>
+                <span style={{ color: e.estrelas >= 3 ? "#eceef2" : "#9aa3b0", minWidth: 0 }}>{e.nome}</span>
+                <s style={{ color: e.estrelas >= 3 ? "#d6a73f" : "#636d7a" }}>
+                  {"★".repeat(e.estrelas) + "☆".repeat(Math.max(0, 3 - e.estrelas))}
+                </s>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="eq">
+          {calc.pernas.map((p, i) => (
+            <span key={p.symbol}>
+              {i > 0 && " + "}
+              <b>{p.sinal === -1 ? `( −${p.rotulo} )` : p.rotulo}</b>
+            </span>
+          ))}
+          {"  =  intenção"}
+        </div>
+      </section>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(290px,1fr))",gap:"14px"}}>
-        <Card d={win} nome="WIN" desc="mini índice" checagem="EWZ" temCesta={true}
-              origemDetalhe={win.mapa_global?.brasil!=null ? `Brasil ${sinal(win.mapa_global.brasil,2)}%  ·  EUA ${sinal(win.mapa_global.eua,2)}%` : null}
-              selo={win.nivel===3?"sem":win.idade_dado_seg>900?"del":"live"}/>
-        <Card d={wdo||DEMO.WDO} nome="WDO" desc="mini dólar" checagem="USD/MXN" temCesta={false}
-              origemDetalhe={null}
-              selo={(wdo?.idade_dado_seg??0)>900?"del":"live"}/>
+      <section className="card">
+        <h2>Variação às 08h55</h2>
+        <div className="campos">
+          {calc.pernas.map((p) => {
+            const manual = p.entrada === "manual";
+            const selo = manual ? "man" : p.parado ? "parado" : p.ausente ? "sem" : "del";
+            return (
+              <label key={p.symbol} className={"campo" + (manual ? " manual" : "") + (p.parado ? " parado" : "")}>
+                <span className="campo-top">
+                  <b>{p.rotulo}{p.sinal === -1 && <span style={{ color: "#ef6462", fontSize: 9 }}> inverte</span>}</b>
+                  <Selo tipo={selo} />
+                </span>
+                {manual ? (
+                  <input type="number" step="0.01" inputMode="decimal" value={fef2} placeholder="0,00"
+                         disabled={!aberta} onChange={(e) => digitar(e.target.value)}
+                         aria-label={`${p.rotulo} — variação em %`} />
+                ) : (
+                  <span className="val" style={{ color: p.pct == null ? "#636d7a" : p.pct > 0 ? "#2fc79f" : p.pct < 0 ? "#ef6462" : "#9aa3b0" }}>
+                    {p.pct == null ? "—" : sg(p.pct)}
+                  </span>
+                )}
+                <small>
+                  {manual
+                    ? (!aberta ? "registro fechado às 09:00"
+                      : salvando === "salvando" ? "salvando…" : salvando === "erro" ? "não salvou — tente de novo"
+                      : salvando === "salvo" ? "salvo no log" : "você digita · TradingView")
+                    : p.parado ? "sem negócio no pré — conta 0"
+                    : p.ausente ? "sem cotação" : `cotação ${horaBRT(p.preco_em)}`}
+                </small>
+              </label>
+            );
+          })}
+        </div>
+        <div className="soma">
+          {calc.pernas.map((p, i) => (
+            <span key={p.symbol}>
+              {i > 0 && " + "}
+              <span style={{ color: (p.contribuicao ?? 0) > 0 ? "#2fc79f" : (p.contribuicao ?? 0) < 0 ? "#ef6462" : "#636d7a" }}>
+                {p.contribuicao == null ? "—" : sg(p.contribuicao) + "%"}
+              </span>
+            </span>
+          ))}
+          {"  =  "}<b style={{ color: cor }}>{sg(calc.resultado, n1)}%</b>
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>Contribuição de cada perna</h2>
+        <div className="pernas">
+          {calc.pernas.map((p) => {
+            const v = p.contribuicao ?? 0;
+            const w = Math.abs(v) / maxAbs * 50;
+            const c = v > 0 ? "#2fc79f" : v < 0 ? "#ef6462" : "#262639";
+            return (
+              <div key={p.symbol} className="perna">
+                <span className="pn">
+                  <b>{p.rotulo}</b>
+                  <span>{p.sinal === -1 ? "invertido" : p.parado ? "sem negócio" : p.ausente ? "sem dado" : "a favor"}</span>
+                </span>
+                <span className="barra">
+                  <i style={{ background: c, ...(v >= 0 ? { left: "50%", width: `${w}%` } : { right: "50%", width: `${w}%` }) }} />
+                </span>
+                <span className="pv" style={{ color: v > 0 ? "#2fc79f" : v < 0 ? "#ef6462" : "#636d7a" }}>
+                  {p.contribuicao == null ? "—" : sg(v)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="total">
+          <span className="lbl">Total</span>
+          <span className="tv" style={{ color: cor }}>{sg(calc.resultado, n1)}%</span>
+        </div>
+        {calc.faltando.length > 0 && (
+          <div className="alerta">
+            <b>{calc.faltando.join(", ")}</b> sem valor. A leitura está incompleta — o número na régua não é o viés final.
+          </div>
+        )}
+        {calc.parados.length > 0 && (
+          <div className="alerta">
+            <b>{calc.parados.join(", ")}</b> sem negócio no pré-mercado. A perna entrou como zero e puxou o resultado
+            para o lateral. Σ de {calc.pernas.length - calc.parados.length} de {calc.pernas.length} — o número é real,
+            a leitura está incompleta.
+          </div>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Overnight · contexto</h2>
+        <div className="ctx">
+          {ctx.map((c) => (
+            <div key={c.symbol || c.rotulo}>
+              <span className="ctx-top">
+                <em>{c.rotulo}</em>
+                <Selo tipo={frescor(c.em)} />
+              </span>
+              <b style={{ color: c.pct == null ? "#636d7a" : c.pct > 0 ? "#2fc79f" : c.pct < 0 ? "#ef6462" : "#9aa3b0" }}>
+                {c.pct == null ? "—" : sg(c.pct) + "%"}
+              </b>
+              <small>{c.nome}</small>
+            </div>
+          ))}
+        </div>
+        <p className="nota">
+          Leitura de ambiente. Nenhum destes entra na conta do viés.
+          Futuros, não índices à vista — às 08h55 a bolsa americana está fechada e o índice à vista
+          só repetiria o fechamento de ontem.
+        </p>
+      </section>
+
+      <footer className="rodape">
+        <div className="legenda">
+          <span><Selo tipo="live" /> tempo real</span>
+          <span><Selo tipo="del" /> atrasado</span>
+          <span><Selo tipo="fech" /> mercado fechado — número definitivo</span>
+          <span><Selo tipo="man" /> você digita</span>
+          <span><Selo tipo="parado" /> sem negócio — entra como zero</span>
+        </div>
+        <p style={{ margin: 0 }}>
+          Até 1,5% lateral · 1,5 a 2,5% fraca · 2,5 a 4,5% moderada · acima de 4,5% forte.
+          Classificação feita sobre o valor já arredondado em uma casa decimal.
+          A leitura vale das 09:00 às 09:15 e fica gravada para medição posterior.
+        </p>
+      </footer>
       </div>
-
-      <Adrs comp={win.componentes} calculadoEm={win.calculado_em}/>
-      <MapaGlobal mg={win.mapa_global || {}}/>
-      <Trio score={win.score_trio} suspenso={trioSuspenso} trio={win.componentes?.trio} calculadoEm={win.calculado_em}/>
-
-      <div style={{display:"flex",flexWrap:"wrap",gap:"8px 16px",alignItems:"center",
-        fontSize:"12px",color:C.faint,paddingTop:"4px"}}>
-        <span style={{display:"flex",gap:"6px",alignItems:"center"}}><Selo tipo="live"/> tempo real</span>
-        <span style={{display:"flex",gap:"6px",alignItems:"center"}}><Selo tipo="del"/> atrasado 15 min</span>
-        <span style={{display:"flex",gap:"6px",alignItems:"center"}}><Selo tipo="fech"/> fechado — número definitivo</span>
-      </div>
-
-      <p style={{margin:0,fontSize:"12.5px",lineHeight:1.5,color:C.faint,
-        borderTop:"1px solid "+C.line2,paddingTop:"12px"}}>
-        Este painel não dá entrada. Ele modula tamanho e convicção do trade que o seu operacional
-        já escolheu, e nunca cancela stop.
-      </p>
     </div>
   );
 }

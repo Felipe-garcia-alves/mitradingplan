@@ -22,7 +22,12 @@ async function yahoo(symbol: string) {
   if (preco == null) { preco = res.meta?.regularMarketPrice ?? null; em = res.meta?.regularMarketTime ?? null; }
   const per = res.meta?.currentTradingPeriod?.regular;
   const agora = Math.floor(Date.now() / 1000);
-  return { preco, em: em ? new Date(em * 1000).toISOString() : null, preMarket: !!(per && agora < per.start) };
+  // fechamento anterior do proprio ativo: e a base que o TradingView usa na coluna Chg%,
+  // e por isso e a base do vies. Nao confundir com o snapshot das 18:20 (macro_referencia),
+  // que continua servindo o implied open.
+  const fech = res.meta?.chartPreviousClose ?? res.meta?.previousClose
+            ?? res.meta?.regularMarketPreviousClose ?? null;
+  return { preco, fech, em: em ? new Date(em * 1000).toISOString() : null, preMarket: !!(per && agora < per.start) };
 }
 
 // TIO=F: meta.regularMarketPrice vem congelado (161,91 de 11/08/2021) e nao ha barra de 1m.
@@ -41,6 +46,7 @@ async function yahooDiario(symbol: string) {
   return {
     preco: idx[0] != null ? closes[idx[0]] : null,
     anterior: idx[1] != null ? closes[idx[1]] : null,
+    fech: idx[1] != null ? closes[idx[1]] : null,
     em: idx[0] != null ? new Date(stamps[idx[0]] * 1000).toISOString() : null, // barra carimbada 00:00 NY
     preMarket: false,
   };
@@ -59,15 +65,19 @@ async function dalian() {
     const ult = Number(f[8]), hora = f[1] ?? "", data = f[17] ?? "", ajAnt = Number(f[10]);
     if (!(ult > 0) || !/^\d{6}$/.test(hora) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) throw new Error("sina formato inesperado");
     const em = new Date(`${data}T${hora.slice(0, 2)}:${hora.slice(2, 4)}:${hora.slice(4, 6)}+08:00`).toISOString();
-    return { preco: ult, em, preMarket: false, fonte: "sina", conferencia_pct: ajAnt > 0 ? r2((ult / ajAnt - 1) * 100) : null };
+    return { preco: ult, fech: ajAnt > 0 ? ajAnt : null, em, preMarket: false, fonte: "sina",
+             conferencia_pct: ajAnt > 0 ? r2((ult / ajAnt - 1) * 100) : null };
   } catch (_) { /* cai para o East Money */ }
   const r = await fetch("https://push2.eastmoney.com/api/qt/stock/get?secid=114.im&fields=f43,f59,f86,f170",
     { headers: { "User-Agent": UA }, signal: t() });
   if (!r.ok) throw new Error(`DCE:I: eastmoney HTTP ${r.status}`);
   const d = (await r.json())?.data;
   if (!d || !(d.f43 > 0) || !d.f86) throw new Error("DCE:I: sina e eastmoney sem dado");
-  return { preco: d.f43 / 10 ** (d.f59 ?? 1), em: new Date(d.f86 * 1000).toISOString(), preMarket: false,
-           fonte: "eastmoney", conferencia_pct: d.f170 != null ? d.f170 / 100 : null };
+  const p = d.f43 / 10 ** (d.f59 ?? 1);
+  const v = d.f170 != null ? d.f170 / 100 : null;
+  return { preco: p, fech: v != null && v !== -100 ? p / (1 + v / 100) : null,
+           em: new Date(d.f86 * 1000).toISOString(), preMarket: false,
+           fonte: "eastmoney", conferencia_pct: v };
 }
 
 const hojeBRT = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
@@ -83,6 +93,112 @@ const pregoesDesde = (em: string) => {
   }
   return n;
 };
+
+// ---------------------------------------------------------------------------
+// VIES DA ABERTURA
+// Rota decidida pelo calendario: evento 3 estrelas, do Brasil, as 09:00 em ponto.
+// Sem notícia -> (-VIX) + FEF2! + CL1!. Com notícia -> soma das 6 ADRs.
+// Base do percentual: fechamento anterior do proprio ativo (coluna Chg% do TradingView).
+// Classificacao feita sobre o valor JA arredondado em 1 casa: o que aparece na tela e o que decide.
+// ---------------------------------------------------------------------------
+const diaNY = (iso: string | null) =>
+  iso == null ? null : new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+const hojeNY = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+
+function classificar(resultado: number) {
+  const m = Math.abs(resultado);
+  if (m < 1.5) return { direcao: "lateral", intensidade: "Lateral" };
+  return {
+    direcao: resultado > 0 ? "positiva" : "negativa",
+    intensidade: m < 2.5 ? "Fraca" : m < 4.5 ? "Moderada" : "Forte",
+  };
+}
+
+// Janela de registro: ate 08:59 BRT. Das 09:00 em diante o vies do dia esta CONGELADO.
+// O cron macro-pregao coleta a cada 5 min ate as 18h; sem esta guarda ele reescreveria a
+// leitura da abertura com cotacoes da tarde, e o log perderia a unica coisa que importa nele.
+function janelaDeRegistroAberta() {
+  const brt = new Date(Date.now() - 3 * 3600 * 1000);
+  return brt.getUTCHours() * 60 + brt.getUTCMinutes() < 9 * 60;
+}
+
+async function calcularVies(db: any, precos: Record<string, any>, hoje: string) {
+  if (!janelaDeRegistroAberta()) {
+    const { data: reg } = await db.from("macro_vies")
+      .select("rota, resultado, direcao, intensidade, completo").eq("data_pregao", hoje).maybeSingle();
+    return { congelado: true, gravado: false, registrado: reg ?? null };
+  }
+  const { data: cesta } = await db.from("macro_vies_cesta")
+    .select("symbol, rota, sinal, entrada, rotulo, ordem").is("valido_ate", null).order("ordem");
+  if (!cesta?.length) throw new Error("macro_vies_cesta vazia");
+
+  // Os tres criterios juntos. hora_brt exatamente 09:00, pais Brasil, 3 estrelas.
+  const { data: evs } = await db.from("macro_calendario")
+    .select("nome, estrelas, hora_brt, pais").eq("data", hoje).gte("estrelas", 3);
+  const ev = (evs ?? []).find((e: any) =>
+    String(e.hora_brt ?? "").slice(0, 5) === "09:00" &&
+    ["br", "brasil", "brazil"].includes(String(e.pais ?? "").trim().toLowerCase()));
+  const temNoticia = !!ev;
+  const rota = temNoticia ? "adr" : "macro";
+
+  // Um valor manual ja digitado hoje nao pode ser perdido numa recoleta.
+  const { data: ant } = await db.from("macro_vies")
+    .select("fef2_manual, pernas").eq("data_pregao", hoje).maybeSingle();
+  const manuais: Record<string, number | null> = { "FEF2!": ant?.fef2_manual ?? null };
+
+  const pernas: any[] = [];
+  for (const c of cesta.filter((x: any) => x.rota === rota)) {
+    if (c.entrada === "manual") {
+      const v = manuais[c.symbol];
+      pernas.push({ symbol: c.symbol, rotulo: c.rotulo, sinal: c.sinal, entrada: "manual",
+                    pct: v, contribuicao: v == null ? null : r2(c.sinal * v, 2),
+                    preco_em: null, parado: false, ausente: v == null });
+      continue;
+    }
+    const q = precos[c.symbol];
+    const pct = q?.preco != null && q?.fech ? r2((q.preco / q.fech - 1) * 100, 2) : null;
+    // Sem negocio no pre: a ultima cotacao ainda e de um pregao anterior em Nova York.
+    const parado = pct != null && pct === 0 && diaNY(q?.em) !== hojeNY();
+    pernas.push({ symbol: c.symbol, rotulo: c.rotulo, sinal: c.sinal, entrada: "auto",
+                  pct, contribuicao: pct == null ? null : r2(c.sinal * pct, 2),
+                  preco_em: q?.em ?? null, parado, ausente: pct == null });
+  }
+
+  const soma = pernas.reduce((t, p) => t + (p.contribuicao ?? 0), 0);
+  const resultado = Math.round(soma * 10) / 10;
+  const { direcao, intensidade } = classificar(resultado);
+  const completo = pernas.every((p) => !p.ausente && !p.parado);
+
+  // Contexto overnight: so leitura de ambiente, nao entra na conta. Mesma base de percentual.
+  // Futuros, nao indices a vista: as 08h55 a bolsa americana esta fechada e o indice a vista
+  // so repetiria o fechamento de ontem. O futuro negocia a noite inteira.
+  const CTX: [string, string, string][] = [
+    ["ES=F", "ES=F", "S&P 500 futuro"],
+    ["YM=F", "YM=F", "Dow futuro"],
+    ["NQ=F", "NQ=F", "Nasdaq futuro"],
+    ["DX=F", "DX=F", "Dólar index futuro"],
+    ["EWZ",  "EWZ",  "ETF Brasil · NYSE"],
+  ];
+  const contexto = CTX.map(([sym, rotulo, nome]) => {
+    const q = precos[sym];
+    return {
+      symbol: sym, rotulo, nome,
+      pct: q?.preco != null && q?.fech ? r2((q.preco / q.fech - 1) * 100, 2) : null,
+      em: q?.em ?? null,
+    };
+  });
+
+  const linha = {
+    data_pregao: hoje, rota, tem_noticia: temNoticia,
+    evento_nome: ev?.nome ?? null, evento_hora: ev?.hora_brt ?? null,
+    resultado, direcao, intensidade, pernas, contexto,
+    fef2_manual: manuais["FEF2!"], completo, atualizado_em: new Date().toISOString(),
+  };
+  const { error } = await db.from("macro_vies").upsert(linha, { onConflict: "data_pregao" });
+  if (error) throw new Error(error.message);
+  return { rota, tem_noticia: temNoticia, resultado, direcao, intensidade, completo,
+           pernas: pernas.map((p) => ({ [p.rotulo]: p.contribuicao })) };
+}
 
 Deno.serve(async (req) => {
   // Prefere a secret key nova; cai para a legada enquanto ela existir.
@@ -126,16 +242,21 @@ Deno.serve(async (req) => {
     return json({ ok: true, modo, data: hoje, gravados: linhas.length, falhas });
   }
 
+  // O vies e independente do implied open: se ele falhar, a leitura antiga continua gravando.
+  let vies: unknown = null, viesErro: string | null = null;
+  try { vies = await calcularVies(db, precos, hoje); }
+  catch (e) { viesErro = e instanceof Error ? e.message : String(e); }
+
   const { data: refUlt } = await db.from("macro_referencia")
     .select("data_captura").order("data_captura", { ascending: false }).limit(1);
-  if (!refUlt?.length) return json({ erro: "sem referencia gravada ainda" }, 409);
+  if (!refUlt?.length) return json({ erro: "sem referencia gravada ainda", vies, vies_erro: viesErro }, 409);
   const { data: refs } = await db.from("macro_referencia")
     .select("symbol, preco").eq("data_captura", refUlt[0].data_captura);
   const ref: Record<string, number> = {};
   for (const r of refs ?? []) ref[r.symbol] = Number(r.preco);
 
   const fxAgora = precos["BRL=X"]?.preco, fxRef = ref["BRL=X"], ibovRef = ref["^BVSP"];
-  if (!fxAgora || !fxRef || !ibovRef) return json({ erro: "faltou cambio ou Ibovespa de referencia" }, 409);
+  if (!fxAgora || !fxRef || !ibovRef) return json({ erro: "faltou cambio ou Ibovespa de referencia", vies, vies_erro: viesErro }, 409);
 
   const varPct = (s: string) => {
     const p = precos[s]?.preco, r = ref[s];
@@ -248,10 +369,11 @@ Deno.serve(async (req) => {
   ];
 
   const { error: eI } = await db.from("macro_leitura").insert(leituras);
-  if (eI) return json({ erro: eI.message }, 500);
+  if (eI) return json({ erro: eI.message, vies, vies_erro: viesErro }, 500);
 
   return json({
-    ok: true, nivel, cobertura: r2(cobertura, 1), justo_win: justoWin, mercado_win: mercadoWin,
+    ok: true, vies, vies_erro: viesErro,
+    nivel, cobertura: r2(cobertura, 1), justo_win: justoWin, mercado_win: mercadoWin,
     justo_wdo: r2(fxAgora * 1000, 1), variacao_win_pct: rIbov != null ? r2(rIbov * 100, 3) : null,
     score_trio: r2(trio, 2), trio_completo: trioCompleto, trio: { vix: vVix, petroleo: vOil, minerio: vMin },
     vix_ratio: vixRatio, mapa, descartados_velhos: velhos, sem_dado: semDado, falhas,
