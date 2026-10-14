@@ -59,28 +59,28 @@ export default function Login() {
 
   const inp = {
     width:"100%", background:"rgba(255,255,255,0.04)",
-    border:"1px solid #2a2a3a", borderRadius:"10px",
+    border:"1px solid #26352e", borderRadius:"10px",
     padding:"13px 14px", color:"#f0f0f0", fontSize:"14px",
-    outline:"none", boxSizing:"border-box", fontFamily:"Inter,sans-serif"
+    outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)"
   };
 
   return (
-    <div style={{minHeight:"100vh",background:"#0d0d1a",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Inter,sans-serif",padding:"20px"}}>
+    <div style={{minHeight:"100vh",background:"#050907",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)",padding:"20px"}}>
       <div style={{width:"100%",maxWidth:"400px"}}>
         <div style={{textAlign:"center",marginBottom:"32px"}}>
-          <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+          <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
           <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Mi Trading Plan</h1>
           <p style={{margin:0,color:"#555",fontSize:"13px"}}>Plataforma profissional para traders</p>
         </div>
 
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"32px"}}>
+        <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"32px"}}>
 
           {!resetMode && (
             <div style={{display:"flex",background:"rgba(255,255,255,0.03)",borderRadius:"10px",padding:"3px",marginBottom:"24px"}}>
               {["login","cadastro"].map(m=>(
-                <button key={m} onClick={()=>{setModo(m);setErro("");setMsg("");}} style={{flex:1,padding:"9px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",transition:"all 0.2s",background:modo===m?"rgba(255,255,255,0.07)":"transparent",color:modo===m?"#f0f0f0":"#666",fontFamily:"Inter,sans-serif"}}>
+                <button key={m} onClick={()=>{setModo(m);setErro("");setMsg("");}} style={{flex:1,padding:"9px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",transition:"all 0.2s",background:modo===m?"rgba(255,255,255,0.07)":"transparent",color:modo===m?"#f0f0f0":"#666",fontFamily:"var(--font-sans)"}}>
                   {m==="login"?"Entrar":"Criar conta"}
                 </button>
               ))}
@@ -92,13 +92,13 @@ export default function Login() {
           )}
 
           {erro && (
-            <div style={{background:"rgba(255,77,77,0.1)",border:"1px solid rgba(255,77,77,0.2)",borderRadius:"8px",padding:"10px 14px",color:"#ff6b6b",fontSize:"13px",marginBottom:"16px"}}>
+            <div style={{background:"rgba(255,84,112,0.1)",border:"1px solid rgba(255,84,112,0.2)",borderRadius:"8px",padding:"10px 14px",color:"#ff7a90",fontSize:"13px",marginBottom:"16px"}}>
               {erro}
             </div>
           )}
 
           {msg && (
-            <div style={{background:"rgba(0,212,170,0.1)",border:"1px solid rgba(0,212,170,0.2)",borderRadius:"8px",padding:"10px 14px",color:"#00d4aa",fontSize:"13px",marginBottom:"16px"}}>
+            <div style={{background:"rgba(46,230,160,0.1)",border:"1px solid rgba(46,230,160,0.2)",borderRadius:"8px",padding:"10px 14px",color:"#2ee6a0",fontSize:"13px",marginBottom:"16px"}}>
               {msg}
             </div>
           )}
@@ -122,18 +122,18 @@ export default function Login() {
             </div>
           )}
 
-          <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"13px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",fontWeight:"700",fontSize:"14px",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,fontFamily:"Inter,sans-serif",marginBottom:"16px"}}>
+          <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"13px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"14px",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,fontFamily:"var(--font-sans)",marginBottom:"16px"}}>
             {loading?"Aguarde...":resetMode?"Enviar email":modo==="login"?"Entrar":"Criar conta"}
           </button>
 
           <div style={{display:"flex",justifyContent:"center",gap:"16px"}}>
             {!resetMode && modo==="login" && (
-              <button onClick={()=>{setResetMode(true);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#555",fontSize:"12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+              <button onClick={()=>{setResetMode(true);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#555",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
                 Esqueci minha senha
               </button>
             )}
             {resetMode && (
-              <button onClick={()=>{setResetMode(false);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#555",fontSize:"12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+              <button onClick={()=>{setResetMode(false);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#555",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
                 ← Voltar ao login
               </button>
             )}
@@ -142,9 +142,9 @@ export default function Login() {
           <p style={{textAlign:"center",color:"#ccc",fontSize:"12px",marginTop:"20px",lineHeight:"1.6"}}>
             Seus dados são privados e protegidos.<br/>
             Ao criar conta você concorda com os{" "}
-            <span onClick={()=>setShowTermos(true)} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Termos de Uso</span>
+            <span onClick={()=>setShowTermos(true)} style={{color:"#2ee6a0",cursor:"pointer",textDecoration:"underline"}}>Termos de Uso</span>
             {" "}e a{" "}
-            <span onClick={()=>setShowTermos(true)} style={{color:"#00d4aa",cursor:"pointer",textDecoration:"underline"}}>Política de Privacidade</span>.
+            <span onClick={()=>setShowTermos(true)} style={{color:"#2ee6a0",cursor:"pointer",textDecoration:"underline"}}>Política de Privacidade</span>.
 
       {showTermos && (
         <div style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.85)",overflowY:"auto"}}>

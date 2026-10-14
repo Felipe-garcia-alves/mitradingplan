@@ -1,0 +1,520 @@
+// Mi Trading Plan - componentes visuais reutilizáveis (números, anéis, gráficos)
+import { useState, useEffect, useRef, useId } from "react";
+import { createPortal } from "react-dom";
+
+const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+
+function fmtDia(d) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d||"")) return d||"";
+  return (+d.slice(8))+" "+MESES[+d.slice(5,7)-1];
+}
+
+// R$ compacto para eixos: R$5k, -R$1,2k, R$800
+function fmtK(v, cur="R$") {
+  const a = Math.abs(v);
+  const s = a>=1000 ? (a/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+"k" : a.toLocaleString("pt-BR",{maximumFractionDigits:0});
+  return (v<0?"-":"")+cur+s;
+}
+
+// Largura real do elemento (para desenhar gráficos em pixels, com texto nítido)
+function useWidth() {
+  const ref = useRef(null);
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, w];
+}
+
+// Escala "bonita" para o eixo Y
+function spacedIdx(n, xOf, minGap=48) {
+  const out = [];
+  for (let i=0; i<n; i++) {
+    const last = out[out.length-1];
+    if (last===undefined || xOf(i)-xOf(last) >= minGap) out.push(i);
+  }
+  if (n>1 && out[out.length-1]!==n-1) { if (xOf(n-1)-xOf(out[out.length-1]) < minGap) out.pop(); out.push(n-1); }
+  return out;
+}
+
+function niceTicks(min, max, count=5) {
+  if (min === max) { min -= 1; max += 1; }
+  const raw = (max-min)/(count-1);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw) || 10*mag;
+  const lo = Math.floor(min/step)*step, hi = Math.ceil(max/step)*step;
+  const ticks = [];
+  for (let v=lo; v<=hi+step/2; v+=step) ticks.push(Math.round(v*100)/100);
+  return ticks;
+}
+
+// ── Número que conta até o valor ─────────────────────────────────
+export function CountUp({ value, format, duration=900 }) {
+  const [v, setV] = useState(0);
+  const from = useRef(0);
+  useEffect(() => {
+    const reduz = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const a = from.current, b = value, start = performance.now();
+    let raf;
+    const tick = t => {
+      const p = reduz ? 1 : Math.min(1, (t-start)/duration);
+      const cur = a + (b-a)*(1-Math.pow(1-p,3));
+      from.current = cur;
+      setV(cur);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+  return format ? format(v) : Math.round(v);
+}
+
+// ── Anel de progresso ────────────────────────────────────────────
+export function Ring({ pct, color="var(--accent)", size=54, stroke=5 }) {
+  const r = (size-stroke)/2, c = 2*Math.PI*r;
+  const p = pct==null ? 0 : Math.max(0, Math.min(100, pct));
+  return (
+    <svg width={size} height={size} style={{flexShrink:0,transform:"rotate(-90deg)",overflow:"visible"}}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--line)" strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={c*(1-p/100)}
+        style={{transition:"stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)",filter:"drop-shadow(0 0 4px "+color+")"}}/>
+    </svg>
+  );
+}
+
+// ── Mini gráfico de linha (canto do card) ────────────────────────
+export function Sparkline({ values, color="var(--accent)", width=90, height=34 }) {
+  const id = useId();
+  if (!values || values.length < 2) return null;
+  const VW = 100, VH = 40;
+  const min = Math.min(...values), max = Math.max(...values), rng = max-min || 1;
+  const pts = values.map((v,i)=>[(i/(values.length-1))*VW, 3+(1-(v-min)/rng)*(VH-6)]);
+  const d = pts.map(([x,y],i)=>(i?"L":"M")+x.toFixed(2)+","+y.toFixed(2)).join(" ");
+  return (
+    <svg viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="none" width={width} height={height} style={{display:"block",overflow:"visible"}}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d={d+` L${VW},${VH} L0,${VH} Z`} fill={`url(#${id})`}/>
+      <path d={d} fill="none" stroke={color} strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 3px "+color+")"}}/>
+    </svg>
+  );
+}
+
+// ── Tooltip flutuante dos gráficos ───────────────────────────────
+function Tip({ x, y, children }) {
+  return (
+    <div style={{position:"absolute",left:x,top:y,transform:"translate(-50%,calc(-100% - 12px))",pointerEvents:"none",zIndex:5,
+      background:"rgba(8,14,11,0.92)",backdropFilter:"blur(8px)",border:"1px solid var(--line-strong)",borderRadius:"10px",
+      padding:"8px 11px",whiteSpace:"nowrap",boxShadow:"0 10px 30px rgba(0,0,0,0.6)",fontFamily:"var(--font-mono)",fontSize:"12px"}}>
+      {children}
+    </div>
+  );
+}
+
+const AX = { fill:"#5d6f67", fontSize:10, fontFamily:"var(--font-mono)" };
+
+// ── Curva de capital com eixos e tooltip ─────────────────────────
+export function CapitalChart({ points, height=210 }) {
+  const [ref, w] = useWidth();
+  const [hover, setHover] = useState(null);
+  const id = useId();
+  const PL=56, PR=12, PT=12, PB=26, H=height;
+
+  if (points.length < 2) {
+    return <div ref={ref} style={{height,display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"var(--text-3)",fontSize:"12px"}}>Registre operações para ver o gráfico</p></div>;
+  }
+
+  const vals = points.map(p=>p.val);
+  const ticks = niceTicks(Math.min(0,...vals), Math.max(0,...vals));
+  const lo = ticks[0], hi = ticks[ticks.length-1];
+  const n = points.length;
+  const iw = Math.max(1, w-PL-PR);
+  const x = i => PL + (i/(n-1))*iw;
+  const y = v => PT + (1-(v-lo)/(hi-lo))*(H-PT-PB);
+  const last = vals[n-1];
+  const cor = last>=0 ? "#2ee6a0" : "#ff5470";
+  const path = points.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(p.val).toFixed(1)).join(" ");
+  const area = path+` L${x(n-1).toFixed(1)},${y(0).toFixed(1)} L${PL},${y(0).toFixed(1)} Z`;
+  const labelIdx = spacedIdx(n, x, 56);
+
+  const onMove = e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const i = Math.round(((e.clientX-r.left-PL)/iw)*(n-1));
+    setHover(Math.max(0, Math.min(n-1, i)));
+  };
+  const hp = hover!=null ? points[hover] : null;
+
+  return (
+    <div ref={ref} style={{position:"relative",width:"100%",height:H}}>
+      {w>0 && (
+        <svg width={w} height={H} style={{display:"block",cursor:"crosshair"}} onMouseMove={onMove} onMouseLeave={()=>setHover(null)}>
+          <defs>
+            <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={cor} stopOpacity="0.30"/>
+              <stop offset="100%" stopColor={cor} stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          {ticks.map(t=>(
+            <g key={t}>
+              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke={t===0?"#ffffff22":"#ffffff0a"} strokeDasharray={t===0?"4,4":"none"}/>
+              <text x={PL-8} y={y(t)+3} textAnchor="end" {...AX}>{fmtK(t)}</text>
+            </g>
+          ))}
+          {labelIdx.map(i=>(
+            <text key={i} x={x(i)} y={H-6} textAnchor={i===0?"start":i===n-1?"end":"middle"} {...AX}>{fmtDia(points[i].d)}</text>
+          ))}
+          <path d={area} fill={`url(#${id})`}/>
+          <path d={path} fill="none" stroke={cor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+cor+"88)"}}/>
+          {hp && <>
+            <line x1={x(hover)} x2={x(hover)} y1={PT} y2={H-PB} stroke="#ffffff30" strokeDasharray="3,3"/>
+            <circle cx={x(hover)} cy={y(hp.val)} r="4.5" fill={cor} stroke="#050907" strokeWidth="2"/>
+          </>}
+        </svg>
+      )}
+      {hp && (
+        <Tip x={x(hover)} y={y(hp.val)}>
+          <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{fmtDia(hp.d)}</div>
+          <div style={{color:hp.val>=0?"#2ee6a0":"#ff5470",fontWeight:700}}>{hp.val>=0?"+":""}R$ {hp.val.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+        </Tip>
+      )}
+    </div>
+  );
+}
+
+// ── Resultado diário em barras, com médias e tooltip ─────────────
+export function DailyBars({ bars, height=210 }) {
+  const [ref, w] = useWidth();
+  const [hover, setHover] = useState(null);
+  const id = useId();
+  const PL=56, PR=12, PT=12, PB=26, H=height;
+
+  if (bars.length === 0) {
+    return <div ref={ref} style={{height,display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"var(--text-3)",fontSize:"12px"}}>Sem dados no período</p></div>;
+  }
+
+  const vals = bars.map(b=>b.val);
+  const ticks = niceTicks(Math.min(0,...vals), Math.max(0,...vals));
+  const lo = ticks[0], hi = ticks[ticks.length-1];
+  const n = bars.length;
+  const iw = Math.max(1, w-PL-PR);
+  const slot = iw/n;
+  const bw = Math.max(2, Math.min(24, slot*0.68));
+  const cx = i => PL + slot*i + slot/2;
+  const y = v => PT + (1-(v-lo)/(hi-lo))*(H-PT-PB);
+  const pos = vals.filter(v=>v>0), neg = vals.filter(v=>v<0);
+  const mPos = pos.length ? pos.reduce((a,b)=>a+b,0)/pos.length : null;
+  const mNeg = neg.length ? neg.reduce((a,b)=>a+b,0)/neg.length : null;
+  const labelIdx = spacedIdx(n, cx, 56);
+
+  const onMove = e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const i = Math.floor((e.clientX-r.left-PL)/slot);
+    setHover(i>=0 && i<n ? i : null);
+  };
+  const hb = hover!=null ? bars[hover] : null;
+
+  return (
+    <div ref={ref} style={{position:"relative",width:"100%",height:H}}>
+      {w>0 && (
+        <svg width={w} height={H} style={{display:"block"}} onMouseMove={onMove} onMouseLeave={()=>setHover(null)}>
+          <defs>
+            <linearGradient id={id+"p"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3fe8a8"/><stop offset="100%" stopColor="#1fb57e"/></linearGradient>
+            <linearGradient id={id+"n"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#d9435d"/><stop offset="100%" stopColor="#ff5470"/></linearGradient>
+          </defs>
+          {ticks.map(t=>(
+            <g key={t}>
+              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke={t===0?"#ffffff22":"#ffffff0a"}/>
+              <text x={PL-8} y={y(t)+3} textAnchor="end" {...AX}>{fmtK(t)}</text>
+            </g>
+          ))}
+          {labelIdx.map(i=>(
+            <text key={i} x={cx(i)} y={H-6} textAnchor={i===0?"start":i===n-1?"end":"middle"} {...AX}>{fmtDia(bars[i].d)}</text>
+          ))}
+          {bars.map((b,i)=>{
+            const top = y(Math.max(0,b.val)), bot = y(Math.min(0,b.val));
+            const ativo = hover===i;
+            return (
+              <rect key={i} x={cx(i)-bw/2} y={top} width={bw} height={Math.max(1.5,bot-top)} rx={Math.min(3,bw/3)}
+                fill={b.val>=0?`url(#${id}p)`:`url(#${id}n)`}
+                opacity={hover==null||ativo?1:0.45}
+                style={{transition:"opacity .2s",filter:ativo?"drop-shadow(0 0 6px "+(b.val>=0?"#2ee6a0":"#ff5470")+")":"none"}}/>
+            );
+          })}
+          {mPos!==null && <>
+            <line x1={PL} x2={w-PR} y1={y(mPos)} y2={y(mPos)} stroke="#2ee6a0" strokeOpacity="0.55" strokeDasharray="4,4"/>
+            <text x={w-PR} y={y(mPos)-5} textAnchor="end" fill="#2ee6a0" fontSize="10" fontFamily="var(--font-mono)" stroke="#0a110e" strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">média {fmtK(mPos)}</text>
+          </>}
+          {mNeg!==null && <>
+            <line x1={PL} x2={w-PR} y1={y(mNeg)} y2={y(mNeg)} stroke="#ff5470" strokeOpacity="0.55" strokeDasharray="4,4"/>
+            <text x={w-PR} y={y(mNeg)+13} textAnchor="end" fill="#ff5470" fontSize="10" fontFamily="var(--font-mono)" stroke="#0a110e" strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">média {fmtK(mNeg)}</text>
+          </>}
+        </svg>
+      )}
+      {hb && (
+        <Tip x={cx(hover)} y={y(Math.max(0,hb.val))}>
+          <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{fmtDia(hb.d)}</div>
+          <div style={{color:hb.val>=0?"#2ee6a0":"#ff5470",fontWeight:700}}>{hb.val>=0?"+":""}R$ {hb.val.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          {hb.pts!=null && <div style={{color:"var(--text-2)",fontSize:"11px"}}>{hb.pts>=0?"+":""}{(+hb.pts).toFixed(1)} pts</div>}
+        </Tip>
+      )}
+    </div>
+  );
+}
+
+// ── Modal (vidro, abre com escala; Esc ou clique fora fecha) ─────
+export function Modal({ onClose, children, width=720 }) {
+  useEffect(() => {
+    const fn = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", fn);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", fn); document.body.style.overflow = prev; };
+  }, [onClose]);
+  return createPortal(
+    <div className="mtp-modal-backdrop" onClick={onClose}>
+      <div className="mtp-modal" style={{maxWidth:width}} onClick={e=>e.stopPropagation()} role="dialog" aria-modal="true">
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ── Histórico real | projeção futura, divididos em "hoje" ────────
+export function ProjectionChart({ real, proj, base, color="#2ee6a0", cur="R$", height=290 }) {
+  const [ref, w] = useWidth();
+  const [hover, setHover] = useState(null);
+  const id = useId();
+  const PL=60, PR=16, PT=16, PB=28, H=height;
+  const iw = Math.max(1, w-PL-PR);
+  const temReal = real.length > 1;
+  const split = temReal ? 0.5 : 0;
+  const xs = PL + iw*split;
+  const xR = i => PL + (i/Math.max(1, real.length-1))*(xs-PL);
+  const xP = i => xs + (i/Math.max(1, proj.length-1))*(PL+iw-xs);
+
+  const vals = [...real.map(p=>p.val), ...proj.map(p=>p.val), base];
+  const ticks = niceTicks(Math.min(...vals), Math.max(...vals));
+  const lo = ticks[0], hi = ticks[ticks.length-1];
+  const y = v => PT + (1-(v-lo)/(hi-lo))*(H-PT-PB);
+
+  const realPath = real.map((p,i)=>(i?"L":"M")+xR(i).toFixed(1)+","+y(p.val).toFixed(1)).join(" ");
+  const area = temReal ? realPath+` L${xR(real.length-1).toFixed(1)},${H-PB} L${PL},${H-PB} Z` : "";
+  const projPath = proj.map((p,i)=>(i?"L":"M")+xP(i).toFixed(1)+","+y(p.val).toFixed(1)).join(" ");
+  const realLabels = temReal ? spacedIdx(real.length, xR, 64).filter(i => i===0 || xs-xR(i) >= 40) : [];
+  const projLabels = spacedIdx(proj.length, xP, 40).filter(i=>i>0);
+  const fmtCur = v => cur+" "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const onMove = e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    if (temReal && mx < xs) {
+      const i = Math.round(((mx-PL)/Math.max(1,xs-PL))*(real.length-1));
+      setHover({ lado:"r", i:Math.max(0, Math.min(real.length-1, i)) });
+    } else {
+      const i = Math.round(((mx-xs)/Math.max(1,PL+iw-xs))*(proj.length-1));
+      setHover({ lado:"p", i:Math.max(0, Math.min(proj.length-1, i)) });
+    }
+  };
+  const hp = hover ? (hover.lado==="r" ? real[hover.i] : proj[hover.i]) : null;
+  const hx = hover ? (hover.lado==="r" ? xR(hover.i) : xP(hover.i)) : 0;
+
+  return (
+    <div ref={ref} style={{position:"relative",width:"100%",height:H}}>
+      {w>0 && (
+        <svg width={w} height={H} style={{display:"block",cursor:"crosshair"}} onMouseMove={onMove} onMouseLeave={()=>setHover(null)}>
+          <defs>
+            <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.28"/>
+              <stop offset="100%" stopColor={color} stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          {ticks.map(t=>(
+            <g key={t}>
+              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke="#ffffff0a"/>
+              <text x={PL-8} y={y(t)+3} textAnchor="end" {...AX}>{fmtK(t, cur)}</text>
+            </g>
+          ))}
+          <line x1={PL} x2={w-PR} y1={y(base)} y2={y(base)} stroke="#ffffff26" strokeDasharray="2,5"/>
+          {temReal && <>
+            <rect x={xs} y={PT} width={PL+iw-xs} height={H-PT-PB} fill="#ffffff04"/>
+            <line x1={xs} x2={xs} y1={PT} y2={H-PB} stroke="#ffffff22" strokeDasharray="3,3"/>
+            <text x={xs+6} y={PT+11} fill="#82948c" fontSize="10" fontFamily="var(--font-mono)">hoje →</text>
+          </>}
+          {realLabels.map(i=>(
+            <text key={"r"+i} x={xR(i)} y={H-8} textAnchor={i===0?"start":"middle"} {...AX}>{fmtDia(real[i].d)}</text>
+          ))}
+          {projLabels.map(i=>(
+            <text key={"p"+i} x={xP(i)} y={H-8} textAnchor={i===proj.length-1?"end":"middle"} {...AX}>{proj[i].label}</text>
+          ))}
+          {temReal && <path d={area} fill={`url(#${id})`}/>}
+          <path d={projPath} fill="none" stroke={color} strokeOpacity="0.55" strokeWidth="1.8" strokeDasharray="6,5" strokeLinejoin="round"/>
+          {proj.length>0 && <circle cx={xP(proj.length-1)} cy={y(proj[proj.length-1].val)} r="3.5" fill="none" stroke={color} strokeOpacity="0.7" strokeWidth="1.5"/>}
+          {temReal && <path d={realPath} fill="none" stroke={color} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+color+"88)"}}/>}
+          {temReal && <circle cx={xR(real.length-1)} cy={y(real[real.length-1].val)} r="4" fill={color} stroke="#050907" strokeWidth="2"/>}
+          {hp && <>
+            <line x1={hx} x2={hx} y1={PT} y2={H-PB} stroke="#ffffff30" strokeDasharray="3,3"/>
+            <circle cx={hx} cy={y(hp.val)} r="4.5" fill={hover.lado==="r"?color:"#0a110e"} stroke={hover.lado==="r"?"#050907":color} strokeWidth="2"/>
+          </>}
+        </svg>
+      )}
+      {hp && (
+        <Tip x={hx} y={y(hp.val)}>
+          <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{hover.lado==="r" ? fmtDia(hp.d) : hp.label+" · projeção"}</div>
+          <div style={{color:hover.lado==="r"?color:"var(--text)",fontWeight:700}}>{fmtCur(hp.val)}</div>
+          <div style={{color:hp.val>=base?"#2ee6a0":"#ff5470",fontSize:"11px"}}>{hp.val>=base?"+":"-"}{fmtCur(Math.abs(hp.val-base))} vs inicial</div>
+        </Tip>
+      )}
+    </div>
+  );
+}
+
+// ── Popover ancorado (portal, posição fixa; abre p/ cima se não couber) ──
+// `rect` = getBoundingClientRect() do gatilho no momento da abertura.
+export function Popover({ rect, onClose, children, width, align="left", maxHeight=320, anchorRef }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const fora = e => {
+      if (ref.current?.contains(e.target) || anchorRef?.current?.contains(e.target)) return;
+      onClose();
+    };
+    const tecla = e => { if (e.key === "Escape") onClose(); };
+    const rolou = e => { if (!ref.current?.contains(e.target)) onClose(); };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", tecla);
+    window.addEventListener("scroll", rolou, true);
+    window.addEventListener("resize", onClose);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", tecla);
+      window.removeEventListener("scroll", rolou, true);
+      window.removeEventListener("resize", onClose);
+    };
+  }, [onClose, anchorRef]);
+
+  const w = width ?? rect.width;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = align === "right" ? rect.right - w : rect.left;
+  left = Math.max(8, Math.min(left, vw - w - 8));
+  const baixo = vh - rect.bottom;
+  const paraCima = baixo < Math.min(maxHeight, 220) && rect.top > baixo;
+  const pos = paraCima
+    ? { bottom: vh - rect.top + 6, maxHeight: Math.min(maxHeight, rect.top - 16) }
+    : { top: rect.bottom + 6,      maxHeight: Math.min(maxHeight, baixo - 16) };
+
+  return createPortal(
+    <div ref={ref} className={"mtp-pop"+(paraCima?" up":"")} style={{ position:"fixed", left, width:w, minWidth:Math.min(rect.width, w), zIndex:600, ...pos }}>
+      {children}
+    </div>,
+    document.body
+  );
+}
+
+// ── Select próprio (substitui o <select> nativo) ─────────────────
+// options: [{ value, label, cor?, hint? }] ou valores simples
+export function Select({ value, onChange, options, placeholder="Selecione", style, title, popWidth, align }) {
+  const opts = options.map(o => (o !== null && typeof o === "object") ? o : { value:o, label:String(o) });
+  const [rect, setRect] = useState(null);
+  const [ativo, setAtivo] = useState(-1);
+  const btn = useRef(null);
+  const atual = opts.find(o => o.value === value);
+
+  const abrir = () => { setRect(btn.current.getBoundingClientRect()); setAtivo(Math.max(0, opts.findIndex(o => o.value === value))); };
+  const fechar = () => setRect(null);
+  const escolher = o => { onChange(o.value); fechar(); btn.current?.focus(); };
+
+  const tecla = e => {
+    if (!rect) {
+      if (["ArrowDown","ArrowUp","Enter"," "].includes(e.key)) { e.preventDefault(); abrir(); }
+      return;
+    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setAtivo(i => Math.min(opts.length-1, i+1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setAtivo(i => Math.max(0, i-1)); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (opts[ativo]) escolher(opts[ativo]); }
+    else if (e.key === "Tab") fechar();
+  };
+
+  return (
+    <>
+      <button ref={btn} type="button" title={title} className={"mtp-select"+(rect?" open":"")} onClick={()=> rect ? fechar() : abrir()} onKeyDown={tecla}
+        aria-haspopup="listbox" aria-expanded={!!rect} style={style}>
+        <span style={{ display:"flex", alignItems:"center", gap:"8px", minWidth:0, overflow:"hidden" }}>
+          {atual?.cor && <i className="mtp-dot" style={{ background:atual.cor }}/>}
+          <span style={{ whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color: atual ? undefined : "var(--text-3)" }}>{atual ? atual.label : placeholder}</span>
+        </span>
+        <svg className="mtp-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      {rect && (
+        <Popover rect={rect} onClose={fechar} width={popWidth} align={align} anchorRef={btn}>
+          <div role="listbox">
+            {opts.map((o, i) => (
+              <div key={String(o.value)} role="option" aria-selected={o.value === value}
+                className={"mtp-option"+(i === ativo ? " ativo" : "")+(o.value === value ? " sel" : "")}
+                onMouseEnter={() => setAtivo(i)}
+                onMouseDown={e => { e.preventDefault(); escolher(o); }}>
+                {o.cor && <i className="mtp-dot" style={{ background:o.cor }}/>}
+                <span style={{ flex:1, minWidth:0, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{o.label}</span>
+                {o.hint && <span className="mtp-option-hint">{o.hint}</span>}
+                {o.value === value && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+              </div>
+            ))}
+          </div>
+        </Popover>
+      )}
+    </>
+  );
+}
+
+// ── Seletor de horário (substitui o <input type="time"> nativo) ──
+// value: "HH:MM" ou ""
+export function TimePicker({ value, onChange, style, horas = [9,10,11,12,13,14,15,16,17,18] }) {
+  const [rect, setRect] = useState(null);
+  const btn = useRef(null);
+  const [h, m] = (value || "").split(":");
+  const agora = () => { const d = new Date(); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
+  const setH = hh => onChange(String(hh).padStart(2,"0")+":"+(m || "00"));
+  const setM = mm => onChange((h || String(new Date().getHours()).padStart(2,"0"))+":"+String(mm).padStart(2,"0"));
+  const cel = ativo => ({
+    padding:"7px 0", borderRadius:"8px", border:"1px solid "+(ativo?"rgba(46,230,160,0.4)":"var(--line)"),
+    background: ativo?"rgba(46,230,160,0.12)":"transparent", color: ativo?"var(--accent)":"var(--text-2)",
+    fontFamily:"var(--font-mono)", fontSize:"12.5px", fontWeight:600, cursor:"pointer",
+  });
+  return (
+    <>
+      <button ref={btn} type="button" className={"mtp-select"+(rect?" open":"")} style={style}
+        onClick={() => setRect(rect ? null : btn.current.getBoundingClientRect())}>
+        <span style={{ display:"flex", alignItems:"center", gap:"8px", fontFamily:"var(--font-mono)", color: value ? "var(--text)" : "var(--text-3)" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+          {value || "--:--"}
+        </span>
+      </button>
+      {rect && (
+        <Popover rect={rect} onClose={() => setRect(null)} width={252} maxHeight={400} anchorRef={btn}>
+          <div style={{ padding:"6px" }}>
+            <div style={{ display:"flex", gap:"6px", marginBottom:"10px" }}>
+              <button type="button" onClick={() => { onChange(agora()); setRect(null); }} style={{ ...cel(false), flex:1, color:"var(--accent)", borderColor:"rgba(46,230,160,0.3)" }}>Agora · {agora()}</button>
+              {value && <button type="button" onClick={() => { onChange(""); setRect(null); }} style={{ ...cel(false), padding:"7px 10px", color:"var(--text-3)" }}>Limpar</button>}
+            </div>
+            <p style={{ margin:"0 2px 6px", color:"var(--text-3)", fontSize:"10px", fontWeight:700, letterSpacing:"1.2px", textTransform:"uppercase" }}>Hora</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"5px", marginBottom:"10px" }}>
+              {horas.map(hh => <button type="button" key={hh} onClick={() => setH(hh)} style={cel(Number(h) === hh)}>{String(hh).padStart(2,"0")}</button>)}
+            </div>
+            <p style={{ margin:"0 2px 6px", color:"var(--text-3)", fontSize:"10px", fontWeight:700, letterSpacing:"1.2px", textTransform:"uppercase" }}>Minuto</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"5px" }}>
+              {[0,5,10,15,20,25,30,35,40,45,50,55].map(mm => <button type="button" key={mm} onClick={() => { setM(mm); setRect(null); }} style={cel(Number(m) === mm)}>{String(mm).padStart(2,"0")}</button>)}
+            </div>
+          </div>
+        </Popover>
+      )}
+    </>
+  );
+}

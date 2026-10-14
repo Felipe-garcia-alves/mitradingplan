@@ -4,13 +4,13 @@ export default function Termos({ onVoltar }) {
   const [aba, setAba] = useState("termos");
 
   return (
-    <div style={{minHeight:"100vh",background:"#080810",fontFamily:"Inter,sans-serif",padding:"40px 20px"}}>
+    <div style={{minHeight:"100vh",background:"#040806",fontFamily:"var(--font-sans)",padding:"40px 20px"}}>
       <div style={{maxWidth:"720px",margin:"0 auto"}}>
 
         {/* Header */}
         <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"32px"}}>
           {onVoltar && (
-            <button onClick={onVoltar} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",padding:"8px 14px",color:"#888",cursor:"pointer",fontSize:"13px",fontFamily:"Inter,sans-serif"}}>
+            <button onClick={onVoltar} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",padding:"8px 14px",color:"#888",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>
               ← Voltar
             </button>
           )}
@@ -24,13 +24,13 @@ export default function Termos({ onVoltar }) {
         <div style={{display:"flex",background:"rgba(255,255,255,0.03)",borderRadius:"10px",padding:"3px",marginBottom:"28px"}}>
           {[["termos","Termos de Uso"],["privacidade","Política de Privacidade"]].map(([id,label])=>(
             <button key={id} onClick={()=>setAba(id)}
-              style={{flex:1,padding:"10px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",transition:"all 0.2s",background:aba===id?"rgba(255,255,255,0.07)":"transparent",color:aba===id?"#f0f0f0":"#555",fontFamily:"Inter,sans-serif"}}>
+              style={{flex:1,padding:"10px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",transition:"all 0.2s",background:aba===id?"rgba(255,255,255,0.07)":"transparent",color:aba===id?"#f0f0f0":"#555",fontFamily:"var(--font-sans)"}}>
               {label}
             </button>
           ))}
         </div>
 
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"36px 40px"}}>
+        <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"36px 40px"}}>
 
           {aba === "termos" && (
             <div style={{color:"#888",fontSize:"14px",lineHeight:"1.9"}}>
@@ -74,7 +74,7 @@ export default function Termos({ onVoltar }) {
               </Section>
 
               <Section titulo="10. Contato">
-                Dúvidas sobre estes termos: <span style={{color:"#00d4aa"}}>contato@mitradingplan.com</span>
+                Dúvidas sobre estes termos: <span style={{color:"#2ee6a0"}}>contato@mitradingplan.com</span>
               </Section>
             </div>
           )}
@@ -113,7 +113,7 @@ export default function Termos({ onVoltar }) {
               </Section>
 
               <Section titulo="8. Contato">
-                Para questões sobre privacidade e proteção de dados: <span style={{color:"#00d4aa"}}>contato@mitradingplan.com</span>
+                Para questões sobre privacidade e proteção de dados: <span style={{color:"#2ee6a0"}}>contato@mitradingplan.com</span>
               </Section>
             </div>
           )}

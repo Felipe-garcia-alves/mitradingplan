@@ -4,8 +4,8 @@
   "description": "Plataforma profissional para traders — análise comportamental e performance",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d0d1a",
-  "theme_color": "#0d0d1a",
+  "background_color": "#050907",
+  "theme_color": "#050907",
   "orientation": "portrait-primary",
   "icons": [
     {

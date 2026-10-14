@@ -17,12 +17,32 @@ const Regras      = lazy(()=>import("./pages/Regras"));
 const Crescimento = lazy(()=>import("./pages/Crescimento"));
 const Patrimonio  = lazy(()=>import("./pages/Patrimonio"));
 const Config      = lazy(()=>import("./pages/Config"));
+const Usuarios    = lazy(()=>import("./pages/Usuarios"));
 
 function Spinner() {
   return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"200px"}}>
-      <div style={{width:"28px",height:"28px",border:"3px solid #1a1a2e",borderTop:"3px solid #00d4aa",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-      <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+      <div style={{width:"28px",height:"28px",border:"3px solid #18241f",borderTop:"3px solid #2ee6a0",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+    </div>
+  );
+}
+
+// Tela de bloqueio quando a assinatura venceu ou foi suspensa
+function AssinaturaInativa({ perfil, onSair }) {
+  const vencida = perfil.status!=="suspensa" && perfil.status!=="cancelada";
+  return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",fontFamily:"var(--font-sans)"}}>
+      <div style={{width:"100%",maxWidth:"440px",background:"var(--panel)",border:"1px solid var(--line-strong)",borderRadius:"20px",padding:"32px",textAlign:"center"}}>
+        <div style={{width:"52px",height:"52px",borderRadius:"14px",margin:"0 auto 18px",background:"rgba(245,185,65,0.1)",border:"1px solid #f5b94144",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5b941" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h1 style={{margin:"0 0 8px",color:"var(--text)",fontSize:"21px",fontWeight:"800"}}>{vencida ? "Sua assinatura venceu" : "Acesso suspenso"}</h1>
+        <p style={{margin:"0 0 24px",color:"var(--text-3)",fontSize:"13.5px",lineHeight:1.6}}>
+          {vencida && perfil.ate ? "Seu acesso foi até "+perfil.ate.split("-").reverse().join("/")+". " : ""}
+          Seus dados continuam guardados. Fale com o suporte para renovar e voltar a usar o Mi Trading Plan.
+        </p>
+        <button onClick={onSair} style={{background:"rgba(255,255,255,0.05)",border:"1px solid var(--line-strong)",borderRadius:"10px",padding:"11px 22px",color:"var(--text-2)",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Sair da conta</button>
+      </div>
     </div>
   );
 }
@@ -43,7 +63,7 @@ function UserHeader({ nomeUsuario, entries }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+  const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
 
   const trades = todayEntry?.trades || [];
   const wins = trades.filter(t=>t.tipo==="WIN").length;
@@ -61,16 +81,16 @@ function UserHeader({ nomeUsuario, entries }) {
 
   return (
     <div ref={ref} style={{position:"relative"}}>
-      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(0,212,170,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#00d4aa44":"#1e1e2e"),borderRadius:"10px",padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.2s"}}>
-        <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,#00d4aa22,#0099ff22)",border:"1px solid #00d4aa44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:"700",color:"#00d4aa",flexShrink:0}}>{inicial}</div>
+      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(46,230,160,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#2ee6a044":"#1b2823"),borderRadius:"10px",padding:"7px 12px",cursor:"pointer",fontFamily:"var(--font-sans)",transition:"all 0.2s"}}>
+        <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,#2ee6a022,#0099ff22)",border:"1px solid #2ee6a044",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:"700",color:"#2ee6a0",flexShrink:0}}>{inicial}</div>
         <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{nomeUsuario||"Trader"}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0f0f18",border:"1px solid #1e1e2e",borderRadius:"20px",padding:"0",zIndex:300,width:"300px",boxShadow:"0 24px 60px rgba(0,0,0,0.8)",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0c1411",border:"1px solid #1b2823",borderRadius:"20px",padding:"0",zIndex:300,width:"300px",boxShadow:"0 24px 60px rgba(0,0,0,0.8)",overflow:"hidden"}}>
           
           {/* Header */}
-          <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #1a1a2e"}}>
+          <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #18241f"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
               <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{today.split("-").reverse().join(" de ").replace(/(\d+) de (\d+) de (\d+)/,(_,d,m,y)=>{const meses=["","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];return `${d} de ${meses[parseInt(m)]}, ${["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][new Date(today).getDay()]}`})}</p>
               <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:"18px",padding:"0",lineHeight:1}}>×</button>
@@ -79,13 +99,13 @@ function UserHeader({ nomeUsuario, entries }) {
             {/* Stats topo */}
             {todayEntry ? (
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"}}>
-                <div style={{background:"#1a1a2e",borderRadius:"10px",padding:"12px"}}>
+                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px"}}>
                   <p style={{margin:"0 0 2px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos do dia</p>
-                  <p style={{margin:0,color:totalPts>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
+                  <p style={{margin:0,color:totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"20px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
                 </div>
-                <div style={{background:"#1a1a2e",borderRadius:"10px",padding:"12px"}}>
+                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px"}}>
                   <p style={{margin:"0 0 2px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado R$</p>
-                  <p style={{margin:0,color:totalHoje>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
+                  <p style={{margin:0,color:totalHoje>=0?"#2ee6a0":"#ff5470",fontSize:"20px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
                 </div>
               </div>
             ) : null}
@@ -93,16 +113,16 @@ function UserHeader({ nomeUsuario, entries }) {
             {/* Trades + exec */}
             {todayEntry && (
               <div style={{display:"flex",gap:"8px"}}>
-                <span style={{background:"#1a1a2e",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#aaa",fontWeight:"600"}}>{trades.length} trades</span>
-                {execPct!==null&&wins===trades.length&&<span style={{background:"rgba(0,212,170,0.1)",border:"1px solid #00d4aa33",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#00d4aa",fontWeight:"600"}}>WIN ({wins})</span>}
-                {execPct!==null&&<span style={{background:"rgba(0,212,170,0.08)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#00d4aa",fontWeight:"600"}}>● {execPct}% exec.</span>}
+                <span style={{background:"#18241f",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#aaa",fontWeight:"600"}}>{trades.length} trades</span>
+                {execPct!==null&&wins===trades.length&&<span style={{background:"rgba(46,230,160,0.1)",border:"1px solid #2ee6a033",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#2ee6a0",fontWeight:"600"}}>WIN ({wins})</span>}
+                {execPct!==null&&<span style={{background:"rgba(46,230,160,0.08)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#2ee6a0",fontWeight:"600"}}>● {execPct}% exec.</span>}
               </div>
             )}
           </div>
 
           {/* Emoção predominante */}
           {emocaoPred && (
-            <div style={{padding:"14px 20px",borderBottom:"1px solid #1a1a2e"}}>
+            <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
               <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoção Predominante</p>
               <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:"10px",padding:"10px 14px",display:"flex",alignItems:"center",gap:"10px"}}>
                 <span style={{fontSize:"18px"}}>🎯</span>
@@ -113,11 +133,11 @@ function UserHeader({ nomeUsuario, entries }) {
 
           {/* Estratégias */}
           {estratUsadas.length > 0 && (
-            <div style={{padding:"14px 20px",borderBottom:"1px solid #1a1a2e"}}>
+            <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
               <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Estratégias Utilizadas</p>
               <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                 {estratUsadas.map(e=>(
-                  <div key={e} style={{background:"#1a1a2e",borderRadius:"8px",padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div key={e} style={{background:"#18241f",borderRadius:"8px",padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{e.slice(0,2).toUpperCase()} — {e}</span>
                     <span style={{color:"#555",fontSize:"12px"}}>({estratCount[e]})</span>
                   </div>
@@ -128,7 +148,7 @@ function UserHeader({ nomeUsuario, entries }) {
 
           {/* Emoções */}
           {todayEntry?.emocoes?.length > 0 && (
-            <div style={{padding:"14px 20px",borderBottom:"1px solid #1a1a2e"}}>
+            <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
               <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções Registradas</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
                 {todayEntry.emocoes.map(em=>(
@@ -144,16 +164,16 @@ function UserHeader({ nomeUsuario, entries }) {
               <p style={{margin:"0 0 10px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações ({trades.length})</p>
               <div style={{display:"flex",flexDirection:"column",gap:"6px",maxHeight:"200px",overflowY:"auto"}}>
                 {trades.map((t,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#1a1a2e",borderRadius:"8px"}}>
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#18241f",borderRadius:"8px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                       <span style={{color:"#666",fontSize:"11px"}}>#{i+1}</span>
-                      <span style={{padding:"2px 6px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
+                      <span style={{padding:"2px 6px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                       {t.estrategia&&<span style={{padding:"2px 7px",borderRadius:"4px",background:"rgba(0,153,255,0.15)",color:"#0099ff",fontSize:"11px",fontWeight:"600"}}>{t.estrategia.slice(0,2).toUpperCase()}</span>}
                       {t.mercado&&<span style={{color:"#555",fontSize:"11px"}}>{t.mercado==="B3"?"Venda":"Forex"}</span>}
                     </div>
                     <div style={{textAlign:"right"}}>
-                      {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"12px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
-                      {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#00d4aa":"#ff4d4d",fontSize:"12px",fontFamily:"monospace",fontWeight:"700"}}>R$ {t.resultado>=0?"+":""}{t.resultado}</p>}
+                      {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
+                      {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>R$ {t.resultado>=0?"+":""}{t.resultado}</p>}
                     </div>
                   </div>
                 ))}
@@ -173,7 +193,7 @@ function UserHeader({ nomeUsuario, entries }) {
 }
 
 function AppInterno() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [pagina,      setPagina]      = useState("evolucao");
   const [entries,     setEntries]     = useState({});
   const [config,      setConfigState] = useState({bancaB3:3000,bancaForex:200});
@@ -181,6 +201,7 @@ function AppInterno() {
   const [estrategias, setEstrategias] = useState([]);
   const [regras,      setRegras]      = useState([]);
   const [nomeUsuario, setNomeUsuario] = useState("");
+  const [perfil,      setPerfil]      = useState({ papel:"trader", status:"ativa", ate:null });
   const [loading,     setLoading]     = useState(true);
   const [onboarding,  setOnboarding]  = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -203,6 +224,7 @@ function AppInterno() {
           .from("usuarios").select("*").eq("id", uid).single();
         if (userData) {
           setNomeUsuario(userData.nome||"");
+          setPerfil({ papel:userData.papel||"trader", status:userData.status_assinatura||"ativa", ate:userData.assinatura_ate||null });
           if (userData.config)     setConfigState(userData.config);
           if (userData.compliance) setCompliance(userData.compliance);
           if (userData.regras)     setRegras(userData.regras);
@@ -337,35 +359,45 @@ function AppInterno() {
     } catch(e){ console.error(e); }
   };
 
-  const TITLES = {evolucao:"Evolução",macro:"Macro",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações",termos:"Termos & Privacidade"};
+  const TITLES = {evolucao:"Evolução",macro:"Macro",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações",usuarios:"Usuários",termos:"Termos & Privacidade"};
 
   const renderPage = () => {
     switch(pagina){
-      case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina} config={config}/>;
-      case "macro":       return <Macro/>;
-      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid}/>;
+      case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina} config={config} saveConfig={saveConfig}/>;
+      case "macro":       return <Macro isAdmin={perfil.papel==="admin"}/>;
+      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid} config={config}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias}/>;
-      case "estrategias": return <Estrategias estrategias={estrategias} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
-      case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig}/></Suspense>;
+      case "estrategias": return <Estrategias estrategias={estrategias} entries={entries} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
+      case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig} setPagina={setPagina}/></Suspense>;
       case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries} setPagina={setPagina}/></Suspense>;
       case "crescimento": return <Suspense fallback={<Spinner/>}><Crescimento entries={entries} config={config}/></Suspense>;
       case "patrimonio":  return <Suspense fallback={<Spinner/>}><Patrimonio entries={entries} config={config}/></Suspense>;
-      case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario} setPagina={setPagina}/></Suspense>;
+      case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario} setPagina={setPagina} isAdmin={perfil.papel==="admin"} entries={entries}/></Suspense>;
+      case "usuarios":    return perfil.papel==="admin"
+                            ? <Suspense fallback={<Spinner/>}><Usuarios onVoltar={()=>setPagina("config")}/></Suspense>
+                            : null;
       case "termos":      return <Termos onVoltar={()=>setPagina("config")}/>;
       default:            return <Evolucao entries={entries} config={config}/>;
     }
   };
 
   if (loading) return (
-    <div style={{minHeight:"100vh",background:"#0d0d1a",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Inter,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#050907",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)"}}>
       <div style={{textAlign:"center"}}>
-        <div style={{width:"44px",height:"44px",borderRadius:"12px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+        <div style={{width:"44px",height:"44px",borderRadius:"12px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
         <p style={{color:"#444",fontSize:"14px"}}>Carregando...</p>
       </div>
     </div>
   );
+
+  // Assinatura: admin nunca é bloqueado; demais perdem acesso se suspensos ou vencidos
+  const hoje = new Date().toISOString().slice(0,10);
+  const bloqueado = perfil.papel!=="admin" && (
+    perfil.status==="suspensa" || perfil.status==="cancelada" || (perfil.ate && perfil.ate < hoje)
+  );
+  if (bloqueado) return <AssinaturaInativa perfil={perfil} onSair={logout}/>;
 
   if (onboarding) return (
     <Onboarding
@@ -377,22 +409,22 @@ function AppInterno() {
   );
 
   return (
-    <div style={{display:"flex",minHeight:"100vh",background:"#0d0d1a",fontFamily:"Inter,sans-serif"}}>
+    <div style={{display:"flex",minHeight:"100vh",fontFamily:"var(--font-sans)"}}>
       {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance}/>}
       <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}
         onTouchStart={e=>{if(isMobile)window._swipeX=e.touches[0].clientX;}}
         onTouchEnd={e=>{if(isMobile&&window._swipeX&&(window._swipeX-e.changedTouches[0].clientX)>60){setSidebarOpen(false);window._swipeX=null;}}}>
-        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(8,8,16,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #1a1a2e",padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+        <div className="mtp-topbar" style={{position:"sticky",top:0,zIndex:100,padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-            {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1e1e2e",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
-            <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"rgba(0,212,170,0.1)",border:"1px solid #00d4aa33",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <span style={{color:"#00d4aa",fontSize:"11px",fontWeight:"800"}}>{pagina.slice(0,2).toUpperCase()}</span>
+            {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
+            <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"rgba(46,230,160,0.1)",border:"1px solid #2ee6a033",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{color:"#2ee6a0",fontSize:"11px",fontWeight:"800"}}>{pagina.slice(0,2).toUpperCase()}</span>
             </div>
-            <h2 style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{TITLES[pagina]||pagina}</h2>
+            <h2 className="mtp-page-title">{TITLES[pagina]||pagina}</h2>
           </div>
           <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
         </div>
-        <div style={{flex:1,padding:isMobile?"16px 12px":"28px 24px",maxWidth:"1200px",width:"100%",boxSizing:"border-box"}}>
+        <div style={{flex:1,padding:isMobile?"16px 12px":"28px 24px",maxWidth:"1248px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
           {/* Lembrete de disciplina — aparece se hoje ainda não foi salvo */}
           {(() => {
             const today = new Date().toISOString().slice(0,10);
@@ -405,16 +437,15 @@ function AppInterno() {
                   <p style={{margin:0,color:"#f59e0b",fontSize:"13px",fontWeight:"600"}}>Você ainda não registrou sua disciplina hoje</p>
                 </div>
                 <button onClick={()=>setPagina("regras")}
-                  style={{background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"7px",padding:"5px 12px",color:"#f59e0b",fontSize:"12px",fontWeight:"700",cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}}>
+                  style={{background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"7px",padding:"5px 12px",color:"#f59e0b",fontSize:"12px",fontWeight:"700",cursor:"pointer",fontFamily:"var(--font-sans)",flexShrink:0}}>
                   Registrar agora
                 </button>
               </div>
             );
           })()}
-          {renderPage()}
+          <div key={pagina} className="mtp-page">{renderPage()}</div>
         </div>
       </main>
-      <style>{`*{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}body{margin:0;background:#0d0d1a;overflow-x:hidden;}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0d0d14}::-webkit-scrollbar-thumb{background:#1e1e2e;border-radius:3px}@media(max-width:768px){button,a{min-height:40px;}input,select{font-size:16px !important;}}`}</style>
     </div>
   );
 }

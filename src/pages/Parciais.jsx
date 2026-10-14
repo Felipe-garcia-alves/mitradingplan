@@ -6,7 +6,7 @@ export default function Parciais({ config }) {
   const guide = [
     {
       mercado:"Mini Indice (B3)", icon:"🇧🇷", banca:"R$ "+bancaB3.toLocaleString("pt-BR",{minimumFractionDigits:2}),
-      cor:"#00d4aa",
+      cor:"#2ee6a0",
       regra:"NAO faca parcial em alvos pequenos",
       quando:"Apenas se o mercado andar 2x o stop (R$ "+(bancaB3*0.02).toFixed(2)+") a seu favor",
       como:"Feche 50% na regiao de 2R. Mova stop para breakeven. Deixe o restante correr.",
@@ -21,7 +21,7 @@ export default function Parciais({ config }) {
   ];
 
   return (
-    <div style={{ fontFamily:"Inter,sans-serif" }}>
+    <div style={{ fontFamily:"var(--font-sans)" }}>
       <div style={{ marginBottom:"24px" }}>
         <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.5px" }}>Gerenciamento de Parciais</h1>
         <p style={{ margin:0, color:"#555", fontSize:"13px" }}>Regras ajustadas para sua banca real atual</p>
@@ -35,7 +35,7 @@ export default function Parciais({ config }) {
               <span style={{ fontSize:"20px" }}>{g.icon}</span>
               <h3 style={{ margin:0, fontSize:"16px", color:"#f0f0f0", fontWeight:"700" }}>{g.mercado}</h3>
             </div>
-            <span style={{ color:g.cor, fontSize:"13px", fontFamily:"JetBrains Mono,monospace", fontWeight:"700" }}>{g.banca}</span>
+            <span style={{ color:g.cor, fontSize:"13px", fontFamily:"var(--font-mono)", fontWeight:"700" }}>{g.banca}</span>
           </div>
           {[["REGRA",g.regra],["QUANDO",g.quando],["COMO",g.como]].map(([lbl,txt])=>(
             <div key={lbl} style={{ display:"flex", gap:"14px", marginBottom:"10px" }}>

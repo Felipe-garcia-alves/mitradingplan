@@ -1,6 +1,9 @@
 import { useState, useRef } from "react";
+import { Select, TimePicker } from "../components/ui";
+import { listaContas, contaPadrao, contaDoTrade, TIPOS_CONTA } from "../lib/contas";
+import { ATIVOS_SUGERIDOS, opcoesDeAtivo, ativosUsados, normalizarAtivo, rotuloAtivo } from "../lib/ativos";
 import { supabase } from "../supabase";
-import ImageEditor, { uploadTradeImage, deleteTradeImage, ImageThumb, ImageViewer } from "../components/ImageEditor";
+import ImageEditor, { uploadTradeImage, deleteTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
 
 function todayKey() {
   const d = new Date();
@@ -17,9 +20,10 @@ function formatDateFull(s) { const p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]
 function formatMonthLabel(s) { const p=s.split("-"); return MONTH_NAMES[parseInt(p[1])-1]+" "+p[0]; }
 
 const EMOCOES = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansioso","Impaciente","Frustrado","Eufórico","Medo","Cansado","Revanche"];
-const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
 
-export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid }) {
+export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid, config }) {
+  const contas = listaContas(config);
   const today    = todayKey();
   const curMonth = monthKey(today);
   const [selectedDate, setSelectedDate] = useState(today);
@@ -29,9 +33,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const [emocoes,    setEmocoes]    = useState([]);
   const [observacao, setObservacao] = useState("");
   const [trades,     setTrades]     = useState([]);
-  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:""});
+  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:"",conta:contaPadrao(config).id,ativo:ativosUsados(entries,"B3")[0]||"WIN"});
   const [pendingImages, setPendingImages] = useState([]);
-  const [showEstSug, setShowEstSug] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null); // { dateKey, index, data }
   const [editorImg, setEditorImg]   = useState(null);  // { src, tradeIdx } — editor aberto
   const [viewerImg, setViewerImg]   = useState(null);  // url — viewer aberto
@@ -49,6 +52,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         resultado: trade.resultado !== undefined && trade.resultado !== null ? String(trade.resultado) : "",
         estrategia: trade.estrategia || "",
         observacao: trade.observacao || "",
+        conta: contaDoTrade(trade),
+        ativo: trade.ativo || "",
       }
     });
   }
@@ -60,9 +65,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     if (!entry) return;
     const updatedTrades = entry.trades.map((t, i) => {
       if (i !== index) return t;
-      const updated = { mercado: data.mercado, tipo: data.tipo, estrategia: data.estrategia || "", observacao: data.observacao || "" };
-      if (data.pontos !== "") updated.pontos = parseFloat(data.pontos);
-      if (data.resultado !== "") updated.resultado = parseFloat(data.resultado);
+      // mantém o resto do trade (fotos, horário, lotes, execução)
+      const updated = { ...t, mercado: data.mercado, tipo: data.tipo, estrategia: data.estrategia || "", observacao: data.observacao || "", conta: data.conta || contaDoTrade(t) };
+      const ativoEd = normalizarAtivo(data.ativo);
+      if (ativoEd) updated.ativo = ativoEd; else delete updated.ativo;
+      if (data.pontos !== "") updated.pontos = parseFloat(data.pontos); else delete updated.pontos;
+      if (data.resultado !== "") updated.resultado = parseFloat(data.resultado); else delete updated.resultado;
       return updated;
     });
     const totalB3     = updatedTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
@@ -117,26 +125,50 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     setEmocoes(prev => prev.includes(em) ? prev.filter(e=>e!==em) : [...prev, em]);
   }
 
+  // LOSS sempre negativo, WIN sempre positivo (aceita o prejuízo digitado sem sinal)
+  function comSinal(v) {
+    const n = Math.abs(parseFloat(String(v).replace(",", ".")));
+    return novoTrade.tipo === "LOSS" ? -n : n;
+  }
+  function trocarTipo(t) {
+    setNovoTrade(p => {
+      const ajusta = v => { const n = parseFloat(v); if (v === "" || isNaN(n) || n === 0) return v; return (t === "LOSS") === (n < 0) ? v : String(-n); };
+      return { ...p, tipo:t, resultado:ajusta(p.resultado), pontos:ajusta(p.pontos) };
+    });
+  }
+  function digitarNumero(k, v) {
+    setNovoTrade(p => {
+      const novo = { ...p, [k]: v };
+      if (k !== "contratos" && parseFloat(v) < 0) novo.tipo = "LOSS";
+      return novo;
+    });
+  }
+  function escolherEstrategia(n) {
+    const sug = sugerirExecucao(n);
+    setNovoTrade(p => ({ ...p, estrategia:n, qualidade: sug || p.qualidade }));
+  }
+
   function addTrade() {
     if (!novoTrade.resultado && !novoTrade.pontos) return;
     const t = {
       id: Date.now(),
       mercado: novoTrade.mercado,
-      resultado: novoTrade.resultado !== "" ? parseFloat(novoTrade.resultado) : null,
-      pontos: novoTrade.pontos !== "" ? parseFloat(novoTrade.pontos) : null,
+      resultado: novoTrade.resultado !== "" ? comSinal(novoTrade.resultado) : null,
+      pontos: novoTrade.pontos !== "" ? comSinal(novoTrade.pontos) : null,
       estrategia: novoTrade.estrategia,
       tipo: novoTrade.tipo,
       observacao: novoTrade.observacao,
       horario: novoTrade.horario,
       contratos: novoTrade.contratos !== "" ? parseInt(novoTrade.contratos) : null,
       qualidade: novoTrade.qualidade || null,
+      conta: novoTrade.conta || contaPadrao(config).id,
+      ativo: normalizarAtivo(novoTrade.ativo) || null,
       imagens: [],
       _pendingFiles: pendingImages.map(p=>p.file),
     };
     setTrades(prev => [...prev, t]);
-    setNovoTrade({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:""});
+    setNovoTrade(p=>({mercado:p.mercado,ativo:p.ativo,resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:"",conta:p.conta}));
     setPendingImages([]);
-    setShowEstSug(false);
   }
 
   // ── Image upload for a trade in the pending list (before saving)
@@ -183,15 +215,23 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     }
     // Merge with existing trades for selectedDate
     const existingTrades = todayEntry?.trades || [];
-    const allTrades = [
-      ...existingTrades,
-      ...trades.map(t => {
-        const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||"", horario:t.horario||"", contratos:t.contratos||null, qualidade:t.qualidade||null};
-        if (t.resultado !== null) tr.resultado = t.resultado;
-        if (t.pontos    !== null) tr.pontos    = t.pontos;
-        return tr;
-      })
-    ];
+    const novos = [];
+    for (const t of trades) {
+      const imagens = [...(t.imagens || [])];
+      if (uid) {
+        for (const [i, file] of (t._pendingFiles || []).entries()) {
+          try { imagens.push(await uploadTradeImage(file, uid, selectedDate, t.id + "-" + i)); }
+          catch (e) { console.error("upload da foto:", e); }
+        }
+      }
+      const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||"", horario:t.horario||"", contratos:t.contratos||null, qualidade:t.qualidade||null, conta:t.conta||contaPadrao(config).id};
+      if (t.resultado !== null) tr.resultado = t.resultado;
+      if (t.pontos    !== null) tr.pontos    = t.pontos;
+      if (imagens.length) tr.imagens = imagens;
+      if (t.ativo) tr.ativo = t.ativo;
+      novos.push(tr);
+    }
+    const allTrades = [...existingTrades, ...novos];
     const mergedEmocoes = [...new Set([...(todayEntry?.emocoes||[]), ...emocoes])];
     const mergedObs = observacao.trim() || todayEntry?.observacao || "";
 
@@ -227,28 +267,38 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   if (!allMonths.includes(curMonth)) allMonths.unshift(curMonth);
   const monthDays = Object.entries(entries).filter(([d])=>monthKey(d)===selMonth).sort(([a],[b])=>b.localeCompare(a));
 
-  const inp = {background:"#1a1a2e",border:"1px solid #2a2a3a",borderRadius:"8px",padding:"10px 13px",color:"#f0f0f0",fontSize:"14px",outline:"none",fontFamily:"Inter,sans-serif"};
+  const inp = {background:"#18241f",border:"1px solid #26352e",borderRadius:"8px",padding:"10px 13px",color:"#f0f0f0",fontSize:"14px",outline:"none",fontFamily:"var(--font-sans)"};
 
   return (
-    <div style={{fontFamily:"Inter,sans-serif"}}>
+    <div style={{fontFamily:"var(--font-sans)"}}>
       
 
       {/* Form */}
-      <div style={{background:"#0d0d14",border:"1px solid "+(todayEntry?"#00d4aa22":"#1a1a2e"),borderRadius:"16px",padding:"28px",marginBottom:"24px"}}>
+      <div style={{background:"var(--panel)",border:"1px solid "+(todayEntry?"#2ee6a022":"#18241f"),borderRadius:"16px",padding:"28px",marginBottom:"24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
           <div>
             <p style={{margin:"0 0 8px",color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar</p>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-              <button onClick={()=>changeDate(-1)} style={{background:"rgba(255,255,255,0.05)",border:"1px solid #2a2a3a",borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#aaa",flexShrink:0}}>
+              <button onClick={()=>changeDate(-1)} style={{background:"rgba(255,255,255,0.05)",border:"1px solid #26352e",borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#aaa",flexShrink:0}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
               <p style={{margin:0,color:"#f0f0f0",fontSize:"17px",fontWeight:"700",whiteSpace:"nowrap"}}>{selectedDate===today?"Hoje — ":""}{formatDateLong(selectedDate)}</p>
-              <button onClick={()=>changeDate(+1)} disabled={selectedDate===today} style={{background:selectedDate===today?"transparent":"rgba(255,255,255,0.05)",border:"1px solid "+(selectedDate===today?"#1a1a2e":"#2a2a3a"),borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:selectedDate===today?"default":"pointer",color:selectedDate===today?"#333":"#aaa",flexShrink:0}}>
+              <button onClick={()=>changeDate(+1)} disabled={selectedDate===today} style={{background:selectedDate===today?"transparent":"rgba(255,255,255,0.05)",border:"1px solid "+(selectedDate===today?"#18241f":"#26352e"),borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:selectedDate===today?"default":"pointer",color:selectedDate===today?"#333":"#aaa",flexShrink:0}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
           </div>
-          {todayEntry && <span style={{background:"rgba(0,212,170,0.1)",color:"#00d4aa",padding:"5px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ {selectedDate===today?"Registrado hoje":"Já registrado"}</span>}
+          <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+            {contas.length > 1 && (
+              <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                <span style={{color:"var(--text-3)",fontSize:"12px"}}>Registrando em</span>
+                <Select value={novoTrade.conta} onChange={v=>setNovoTrade(p=>({...p,conta:v}))} popWidth={240} align="right" title="Conta das próximas operações"
+                  style={{minHeight:"32px",padding:"5px 12px",borderRadius:"20px",fontSize:"12.5px"}}
+                  options={contas.map(c=>({value:c.id,label:c.nome,cor:TIPOS_CONTA[c.tipo]?.cor,hint:c.padrao?"padrão":""}))}/>
+              </div>
+            )}
+            {todayEntry && <span style={{background:"rgba(46,230,160,0.1)",color:"#2ee6a0",padding:"5px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ {selectedDate===today?"Registrado hoje":"Já registrado"}</span>}
+          </div>
         </div>
 
         {/* Emocoes */}
@@ -258,67 +308,106 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             {EMOCOES.map(em => {
               const sel = emocoes.includes(em);
               const cor = EMOCAO_COLORS[em]||"#888";
-              return <button key={em} onClick={()=>toggleEmocao(em)} style={{padding:"7px 14px",borderRadius:"20px",border:"1px solid "+(sel?cor+"66":"#2a2a3a"),background:sel?cor+"1a":"transparent",color:sel?cor:"#aaa",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"Inter,sans-serif"}}>{em}</button>;
+              return <button key={em} onClick={()=>toggleEmocao(em)} style={{padding:"7px 14px",borderRadius:"20px",border:"1px solid "+(sel?cor+"66":"#26352e"),background:sel?cor+"1a":"transparent",color:sel?cor:"#aaa",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"var(--font-sans)"}}>{em}</button>;
             })}
           </div>
         </div>
 
-        {/* Adicionar trade */}
-        <div style={{marginBottom:"24px"}}>
-          <label style={{color:"#888",fontSize:"13px",textTransform:"uppercase",letterSpacing:"1.5px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Adicionar operação</label>
-          <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
-            <select value={novoTrade.tipo} onChange={e=>setNovoTrade(p=>({...p,tipo:e.target.value}))} style={{...inp,width:"85px"}}>
-              <option value="WIN">WIN</option>
-              <option value="LOSS">LOSS</option>
-            </select>
-            <select value={novoTrade.mercado} onChange={e=>setNovoTrade(p=>({...p,mercado:e.target.value}))} style={{...inp,width:"110px"}}>
-              <option value="B3">B3</option>
-              <option value="Forex">Forex</option>
-              <option value="Cripto">Cripto</option>
-              <option value="Americano">Americano</option>
-            </select>
-            {/* Lotes — logo após mercado */}
-            <input style={{...inp,width:"90px"}} type="number" placeholder="Lotes" min="1" value={novoTrade.contratos} onChange={e=>setNovoTrade(p=>({...p,contratos:e.target.value}))} title="Contratos/lotes"/>
-            <input style={{...inp,width:"95px"}} type="number" placeholder="Pontos" value={novoTrade.pontos} onChange={e=>setNovoTrade(p=>({...p,pontos:e.target.value}))}/>
-            <input style={{...inp,width:"95px"}} type="number" placeholder={novoTrade.mercado==="B3"?"R$":novoTrade.mercado==="Cripto"?"$":"$"} value={novoTrade.resultado} onChange={e=>setNovoTrade(p=>({...p,resultado:e.target.value}))}/>
-            {/* Estrategia com autocomplete */}
-            <div style={{position:"relative",flex:1,minWidth:"120px"}}>
-              {/* Hint ABOVE the field */}
-              {novoTrade.estrategia && estWinRate[novoTrade.estrategia]?.total >= 3 && (
-                <div style={{position:"absolute",top:"-20px",left:0,fontSize:"10px",color:"#555",whiteSpace:"nowrap",background:"#0d0d14",padding:"1px 6px",borderRadius:"4px",border:"1px solid #1a1a2e"}}>
-                  {estWinRate[novoTrade.estrategia]?.total}ops · {Math.round((estWinRate[novoTrade.estrategia]?.wins/estWinRate[novoTrade.estrategia]?.total)*100)}% WR → <span style={{color:{"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"}[sugerirExecucao(novoTrade.estrategia)]||"#888",fontWeight:"700"}}>{sugerirExecucao(novoTrade.estrategia)||"—"}</span>
-                </div>
-              )}
-              <input style={{...inp,width:"100%",boxSizing:"border-box"}} type="text" placeholder="Estratégia" value={novoTrade.estrategia}
-                onChange={e=>{const sug=sugerirExecucao(e.target.value);setNovoTrade(p=>({...p,estrategia:e.target.value,qualidade:sug||p.qualidade}));setShowEstSug(true);}}
-                onFocus={()=>setShowEstSug(true)}
-                onBlur={()=>setTimeout(()=>setShowEstSug(false),150)}
-              />
-              {showEstSug && estNomes.filter(n=>n.toLowerCase().includes(novoTrade.estrategia.toLowerCase())).length>0 && (
-                <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"#1a1a2e",border:"1px solid #2a2a3a",borderRadius:"8px",zIndex:50,overflow:"hidden"}}>
-                  {estNomes.filter(n=>n.toLowerCase().includes(novoTrade.estrategia.toLowerCase())).map(n=>(
-                    <div key={n} onMouseDown={()=>{const sug=sugerirExecucao(n);setNovoTrade(p=>({...p,estrategia:n,qualidade:sug||p.qualidade}));setShowEstSug(false);}} style={{padding:"9px 12px",cursor:"pointer",color:"#ccc",fontSize:"13px"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="#2a2a3a"}
-                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                      {n}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+        {/* Nova operação */}
+        <div className="mtp-composer" onKeyDown={e=>{ if(e.key==="Enter" && e.target.tagName==="INPUT"){ e.preventDefault(); addTrade(); } }}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap",marginBottom:"18px"}}>
+            <p className="mtp-section-title" style={{fontSize:"14.5px"}}>Nova operação</p>
+            <TimePicker value={novoTrade.horario} onChange={v=>setNovoTrade(p=>({...p,horario:v}))} style={{minHeight:"34px",padding:"6px 12px",borderRadius:"20px",fontSize:"13px"}}/>
+          </div>
 
-            {/* Qualidade do setup */}
-            <select value={novoTrade.qualidade} onChange={e=>setNovoTrade(p=>({...p,qualidade:e.target.value}))} style={{...inp,width:"100px"}} title="Execução: A+ excelente · A boa · B ok · C ruim">
-              <option value="">Execução</option>
-              <option value="A+">A+</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
-            {/* Foto */}
-            <label title="Anexar print" style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"5px",padding:"9px 12px",borderRadius:"8px",border:"1px solid #2a2a3a",background:"rgba(255,255,255,0.02)",flexShrink:0,color:"#aaa",fontSize:"12px",fontWeight:"600",transition:"all 0.15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#aaa";}}>
+          {/* WIN/LOSS + mercado */}
+          <div style={{display:"flex",gap:"12px",flexWrap:"wrap",alignItems:"center",marginBottom:"18px"}}>
+            <div className="mtp-seg">
+              {[["WIN","#2ee6a0"],["LOSS","#ff5470"]].map(([t,c])=>(
+                <button key={t} type="button" onClick={()=>trocarTipo(t)} className={novoTrade.tipo===t?"on":""} style={{"--seg":c}}>{t}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+              {[["B3","#2ee6a0"],["Forex","#f5b941"],["Cripto","#a78bfa"],["Americano","#60a5fa"]].map(([m,c])=>(
+                <button key={m} type="button" onClick={()=>setNovoTrade(p=>({...p,mercado:m,ativo:p.mercado===m?p.ativo:(ativosUsados(entries,m)[0]||ATIVOS_SUGERIDOS[m]?.[0]?.v||"")}))} className={"mtp-pill"+(novoTrade.mercado===m?" active":"")} style={{"--pill":c}}>{m}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Ativo */}
+          <div style={{display:"flex",gap:"10px",alignItems:"flex-start",marginBottom:"18px",flexWrap:"wrap"}}>
+            <span className="mtp-rotulo-linha">Ativo</span>
+            <div style={{display:"flex",gap:"6px",flexWrap:"wrap",flex:1,minWidth:0}}>
+              {opcoesDeAtivo(entries, novoTrade.mercado).slice(0,10).map(a=>(
+                <button key={a} type="button" onClick={()=>setNovoTrade(p=>({...p,ativo:a}))} title={rotuloAtivo(novoTrade.mercado,a)||a}
+                  className={"mtp-pill"+(novoTrade.ativo===a?" active":"")} style={{fontFamily:"var(--font-mono)",fontSize:"12px"}}>
+                  {a}{rotuloAtivo(novoTrade.mercado,a) && <span style={{opacity:.55,fontFamily:"var(--font-sans)",marginLeft:"6px",fontWeight:500}}>{rotuloAtivo(novoTrade.mercado,a)}</span>}
+                </button>
+              ))}
+              <input value={opcoesDeAtivo(entries, novoTrade.mercado).includes(novoTrade.ativo)?"":novoTrade.ativo}
+                onChange={e=>setNovoTrade(p=>({...p,ativo:normalizarAtivo(e.target.value)}))}
+                placeholder="outro…" className="mtp-input-pill" style={{fontFamily:"var(--font-mono)",textTransform:"uppercase",minWidth:"100px"}}/>
+            </div>
+          </div>
+
+          {/* Números */}
+          <div style={{display:"grid",gridTemplateColumns:"minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.7fr)",gap:"10px",marginBottom:"18px"}}>
+            {[
+              {k:"resultado", l:"Resultado "+(novoTrade.mercado==="B3"?"R$":"$"), ph:"0,00", grande:true},
+              {k:"pontos",    l:"Pontos", ph:"0"},
+              {k:"contratos", l:"Lotes",  ph:"1"},
+            ].map(c=>{
+              const v = novoTrade[c.k];
+              const n = parseFloat(v);
+              const cor = c.k==="contratos" || v==="" || isNaN(n) ? "var(--text)" : (n<0 || novoTrade.tipo==="LOSS") ? "#ff5470" : "#2ee6a0";
+              return (
+                <label key={c.k} className="mtp-campo">
+                  <span>{c.l}</span>
+                  <input type="number" inputMode="decimal" placeholder={c.ph} value={v} min={c.k==="contratos"?"1":undefined}
+                    onChange={e=>digitarNumero(c.k, e.target.value)}
+                    style={{color:cor,fontSize:c.grande?"22px":"18px"}}/>
+                </label>
+              );
+            })}
+          </div>
+
+          {/* Estratégia */}
+          <div style={{display:"flex",gap:"10px",alignItems:"flex-start",marginBottom:"14px",flexWrap:"wrap"}}>
+            <span className="mtp-rotulo-linha">Estratégia</span>
+            <div style={{display:"flex",gap:"6px",flexWrap:"wrap",flex:1,minWidth:0}}>
+              {estNomes.map(n=>{
+                const st = estWinRate[n];
+                const ativo = novoTrade.estrategia===n;
+                return (
+                  <button key={n} type="button" onClick={()=>escolherEstrategia(ativo?"":n)} className={"mtp-pill"+(ativo?" active":"")} title={st?.total ? st.total+" ops · "+Math.round(st.wins/st.total*100)+"% acerto" : "sem histórico"}>
+                    {n}
+                  </button>
+                );
+              })}
+              <input value={estNomes.includes(novoTrade.estrategia)?"":novoTrade.estrategia} onChange={e=>escolherEstrategia(e.target.value)}
+                placeholder={estNomes.length?"outra…":"Nome da estratégia"} className="mtp-input-pill"/>
+            </div>
+          </div>
+
+          {/* Execução */}
+          <div style={{display:"flex",gap:"10px",alignItems:"center",marginBottom:"18px",flexWrap:"wrap"}}>
+            <span className="mtp-rotulo-linha">Execução</span>
+            <div style={{display:"flex",gap:"6px"}}>
+              {[["A+","#2ee6a0","excelente"],["A","#3fe8a8","boa"],["B","#f5b941","ok"],["C","#ff5470","ruim"]].map(([q,c,h])=>(
+                <button key={q} type="button" title={h} onClick={()=>setNovoTrade(p=>({...p,qualidade:p.qualidade===q?"":q}))} className={"mtp-pill"+(novoTrade.qualidade===q?" active":"")} style={{"--pill":c,minWidth:"44px",fontFamily:"var(--font-mono)"}}>{q}</button>
+              ))}
+            </div>
+            {novoTrade.estrategia && estWinRate[novoTrade.estrategia]?.total >= 3 && (
+              <span style={{color:"var(--text-3)",fontSize:"11.5px",fontFamily:"var(--font-mono)"}}>
+                sugestão <b style={{color:"var(--text-2)"}}>{sugerirExecucao(novoTrade.estrategia)}</b> · {Math.round(estWinRate[novoTrade.estrategia].wins/estWinRate[novoTrade.estrategia].total*100)}% acerto em {estWinRate[novoTrade.estrategia].total} ops
+              </span>
+            )}
+          </div>
+
+          {/* Observação + foto + adicionar */}
+          <div style={{display:"flex",gap:"8px",alignItems:"stretch",flexWrap:"wrap"}}>
+            <input style={{...inp,flex:1,minWidth:"200px"}} type="text" placeholder="Observação desta operação (opcional)" value={novoTrade.observacao} onChange={e=>setNovoTrade(p=>({...p,observacao:e.target.value}))}/>
+            <label title="Anexar print" className="mtp-btn-sec">
               <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
                 const files = Array.from(e.target.files);
                 if (files.length > 0) {
@@ -331,91 +420,88 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                     otherFiles: files.slice(1).map(f=>({file:f,preview:URL.createObjectURL(f)}))
                   });
                 }
+                e.target.value = "";
               }}/>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              Foto
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Foto{pendingImages.length>0 && <span className="mtp-ctx-badge">{pendingImages.length}</span>}
             </label>
-            <button onClick={addTrade} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"8px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer",whiteSpace:"nowrap"}}>+ Add</button>
+            <button type="button" onClick={addTrade} disabled={!novoTrade.resultado && !novoTrade.pontos}
+              style={{background:(!novoTrade.resultado && !novoTrade.pontos)?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:(!novoTrade.resultado && !novoTrade.pontos)?"var(--text-3)":"#000",border:"none",borderRadius:"10px",padding:"0 20px",minHeight:"42px",fontWeight:"800",fontSize:"13px",cursor:(!novoTrade.resultado && !novoTrade.pontos)?"not-allowed":"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:"8px"}}>
+              Adicionar <span style={{opacity:.6,fontSize:"11px",fontFamily:"var(--font-mono)"}}>↵</span>
+            </button>
           </div>
+
           {pendingImages.length > 0 && (
-            <div style={{marginTop:"10px",padding:"12px 14px",background:"rgba(0,212,170,0.03)",border:"1px solid #00d4aa1a",borderRadius:"10px"}}>
-              <p style={{margin:"0 0 8px",color:"#00d4aa",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>
-                {pendingImages.length} imagem{pendingImages.length!==1?"s":""} anexada{pendingImages.length!==1?"s":""}
-              </p>
-              <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                {pendingImages.map((img,i)=>(
-                  <div key={i} style={{width:"96px",borderRadius:"8px",overflow:"hidden",border:"1px solid #2a2a3a",boxShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>
-                    <img src={img.preview} style={{width:"100%",height:"68px",objectFit:"cover",display:"block"}}/>
-                    <div style={{display:"flex",background:"#0d0d14",borderTop:"1px solid #1a1a2e"}}>
-                      <button onClick={()=>setPendingImages(prev=>prev.filter((_,j)=>j!==i))}
-                        style={{flex:1,background:"transparent",border:"none",color:"#c94a4a88",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif"}}
-                        onMouseEnter={e=>e.currentTarget.style.color="#ff4d4d"}
-                        onMouseLeave={e=>e.currentTarget.style.color="#c94a4a88"}>
-                        Remover
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginTop:"12px"}}>
+              {pendingImages.map((img,i)=>(
+                <div key={i} style={{position:"relative",width:"84px",height:"58px",borderRadius:"8px",overflow:"hidden",border:"1px solid var(--line-strong)"}}>
+                  <img src={img.preview} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+                  <button onClick={()=>setPendingImages(prev=>prev.filter((_,j)=>j!==i))} aria-label="Remover imagem"
+                    style={{position:"absolute",top:"4px",right:"4px",width:"20px",height:"20px",borderRadius:"50%",border:"none",background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:"12px",cursor:"pointer",padding:0}}>×</button>
+                </div>
+              ))}
             </div>
           )}
-          <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>
-            <input style={{...inp,width:"100px"}} type="time" value={novoTrade.horario} onChange={e=>setNovoTrade(p=>({...p,horario:e.target.value}))} title="Horário da operação"/>
-            <input style={{...inp,flex:1}} type="text" placeholder="Observação desta operação (opcional)" value={novoTrade.observacao} onChange={e=>setNovoTrade(p=>({...p,observacao:e.target.value}))}/>
-          </div>
         </div>
 
-        {/* Lista trades */}
-        {trades.length > 0 && (
-          <div style={{marginBottom:"18px",display:"flex",flexDirection:"column",gap:"6px"}}>
-            {trades.map(t => (
-              <div key={t.id} style={{borderRadius:"10px",background:"rgba(255,255,255,0.02)",border:"1px solid #1a1a2e",overflow:"hidden"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 14px",flexWrap:"wrap"}}>
-                  <span style={{padding:"3px 9px",borderRadius:"5px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
-                  <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
-                  {t.pontos    !== null && <span style={{color:"#f0f0f0",fontSize:"14px",fontWeight:"600",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
-                  {t.resultado !== null && <span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"14px",fontWeight:"600",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$ ":"$ "}{t.resultado?.toFixed(2)}</span>}
-                  {t.horario && <span style={{color:"#555",fontSize:"12px",fontFamily:"monospace"}}>{t.horario}</span>}
-                  {t.estrategia && <span style={{color:"#888",fontSize:"13px",background:"rgba(255,255,255,0.05)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
-                  {t.contratos && <span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"monospace"}}>{t.contratos}×</span>}
-                {t.qualidade && <span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(0,212,170,0.15)","A":"rgba(39,181,137,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(224,86,86,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
-                {t.observacao && <span style={{color:"#666",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
-                  {/* Image upload button */}
-                  <label style={{marginLeft:"auto",cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"5px 10px",borderRadius:"7px",border:"1px solid #2a2a3a",color:"#666",fontSize:"11px",fontWeight:"600",background:"transparent",flexShrink:0,transition:"all 0.15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#666";}}>
-                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) handleImageFile(e.target.files[0],t.id);}}/>
-                    {uploadingIdx===t.id
-                      ? <span style={{fontSize:"11px"}}>⏳</span>
-                      : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
-                    Foto
-                  </label>
-                  <button onClick={()=>removeTrade(t.id)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"15px",padding:"2px 6px",flexShrink:0}}>✕</button>
-                </div>
-                {/* Image thumbnails — pending trade */}
-                {(t.imagens||[]).length > 0 && (
-                  <div style={{display:"flex",gap:"8px",padding:"6px 12px 10px",flexWrap:"wrap",borderTop:"1px solid #1a1a2e"}}>
-                    {t.imagens.map((url,ii)=>(
-                      <div key={ii} style={{width:"88px",borderRadius:"8px",overflow:"hidden",border:"1px solid #2a2a3a",boxShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>
-                        <img src={url} alt="" style={{width:"100%",height:"62px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
-                        <div style={{display:"flex",background:"#0d0d14",borderTop:"1px solid #1a1a2e"}}>
-                          <button onClick={()=>setEditorImg({src:url,pending:true,tradeId:t.id,url})}
-                            style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #1a1a2e",color:"#888",cursor:"pointer",padding:"4px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif"}}
-                            onMouseEnter={e=>e.currentTarget.style.color="#00d4aa"}
-                            onMouseLeave={e=>e.currentTarget.style.color="#888"}>Editar</button>
-                          <button onClick={()=>setTrades(prev=>prev.map(tr=>tr.id===t.id?{...tr,imagens:tr.imagens.filter(u=>u!==url)}:tr))}
-                            style={{flex:1,background:"transparent",border:"none",color:"#c94a4a88",cursor:"pointer",padding:"4px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif"}}
-                            onMouseEnter={e=>e.currentTarget.style.color="#ff4d4d"}
-                            onMouseLeave={e=>e.currentTarget.style.color="#c94a4a88"}>Excluir</button>
+        {/* Operações adicionadas (ainda não salvas) */}
+        {trades.length > 0 && (() => {
+          const tot = trades.reduce((s,t)=>s+(t.resultado||0),0);
+          const w = trades.filter(t=>t.tipo==="WIN").length;
+          return (
+            <div style={{marginBottom:"20px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px",gap:"12px",flexWrap:"wrap"}}>
+                <span className="mtp-section-hint">{trades.length} {trades.length===1?"operação":"operações"} a salvar</span>
+                <span style={{fontFamily:"var(--font-mono)",fontSize:"12.5px",color:"var(--text-3)"}}>
+                  <b style={{color:tot>=0?"#2ee6a0":"#ff5470"}}>{tot>=0?"+":"-"}{Math.abs(tot).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b> · {Math.round(w/trades.length*100)}% acerto
+                </span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                {trades.map(t => {
+                  const cor = t.tipo==="WIN" ? "#2ee6a0" : "#ff5470";
+                  const qc = ({"A+":"#2ee6a0","A":"#3fe8a8","B":"#f5b941","C":"#ff5470"})[t.qualidade];
+                  return (
+                    <div key={t.id} className="mtp-op-card" style={{"--op":cor}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
+                        <span style={{padding:"3px 9px",borderRadius:"6px",fontSize:"11.5px",fontWeight:"800",background:cor+"1f",color:cor,letterSpacing:"0.5px"}}>{t.tipo}</span>
+                        <span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"700",fontFamily:"var(--font-mono)",minWidth:"110px"}}>
+                          {t.resultado !== null ? (t.resultado>=0?"+":"-")+(t.mercado==="B3"?"R$ ":"$ ")+Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"}
+                        </span>
+                        {t.pontos !== null && <span style={{color:"var(--text-2)",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
+                        <span className="mtp-tag">{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
+                        {t.estrategia && <span className="mtp-tag">{t.estrategia}</span>}
+                        {t.contratos && <span className="mtp-tag" style={{fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
+                        {t.qualidade && <span className="mtp-tag" style={{color:qc,borderColor:qc+"44"}}>{t.qualidade}</span>}
+                        {t.horario && <span style={{color:"var(--text-3)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.horario}</span>}
+                        {contas.length > 1 && <span className="mtp-tag" style={{color:TIPOS_CONTA[contas.find(c=>c.id===t.conta)?.tipo]?.cor}}>{contas.find(c=>c.id===t.conta)?.nome}</span>}
+                        <div style={{marginLeft:"auto",display:"flex",gap:"6px",alignItems:"center"}}>
+                          <label className="mtp-btn-sec" style={{minHeight:"30px",padding:"0 10px",fontSize:"11.5px"}}>
+                            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) handleImageFile(e.target.files[0],t.id); e.target.value="";}}/>
+                            {uploadingIdx===t.id ? "enviando…" : <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto</>}
+                          </label>
+                          <button onClick={()=>removeTrade(t.id)} aria-label="Remover operação" style={{background:"none",border:"none",color:"var(--text-3)",cursor:"pointer",fontSize:"15px",padding:"2px 6px"}}>✕</button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      {t.observacao && <p style={{margin:"8px 0 0",color:"var(--text-3)",fontSize:"12.5px",fontStyle:"italic"}}>"{t.observacao}"</p>}
+                      {((t.imagens||[]).length > 0 || (t._pendingFiles||[]).length > 0) && (
+                        <div style={{display:"flex",gap:"8px",marginTop:"10px",flexWrap:"wrap"}}>
+                          {(t.imagens||[]).map((url,ii)=>(
+                            <div key={ii} style={{position:"relative",width:"84px",height:"58px",borderRadius:"8px",overflow:"hidden",border:"1px solid var(--line-strong)"}}>
+                              <ImagemSegura url={url} style={{width:"100%",height:"100%",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
+                              <button onClick={()=>setTrades(prev=>prev.map(tr=>tr.id===t.id?{...tr,imagens:tr.imagens.filter(u=>u!==url)}:tr))} aria-label="Remover imagem"
+                                style={{position:"absolute",top:"4px",right:"4px",width:"20px",height:"20px",borderRadius:"50%",border:"none",background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:"12px",cursor:"pointer",padding:0}}>×</button>
+                            </div>
+                          ))}
+                          {(t._pendingFiles||[]).length > 0 && <span className="mtp-tag">{t._pendingFiles.length} foto{t._pendingFiles.length>1?"s":""} a enviar ao salvar</span>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          );
+        })()}
 
         {/* Observacao */}
         <div style={{marginBottom:"20px"}}>
@@ -424,15 +510,15 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         </div>
 
         <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
-          <button onClick={handleSave} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"10px",padding:"12px 24px",fontWeight:"700",fontSize:"14px",cursor:"pointer"}}>Salvar dia</button>
-          {msg && <span style={{color:msg.includes("✓")?"#00d4aa":"#ff6b6b",fontSize:"14px",fontWeight:"600"}}>{msg}</span>}
+          <button onClick={handleSave} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px 24px",fontWeight:"700",fontSize:"14px",cursor:"pointer"}}>Salvar dia</button>
+          {msg && <span style={{color:msg.includes("✓")?"#2ee6a0":"#ff7a90",fontSize:"14px",fontWeight:"600"}}>{msg}</span>}
         </div>
       </div>
 
       {/* Filtro mes */}
       <div style={{display:"flex",gap:"8px",marginBottom:"18px",flexWrap:"wrap"}}>
         {allMonths.map(m => (
-          <button key={m} onClick={()=>setSelMonth(m)} style={{padding:"6px 16px",borderRadius:"20px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",background:selMonth===m?"#00d4aa":"rgba(255,255,255,0.05)",color:selMonth===m?"#000":"#888",fontFamily:"Inter,sans-serif"}}>{formatMonthLabel(m)}</button>
+          <button key={m} onClick={()=>setSelMonth(m)} style={{padding:"6px 16px",borderRadius:"20px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",background:selMonth===m?"#2ee6a0":"rgba(255,255,255,0.05)",color:selMonth===m?"#000":"#888",fontFamily:"var(--font-sans)"}}>{formatMonthLabel(m)}</button>
         ))}
       </div>
 
@@ -443,24 +529,24 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           const isOpen  = expanded === ds;
           const total   = (entry.totalB3||0)+(entry.totalForex||0)+(entry.totalCripto||0);
           return (
-            <div key={ds} style={{borderRadius:"14px",overflow:"hidden",border:"1px solid "+(isToday?"#00d4aa22":"#1a1a2e"),background:"#0d0d14"}}>
+            <div key={ds} style={{borderRadius:"14px",overflow:"hidden",border:"1px solid "+(isToday?"#2ee6a022":"#18241f"),background:"var(--card)"}}>
               <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px",cursor:"pointer"}} onClick={()=>setExpanded(isOpen?null:ds)}>
                 <div style={{minWidth:"100px"}}>
-                  <p style={{margin:0,color:isToday?"#00d4aa":"#ccc",fontSize:"13px",fontWeight:"600"}}>{isToday?"Hoje":formatDateFull(ds)}</p>
+                  <p style={{margin:0,color:isToday?"#2ee6a0":"#ccc",fontSize:"13px",fontWeight:"600"}}>{isToday?"Hoje":formatDateFull(ds)}</p>
                 </div>
                 <div style={{display:"flex",gap:"14px",flex:1,flexWrap:"wrap",alignItems:"center"}}>
                   {entry.numTrades !== undefined && <span style={{color:"#888",fontSize:"13px"}}>{entry.numTrades} trade{entry.numTrades!==1?"s":""}</span>}
-                  {entry.winRate   !== undefined && <span style={{color:"#00d4aa",fontSize:"13px",fontWeight:"600"}}>{entry.winRate}% acerto</span>}
+                  {entry.winRate   !== undefined && <span style={{color:"#2ee6a0",fontSize:"13px",fontWeight:"600"}}>{entry.winRate}% acerto</span>}
                   {entry.emocoes?.length > 0 && <span style={{color:EMOCAO_COLORS[entry.emocoes[0]]||"#888",fontSize:"13px"}}>{entry.emocoes[0]}</span>}
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:"12px",flexShrink:0}}>
-                  {entry.totalPts !== undefined && <span style={{color:entry.totalPts>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>{entry.totalPts>=0?"+":""}{entry.totalPts} pts</span>}
-                  <span style={{color:total>=0?"#00d4aa":"#ff4d4d",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>{total>=0?"+":""}R$ {Math.abs(total).toFixed(2)}</span>
+                  {entry.totalPts !== undefined && <span style={{color:entry.totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{entry.totalPts>=0?"+":""}{Number((+entry.totalPts).toFixed(1))} pts</span>}
+                  <span style={{color:total>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{total>=0?"+":"-"}R$ {Math.abs(total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
                   <button onClick={e=>{e.stopPropagation();deleteEntry(ds);}} style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
                 </div>
               </div>
               {isOpen && (
-                <div style={{borderTop:"1px solid #1a1a2e",padding:"16px 18px"}}>
+                <div style={{borderTop:"1px solid #18241f",padding:"16px 18px"}}>
                   {entry.emocoes?.length>0 && (
                     <div style={{marginBottom:"14px"}}>
                       <p style={{margin:"0 0 8px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções</p>
@@ -476,31 +562,27 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                         const isEditing = editingTrade?.dateKey===ds && editingTrade?.index===i;
                         if (isEditing) {
                           const ed = editingTrade.data;
-                          const inpE = {background:"#0d0d14",border:"1px solid #2a2a3a",borderRadius:"6px",padding:"6px 10px",color:"#f0f0f0",fontSize:"13px",outline:"none",fontFamily:"Inter,sans-serif"};
+                          const inpE = {background:"#0b1210",border:"1px solid #26352e",borderRadius:"6px",padding:"6px 10px",color:"#f0f0f0",fontSize:"13px",outline:"none",fontFamily:"var(--font-sans)"};
                           return (
-                            <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"rgba(0,212,170,0.04)",border:"1px solid #00d4aa33",marginBottom:"6px"}}>
+                            <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"rgba(46,230,160,0.04)",border:"1px solid #2ee6a033",marginBottom:"6px"}}>
                               <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center",marginBottom:"8px"}}>
-                                <select value={ed.tipo} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,tipo:e.target.value}}))} style={{...inpE,width:"80px"}}>
-                                  <option value="WIN">WIN</option>
-                                  <option value="LOSS">LOSS</option>
-                                </select>
-                                <select value={ed.mercado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,mercado:e.target.value}}))} style={{...inpE,width:"85px"}}>
-                                  <option value="B3">B3</option>
-                                  <option value="Forex">Forex</option>
-                                  <option value="Cripto">Cripto</option>
-                                  <option value="Americano">Americano</option>
-                                </select>
+                                <Select value={ed.tipo} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,tipo:v}}))} style={{...inpE,width:"100px"}} options={[{value:"WIN",label:"WIN",cor:"#2ee6a0"},{value:"LOSS",label:"LOSS",cor:"#ff5470"}]}/>
+                                <Select value={ed.mercado} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,mercado:v}}))} style={{...inpE,width:"118px"}} popWidth={150} options={[{value:"B3",label:"B3",cor:"#2ee6a0"},{value:"Forex",label:"Forex",cor:"#f5b941"},{value:"Cripto",label:"Cripto",cor:"#a78bfa"},{value:"Americano",label:"Americano",cor:"#60a5fa"}]}/>
                                 <input type="number" placeholder="Pontos" value={ed.pontos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,pontos:e.target.value}}))} style={{...inpE,width:"90px"}}/>
+                                <Select value={ed.ativo||""} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,ativo:v}}))} style={{...inpE,width:"118px"}} popWidth={190} placeholder="Ativo"
+                                  options={[{value:"",label:"Sem ativo"}, ...[...new Set([...(ed.ativo?[ed.ativo]:[]), ...opcoesDeAtivo(entries, ed.mercado)])].map(a=>({value:a,label:a,hint:rotuloAtivo(ed.mercado,a)}))]}/>
                                 <input type="number" placeholder={ed.mercado==="B3"?"R$":"$"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:e.target.value}}))} style={{...inpE,width:"90px"}}/>
-                                <select value={ed.estrategia||""} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,estrategia:e.target.value}}))} style={{...inpE,flex:1,minWidth:"120px"}}>
-                                  <option value="">Estratégia</option>
-                                  {estrategias.map(e=><option key={e.id} value={e.nome}>{e.nome}</option>)}
-                                </select>
+                                {contas.length > 1 && (
+                                  <Select value={ed.conta} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,conta:v}}))} style={{...inpE,width:"150px"}} popWidth={240} title="Conta"
+                                    options={contas.map(c=>({value:c.id,label:c.nome,cor:TIPOS_CONTA[c.tipo]?.cor}))}/>
+                                )}
+                                <Select value={ed.estrategia||""} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,estrategia:v}}))} style={{...inpE,flex:1,minWidth:"140px"}} placeholder="Estratégia"
+                                  options={[{value:"",label:"Sem estratégia"}, ...estrategias.map(e=>({value:e.nome,label:e.nome}))]}/>
                               </div>
                               <input type="text" placeholder="Observação" value={ed.observacao} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,observacao:e.target.value}}))} style={{...inpE,width:"100%",boxSizing:"border-box",marginBottom:"8px"}}/>
                               <div style={{display:"flex",gap:"8px"}}>
-                                <button onClick={saveEditTrade} style={{background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"6px",padding:"7px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>Salvar</button>
-                                <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"#666",border:"1px solid #2a2a3a",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
+                                <button onClick={saveEditTrade} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"6px",padding:"7px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>Salvar</button>
+                                <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"#666",border:"1px solid #26352e",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
                               </div>
                             </div>
                           );
@@ -510,12 +592,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                           <div key={i} style={{borderRadius:"8px",background:"rgba(255,255,255,0.02)",marginBottom:"5px",overflow:"hidden"}}>
                             {/* Info row */}
                             <div style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",flexWrap:"wrap"}}>
-                              <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
-                              <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}</span>
-                              {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
-                              {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"13px",fontFamily:"monospace"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
-                              {t.contratos&&<span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"monospace"}}>{t.contratos}×</span>}
-                              {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(0,212,170,0.15)","A":"rgba(39,181,137,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(224,86,86,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#00d4aa","A":"#27b589","B":"#f59e0b","C":"#e05656"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
+                              <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
+                              <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
+                              {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
+                              {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
+                              {t.contratos&&<span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
+                              {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(46,230,160,0.15)","A":"rgba(46,230,160,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(240,80,110,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#2ee6a0","A":"#2ee6a0","B":"#f59e0b","C":"#f0506e"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
                               {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
                               {t.observacao&&<span style={{color:"#777",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                               <div style={{marginLeft:"auto",display:"flex",gap:"6px",alignItems:"center",flexShrink:0}}>
@@ -523,18 +605,18 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                                   {t.imagens.length}
                                 </span>}
-                                <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"4px 9px",borderRadius:"6px",border:"1px solid #2a2a3a",color:"#555",fontSize:"11px",fontWeight:"600",background:"transparent",transition:"all 0.15s"}}
-                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
-                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#555";}}>
+                                <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"4px 9px",borderRadius:"6px",border:"1px solid #26352e",color:"#555",fontSize:"11px",fontWeight:"600",background:"transparent",transition:"all 0.15s"}}
+                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#2ee6a044";e.currentTarget.style.color="#2ee6a0";}}
+                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#26352e";e.currentTarget.style.color="#555";}}>
                                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handleSavedImageUpload(e.target.files[0],ds,i);}}/>
                                   {uploadingIdx===i
                                     ?<span style={{fontSize:"10px"}}>⏳</span>
                                     :<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
                                   Foto
                                 </label>
-                                <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} style={{background:"none",border:"1px solid #2a2a3a",borderRadius:"5px",color:"#555",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
-                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#00d4aa44";e.currentTarget.style.color="#00d4aa";}}
-                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#2a2a3a";e.currentTarget.style.color="#555";}}>
+                                <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} style={{background:"none",border:"1px solid #26352e",borderRadius:"5px",color:"#555",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
+                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#2ee6a044";e.currentTarget.style.color="#2ee6a0";}}
+                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#26352e";e.currentTarget.style.color="#555";}}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                   Editar
                                 </button>
@@ -542,21 +624,21 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                             </div>
                             {/* Image gallery strip */}
                             {temImagens&&(
-                              <div style={{padding:"6px 12px 10px",display:"flex",gap:"8px",flexWrap:"wrap",borderTop:"1px solid #1a1a2e"}}>
+                              <div style={{padding:"6px 12px 10px",display:"flex",gap:"8px",flexWrap:"wrap",borderTop:"1px solid #18241f"}}>
                                 {t.imagens.map((url,ii)=>(
-                                  <div key={ii} style={{width:"100px",borderRadius:"8px",overflow:"hidden",border:"1px solid #2a2a3a",boxShadow:"0 2px 8px rgba(0,0,0,0.35)"}}>
-                                    <img src={url} alt="" style={{width:"100%",height:"70px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
-                                    <div style={{display:"flex",background:"#0d0d14",borderTop:"1px solid #1a1a2e"}}>
+                                  <div key={ii} style={{width:"100px",borderRadius:"8px",overflow:"hidden",border:"1px solid #26352e",boxShadow:"0 2px 8px rgba(0,0,0,0.35)"}}>
+                                    <ImagemSegura url={url} style={{width:"100%",height:"70px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
+                                    <div style={{display:"flex",background:"#0b1210",borderTop:"1px solid #18241f"}}>
                                       <button onClick={()=>setEditorImg({src:url,saved:true,dateKey:ds,tradeIdx:i,url})}
-                                        style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #1a1a2e",color:"#888",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif",transition:"color 0.15s"}}
-                                        onMouseEnter={e=>e.currentTarget.style.color="#00d4aa"}
+                                        style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #18241f",color:"#888",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
+                                        onMouseEnter={e=>e.currentTarget.style.color="#2ee6a0"}
                                         onMouseLeave={e=>e.currentTarget.style.color="#888"}>
                                         Editar
                                       </button>
                                       <button onClick={()=>handleDeleteImage(ds,i,url)}
-                                        style={{flex:1,background:"transparent",border:"none",color:"#c94a4a88",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"Inter,sans-serif",transition:"color 0.15s"}}
-                                        onMouseEnter={e=>e.currentTarget.style.color="#ff4d4d"}
-                                        onMouseLeave={e=>e.currentTarget.style.color="#c94a4a88"}>
+                                        style={{flex:1,background:"transparent",border:"none",color:"#ff547088",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
+                                        onMouseEnter={e=>e.currentTarget.style.color="#ff5470"}
+                                        onMouseLeave={e=>e.currentTarget.style.color="#ff547088"}>
                                         Excluir
                                       </button>
                                     </div>

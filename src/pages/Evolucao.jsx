@@ -1,9 +1,19 @@
 // Mi Trading Plan - Evolucao
 import { useState, useMemo } from "react";
+import { CountUp, Ring, Sparkline, CapitalChart, DailyBars } from "../components/ui";
+import { listaCarteiras, bancaCarteira } from "../lib/banca";
+import { contaDoTrade, entradaFiltrada } from "../lib/contas";
+import FiltrosBarra from "../components/FiltrosBarra";
+import { ativoDoTrade, SEM_ATIVO } from "../lib/ativos";
 
 const MONTH_NAMES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 function fmt(v, cur="R$") { return (v>=0?"+":"")+cur+" "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2}); }
+function fmtBRL(v) {
+  const a = Math.abs(v);
+  const opts = a>=10000 ? {maximumFractionDigits:0} : {minimumFractionDigits:2,maximumFractionDigits:2};
+  return (v<0?"-":"+")+"R$ "+a.toLocaleString("pt-BR",opts);
+}
 function fmtPts(v) { return (v>=0?"+":"")+v.toFixed(1)+" pts"; }
 function dayKey(d) { return d.toISOString().slice(0,10); }
 function parseDate(s) { const [y,m,d]=s.split("-"); return new Date(+y,+m-1,+d); }
@@ -18,22 +28,22 @@ function DateFilter({ inicio, fim, onChange }) {
     <div style={{position:"relative"}}>
       <style>{`input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }`}</style>
       {open && <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:99}}/>}
-      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(0,212,170,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#00d4aa44":"#2a2a3a"),borderRadius:"20px",padding:"8px 16px",color:open?"#00d4aa":"#aaa",fontSize:"13px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.2s"}}>
+      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(46,230,160,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#2ee6a044":"#26352e"),borderRadius:"20px",padding:"8px 16px",color:open?"#2ee6a0":"#aaa",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)",transition:"all 0.2s"}}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         {fmt(inicio)} até {fmt(fim)}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#0d0d14",border:"1px solid #2a2a3a",borderRadius:"16px",padding:"16px",zIndex:100,minWidth:"280px",boxShadow:"0 20px 40px rgba(0,0,0,0.5)"}}>
+        <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#0b1210",border:"1px solid #26352e",borderRadius:"16px",padding:"16px",zIndex:100,minWidth:"280px",boxShadow:"0 20px 40px rgba(0,0,0,0.5)"}}>
           <p style={{margin:"0 0 12px",color:"#999",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Período</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"12px"}}>
             <div>
               <label style={{color:"#999",fontSize:"11px",display:"block",marginBottom:"5px"}}>Início</label>
-              <input type="date" value={editInicio} onChange={e=>setEditInicio(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"8px",padding:"8px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"Inter,sans-serif"}}/>
+              <input type="date" value={editInicio} onChange={e=>setEditInicio(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"8px",padding:"8px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"var(--font-sans)"}}/>
             </div>
             <div>
               <label style={{color:"#999",fontSize:"11px",display:"block",marginBottom:"5px"}}>Fim</label>
-              <input type="date" value={editFim} onChange={e=>setEditFim(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #2a2a3a",borderRadius:"8px",padding:"8px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"Inter,sans-serif"}}/>
+              <input type="date" value={editFim} onChange={e=>setEditFim(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"8px",padding:"8px",color:"#f0f0f0",fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"var(--font-sans)"}}/>
             </div>
           </div>
           <div style={{display:"flex",gap:"8px"}}>
@@ -45,17 +55,17 @@ function DateFilter({ inicio, fim, onChange }) {
                 else if(k==="3m") ini.setMonth(fim.getMonth()-3);
                 else ini.setFullYear(fim.getFullYear()-1);
                 setEditInicio(dayKey(ini)); setEditFim(dayKey(fim));
-              }} style={{flex:1,padding:"6px",borderRadius:"6px",border:"1px solid #2a2a3a",background:"transparent",color:"#999",fontSize:"11px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{l}</button>
+              }} style={{flex:1,padding:"6px",borderRadius:"6px",border:"1px solid #26352e",background:"transparent",color:"#999",fontSize:"11px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>{l}</button>
             ))}
           </div>
-          <button onClick={()=>{ onChange(editInicio,editFim); setOpen(false); }} style={{width:"100%",marginTop:"10px",background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",border:"none",borderRadius:"8px",padding:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>Aplicar</button>
+          <button onClick={()=>{ onChange(editInicio,editFim); setOpen(false); }} style={{width:"100%",marginTop:"10px",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"8px",padding:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>Aplicar</button>
         </div>
       )}
     </div>
   );
 }
 
-export default function Evolucao({ entries, compliance, estrategias, setPagina, config }) {
+export default function Evolucao({ entries, compliance, estrategias, setPagina, config, saveConfig }) {
   const now     = new Date();
   const ini1m   = new Date(now.getFullYear(), now.getMonth(), 1);
   const [inicio, setInicio] = useState(dayKey(ini1m));
@@ -63,11 +73,35 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const [panelEst, setPanelEst] = useState(null);
   const [panelDrill, setPanelDrill] = useState(null);
   const [filtroMercado, setFiltroMercado] = useState("todos");
+  const [filtroConta,   setFiltroConta]   = useState("todas");
+  const [filtroEsts,    setFiltroEsts]    = useState([]);
+  const [filtroAtivos,  setFiltroAtivos]  = useState([]);
+  const [verTodosAtivos, setVerTodosAtivos] = useState(false);
   const isMobile = window.innerWidth < 768;
 
-  const filtered = useMemo(() => {
+  const noPeriodo = useMemo(() => {
     return Object.entries(entries).filter(([d]) => d >= inicio && d <= fim).sort(([a],[b])=>a.localeCompare(b));
   }, [entries, inicio, fim]);
+
+  // Conta e estratégias filtram no nível do trade; os totais do dia são recalculados.
+  const daConta = useMemo(() => {
+    if (filtroConta === "todas") return noPeriodo;
+    return noPeriodo.map(([d,e]) => [d, entradaFiltrada(e, t => contaDoTrade(t) === filtroConta)]).filter(([,e]) => e.numTrades > 0);
+  }, [noPeriodo, filtroConta]);
+  const estrategiasNoPeriodo = useMemo(() => {
+    const nomes = new Set(daConta.flatMap(([,e]) => (e.trades||[]).map(t => t.estrategia || "Sem nome")));
+    return [...nomes].sort((a,b) => a.localeCompare(b));
+  }, [daConta]);
+  const ativosNoPeriodo = useMemo(() => {
+    const nomes = new Set(daConta.flatMap(([,e]) => (e.trades||[]).map(ativoDoTrade)));
+    return [...nomes].sort((a,b) => (a===SEM_ATIVO) - (b===SEM_ATIVO) || a.localeCompare(b));
+  }, [daConta]);
+  const filtered = useMemo(() => {
+    if (filtroEsts.length === 0 && filtroAtivos.length === 0) return daConta;
+    const passa = t => (filtroEsts.length === 0 || filtroEsts.includes(t.estrategia || "Sem nome"))
+                    && (filtroAtivos.length === 0 || filtroAtivos.includes(ativoDoTrade(t)));
+    return daConta.map(([d,e]) => [d, entradaFiltrada(e, passa)]).filter(([,e]) => e.numTrades > 0);
+  }, [daConta, filtroEsts, filtroAtivos]);
 
   // Compliance — média total de todos os dias salvos até hoje
   const now2 = new Date();
@@ -86,7 +120,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
     const v = (compliance||{})[k];
     return v === true || (typeof v === "number" && v >= 80);
   }).length;
-  const complianceColor = compliancePct===null?"#666":compliancePct>=80?"#00d4aa":compliancePct>=50?"#f59e0b":"#ff4d4d";
+  const complianceColor = compliancePct===null?"#666":compliancePct>=80?"#2ee6a0":compliancePct>=50?"#f59e0b":"#ff5470";
 
   // Aggregates
   const totalB3        = filtroMercado==="todos"||filtroMercado==="B3"        ? filtered.reduce((s,[,e])=>s+(e.totalB3||0),        0) : 0;
@@ -102,22 +136,11 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const wins      = allTrades.filter(t=>t.tipo==="WIN").length;
   const winRate   = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
 
-  // % relativo à banca no início do período selecionado
-  // Só inclui mercados que o usuário realmente configurou (evita divisão por valor fictício)
-  const entriesAntesPeriodo = Object.entries(entries).filter(([d]) => d < inicio);
-  const bancaIniB3    = (config?.bancaB3    || 3000) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalB3||0),        0);
-  const bancaIniFx    = (config?.bancaForex ||  200) + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalForex||0),     0);
-  const bancaIniCr    = (config?.bancaCripto!==undefined ? config.bancaCripto : null);
-  const bancaIniCrVal = bancaIniCr !== null ? bancaIniCr + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalCripto||0),0) : null;
-  const bancaIniAm    = (config?.bancaAmericano!==undefined ? config.bancaAmericano : null);
-  const bancaIniAmVal = bancaIniAm !== null ? bancaIniAm + entriesAntesPeriodo.reduce((s,[,e])=>s+(e.totalAmericano||0),0) : null;
-  const bancaRef =
-    (filtroMercado==="todos"||filtroMercado==="B3"        ? bancaIniB3              : 0) +
-    (filtroMercado==="todos"||filtroMercado==="Forex"     ? bancaIniFx              : 0) +
-    (filtroMercado==="Cripto"    && bancaIniCrVal!==null  ? bancaIniCrVal           : 0) +
-    (filtroMercado==="todos"     && bancaIniCrVal!==null  ? bancaIniCrVal           : 0) +
-    (filtroMercado==="Americano" && bancaIniAmVal!==null  ? bancaIniAmVal           : 0) +
-    (filtroMercado==="todos"     && bancaIniAmVal!==null  ? bancaIniAmVal           : 0);
+  // % relativo à banca no início do período: soma das carteiras dentro dos filtros
+  // de conta e mercado (já descontando saques feitos antes do período)
+  const bancaRef = listaCarteiras(config)
+    .filter(c => (filtroConta==="todas" || c.contaId===filtroConta) && (filtroMercado==="todos" || c.mercado===filtroMercado))
+    .reduce((t, c) => t + bancaCarteira(entries, config, c, { antes: inicio }), 0);
   const pctBanca = bancaRef > 0 && filtered.length > 0 ? parseFloat((totalResult / bancaRef * 100).toFixed(1)) : null;
 
   // Curva de capital
@@ -176,124 +199,94 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const mediaPerd = perdas.length>0 ? Math.abs(perdas.reduce((s,t)=>s+(t.resultado||0),0)/perdas.length) : 0;
   const rr        = mediaPerd>0 ? (mediaVenc/mediaPerd).toFixed(2) : "—";
 
-  // Chart helpers
-  function LineChart({ points, color="#00d4aa" }) {
-    if (points.length < 2) return <div style={{height:"120px",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#444",fontSize:"12px"}}>Registre operações para ver o gráfico</p></div>;
-    const W=600,H=120,PL=8,PR=8,PT=8,PB=8;
-    const vals=points.map(p=>p.val), minV=Math.min(0,...vals), maxV=Math.max(0,...vals), rng=maxV-minV||1;
-    const x=(i)=>PL+(i/(points.length-1||1))*(W-PL-PR);
-    const y=(v)=>PT+(1-(v-minV)/rng)*(H-PT-PB);
-    const zero=y(0);
-    const path=points.map((p,i)=>(i===0?"M":"L")+x(i).toFixed(1)+","+y(p.val).toFixed(1)).join(" ");
-    const area=path+" L"+x(points.length-1).toFixed(1)+","+zero.toFixed(1)+" L"+PL+","+zero.toFixed(1)+" Z";
-    const last=points[points.length-1]?.val||0;
-    const lc=last>=0?"#00d4aa":"#ff4d4d";
-    return (
-      <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",height:"auto",display:"block"}} preserveAspectRatio="none">
-        <line x1={PL} y1={zero} x2={W-PR} y2={zero} stroke="#ffffff08" strokeWidth="1" strokeDasharray="4,4"/>
-        <path d={area} fill={lc+"15"}/>
-        <path d={path} fill="none" stroke={lc} strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round"/>
-        {points.map((p,i)=>( i===0||i===points.length-1||i%Math.ceil(points.length/8)===0 ?
-          <circle key={i} cx={x(i)} cy={y(p.val)} r="2" fill={p.val>=0?"#27b589":"#c94a4a"} stroke="#0a0a0f" strokeWidth="1.5"><title>{p.d ? p.d+" — R$ "+p.val.toFixed(2) : "R$ "+p.val.toFixed(2)}</title></circle> : null
-        ))}
-      </svg>
-    );
-  }
+  const losses       = allTrades.length - wins;
+  const wrColor      = winRate>=60?"#2ee6a0":winRate>=40?"#f59e0b":"#ff5470";
+  const profitFactor = totPerda<0 ? totGanho/Math.abs(totPerda) : null;
 
-  function BarChart({ bars }) {
-    if (bars.length === 0) return <div style={{height:"120px",display:"flex",alignItems:"center",justifyContent:"center"}}><p style={{color:"#666",fontSize:"12px"}}>Sem dados no período</p></div>;
-    const W=580, H=120, PT=8, PB=8, PL=8, PR=8;
-    const innerH = H-PT-PB;
-    const midY   = PT + innerH/2;
-    const maxAbs = Math.max(1, ...bars.map(b=>Math.abs(b.val)));
-    const n      = bars.length;
-    const gap    = 3;
-    const bw     = Math.max(4, Math.min(20, Math.floor((W-PL-PR-(n-1)*gap)/n)));
-    const totalW = n*bw + (n-1)*gap;
-    const startX = PL + (W-PL-PR-totalW)/2;
-    return (
-      <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",height:"auto",display:"block"}}>
-        <line x1={PL} y1={midY} x2={W-PR} y2={midY} stroke="#ffffff18" strokeWidth="1"/>
-        {bars.map((b,i)=>{
-          const x    = startX + i*(bw+gap);
-          const barH = Math.max(2, (Math.abs(b.val)/maxAbs)*(innerH/2-2));
-          const col  = b.val>=0 ? "#00d4aa" : "#ff4d4d";
-          const barY = b.val>=0 ? midY-barH : midY;
-          return <rect key={i} x={x} y={barY} width={bw} height={barH} fill={col} rx="2" opacity="0.9"/>;
-        })}
-      </svg>
-    );
-  }
+  // Max drawdown: maior recuo do pico da curva de capital no período
+  let pico = 0, maxDD = 0, picoNoDD = 0;
+  capitalPoints.forEach(p => {
+    if (p.val > pico) pico = p.val;
+    if (pico - p.val > maxDD) { maxDD = pico - p.val; picoNoDD = pico; }
+  });
+  const ddPct = maxDD>0 && bancaRef+picoNoDD>0 ? (maxDD/(bancaRef+picoNoDD))*100 : null;
 
-  const colors = ["#00d4aa","#f59e0b","#a78bfa","#f472b6","#34d399","#e05656","#60a5fa"];
+  // Dias positivos seguidos (do último dia para trás)
+  let streakVerde = 0;
+  for (let i=dailyBars.length-1; i>=0; i--) { if (dailyBars[i].val>0) streakVerde++; else break; }
+
+  const kpiCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px",position:"relative",overflow:"hidden",minWidth:0,minHeight:"132px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"8px"};
+  const kpiLabel = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
+  const kpiValue = {margin:0,fontSize:isMobile?"20px":"clamp(17px,1.55vw,25px)",fontWeight:"700",fontFamily:"var(--font-mono)",letterSpacing:"-0.5px",lineHeight:1.15,whiteSpace:"nowrap"};
+  const kpiSub   = {margin:0,color:"var(--text-3)",fontSize:"11.5px"};
+  const chartCard= {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px 12px"};
+
+  const colors = ["#2ee6a0","#f59e0b","#a78bfa","#f472b6","#34d399","#f0506e","#60a5fa"];
 
   return (
-    <div style={{fontFamily:"Inter,sans-serif"}}>
-      {/* Filter row */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"32px",gap:"12px",flexWrap:"wrap"}}>
-        <div style={{display:"flex",gap:"6px"}}>
-          {[["todos","Todos"],["B3","B3"],["Forex","Forex"],["Cripto","Cripto"],["Americano","Americano"]].map(([v,l])=>(
-            <button key={v} onClick={()=>setFiltroMercado(v)} style={{padding:"7px 16px",borderRadius:"20px",border:"1px solid "+(filtroMercado===v?"#00d4aa44":"#1a1a2e"),cursor:"pointer",fontWeight:"600",fontSize:"12px",background:filtroMercado===v?"rgba(0,212,170,0.1)":"transparent",color:filtroMercado===v?"#00d4aa":"#666",fontFamily:"Inter,sans-serif",transition:"all 0.15s"}}>{l}</button>
-          ))}
-        </div>
-        <DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>
+    <div style={{fontFamily:"var(--font-sans)"}}>
+      {/* Conta + filtros */}
+      <div style={{marginBottom:"32px"}}>
+        <FiltrosBarra config={config} saveConfig={saveConfig}
+          conta={filtroConta} setConta={setFiltroConta}
+          mercado={filtroMercado} setMercado={setFiltroMercado}
+          estrategiasSel={filtroEsts} setEstrategiasSel={setFiltroEsts}
+          estrategias={estrategiasNoPeriodo}
+          ativosSel={filtroAtivos} setAtivosSel={setFiltroAtivos} ativos={ativosNoPeriodo}
+          direita={<DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>}/>
       </div>
 
       {/* LINHA 1: Alerta full width */}
       <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
 
-      {/* LINHA 2: 4 KPIs — Disciplina primeiro */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 2fr 1fr 1fr",gap:"12px",marginBottom:"36px",marginTop:"32px"}}>
-        {/* Disciplina — primeiro */}
-        <div onClick={()=>setPagina&&setPagina("regras")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #252535",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",display:"flex",alignItems:"center",gap:"14px",cursor:setPagina?"pointer":"default",transition:"all 0.2s",boxShadow:"0 1px 0 0 #2a2a3a inset, 0 -1px 0 0 #080810 inset, 2px 0 0 0 #1a1a28 inset"}}
-          onMouseEnter={e=>{if(setPagina)e.currentTarget.style.borderColor=complianceColor+"44";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
-          
-          <div style={{width:"80px",height:"80px",borderRadius:"50%",border:"2px solid "+(compliancePct===null?"#1a1a2e":complianceColor+"55"),background:"#0d0d14",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",flexShrink:0}}>
-            {compliancePct!==null&&<div style={{position:"absolute",inset:0,background:"conic-gradient("+complianceColor+" "+compliancePct+"%, #1a1a2e "+compliancePct+"%)",borderRadius:"50%",opacity:0.25}}/>}
-            <div style={{position:"absolute",inset:"9px",background:"#0d0d14",borderRadius:"50%"}}/>
-            <div style={{position:"relative",textAlign:"center"}}>
-              <p style={{margin:0,color:compliancePct===null?"#444":complianceColor,fontSize:"17px",fontWeight:"800",fontFamily:"monospace"}}>{compliancePct!==null?compliancePct+"%":"—"}</p>
-              <p style={{margin:0,color:"#555",fontSize:"7px",textTransform:"uppercase",letterSpacing:"0.5px"}}>disc.</p>
-            </div>
+      {/* LINHA 2: KPIs — Disciplina primeiro */}
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(5,minmax(0,1fr))",gap:"14px",marginBottom:"20px",marginTop:"32px"}}>
+        {/* Disciplina */}
+        <div onClick={()=>setPagina&&setPagina("regras")} style={{...kpiCard,cursor:setPagina?"pointer":"default"}}>
+          <p style={kpiLabel}>Disciplina</p>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+            <p style={{...kpiValue,color:compliancePct===null?"var(--text-3)":complianceColor}}>
+              {compliancePct!==null ? <CountUp value={compliancePct} format={v=>Math.round(v)+"%"}/> : "—"}
+            </p>
+            <Ring pct={compliancePct} color={complianceColor} size={50}/>
           </div>
-          <div>
-            <p style={{margin:"0 0 3px",color:complianceColor,fontSize:"13px",fontWeight:"700"}}>{compliancePct!==null?compliancePct+"% de disciplina":"Sem dados"}</p>
-            <p style={{margin:0,color:"#555",fontSize:"11px"}}>{allSavedVals.length>0?`média de ${allSavedVals.length} dia${allSavedVals.length!==1?"s":""}`:compliedDays+" de "+daysThisMonth.length+" dias"}</p>
-          </div>
+          <p style={kpiSub}>{allSavedVals.length>0?`média de ${allSavedVals.length} dia${allSavedVals.length!==1?"s":""}`:compliedDays+" de "+daysThisMonth.length+" dias"}</p>
         </div>
-        {/* Resultado Total hero */}
-        <div onClick={()=>setPanelDrill("resultado")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #1e1e2e",borderRadius:"16px",padding:"24px 28px",position:"relative",overflow:"hidden",cursor:"pointer",transition:"all 0.3s"}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#27b58966";e.currentTarget.style.boxShadow="0 0 20px #27b58912";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
-          
-          <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Resultado Total</p>
-          {pctBanca!==null&&(
-            <span style={{position:"absolute",top:"14px",right:"14px",background:pctBanca>=0?"rgba(0,212,170,0.12)":"rgba(255,77,77,0.12)",color:pctBanca>=0?"#00d4aa":"#ff4d4d",fontSize:"20px",fontWeight:"800",padding:"5px 14px",borderRadius:"12px",border:"1px solid "+(pctBanca>=0?"#00d4aa33":"#ff4d4d33"),fontFamily:"monospace",letterSpacing:"-0.5px"}}>
-              {pctBanca>=0?"+":""}{pctBanca}%
+
+        {/* Resultado Total */}
+        <div onClick={()=>setPanelDrill("resultado")} style={{...kpiCard,cursor:"pointer"}}>
+          <div style={{position:"absolute",left:"48%",right:0,bottom:0,height:"46px",opacity:0.5,pointerEvents:"none",maskImage:"linear-gradient(90deg,transparent,#000 35%)",WebkitMaskImage:"linear-gradient(90deg,transparent,#000 35%)"}}>
+            <Sparkline values={capitalPoints.map(p=>p.val)} color={totalResult>=0?"#2ee6a0":"#ff5470"} width="100%" height="100%"/>
+          </div>
+          <p style={{...kpiLabel,position:"relative",whiteSpace:"nowrap"}}>Resultado Total</p>
+          <p style={{...kpiValue,position:"relative",color:totalResult>=0?"var(--pos)":"var(--neg)"}}>
+            <CountUp value={totalResult} format={fmtBRL}/>
+          </p>
+          <p style={{...kpiSub,position:"relative",display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
+            <span style={{background:totalResult>=0?"rgba(46,230,160,0.12)":"rgba(255,84,112,0.12)",color:totalResult>=0?"var(--pos)":"var(--neg)",fontSize:"10.5px",fontWeight:"700",padding:"2px 8px",borderRadius:"20px",border:"1px solid "+(totalResult>=0?"#2ee6a033":"#ff547033"),fontFamily:"var(--font-mono)"}}>
+              {totalResult>=0?"↑":"↓"}{pctBanca!==null ? " "+(pctBanca>=0?"+":"")+pctBanca+"%" : (totalResult>=0?" Positivo":" Negativo")}
             </span>
-          )}
-          <p style={{margin:"0 0 4px",color:totalResult>=0?"#27b589":"#c94a4a",fontSize:"32px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-1px"}}>
-            {totalResult>=0?"+":""}R$ {Math.abs(totalResult).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+            {totalPts>=0?"+":""}{totalPts.toFixed(1)} pts
           </p>
-          <p style={{margin:"0 0 16px",color:"#444",fontSize:"13px",fontFamily:"monospace"}}>{totalPts>=0?"+":""}{totalPts.toFixed(1)} pts no período</p>
-          <span style={{background:totalResult>=0?"rgba(0,212,170,0.12)":"rgba(255,77,77,0.12)",color:totalResult>=0?"#00d4aa":"#ff4d4d",fontSize:"11px",fontWeight:"700",padding:"4px 12px",borderRadius:"20px",border:"1px solid "+(totalResult>=0?"#00d4aa33":"#ff4d4d33")}}>
-            {totalResult>=0?"↑ Positivo":"↓ Negativo"}
-          </span>
-          <span style={{position:"absolute",bottom:"12px",right:"14px",color:"#333",fontSize:"10px"}}>ver detalhes →</span>
         </div>
+
         {/* Win Rate */}
-        <div onClick={()=>setPanelDrill("winrate")} style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #1e1e2e",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",cursor:"pointer",transition:"all 0.3s"}}
-          onMouseEnter={e=>{const wr=winRate>=60?"#27b589":winRate>=40?"#f59e0b":"#c94a4a";e.currentTarget.style.borderColor=wr+"66";e.currentTarget.style.boxShadow="0 0 20px "+wr+"12";}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e1e2e";e.currentTarget.style.boxShadow="none";}}>
-          
-          <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Win Rate</p>
-          <p style={{margin:"0 0 6px",color:winRate===null?"#666":winRate>=60?"#27b589":winRate>=40?"#f59e0b":"#c94a4a",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>
-            {winRate !== null ? winRate+"%" : "—"}
+        <div onClick={()=>setPanelDrill("winrate")} style={{...kpiCard,cursor:"pointer"}}>
+          <p style={kpiLabel}>Win Rate</p>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+            <div>
+              <p style={{...kpiValue,color:winRate===null?"var(--text-3)":wrColor}}>
+                {winRate!==null ? <CountUp value={winRate} format={v=>Math.round(v)+"%"}/> : "—"}
+              </p>
+              <p style={{margin:"2px 0 0",color:"var(--text-3)",fontSize:"11px"}}>taxa de acerto</p>
+            </div>
+            <Ring pct={winRate} color={winRate===null?"var(--line)":wrColor} size={50}/>
+          </div>
+          <p style={{...kpiSub,fontFamily:"var(--font-mono)"}}>
+            <span style={{color:"var(--pos)"}}>{wins}</span> · <span style={{color:"var(--neg)"}}>{losses}</span> · {allTrades.length} trades
           </p>
-          <p style={{margin:0,color:"#444",fontSize:"12px"}}>{wins} de {allTrades.length} trades</p>
-          <span style={{position:"absolute",bottom:"12px",right:"14px",color:"#333",fontSize:"10px"}}>ver trades →</span>
         </div>
+
         {/* Dias Operados */}
         {(()=>{
           const hoje = new Date();
@@ -309,42 +302,71 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           const semanas = [];
           for(let i=0;i<celulas.length;i+=7) semanas.push(celulas.slice(i,i+7));
           return (
-            <div style={{background:"linear-gradient(145deg,#111119,#0a0a11)",border:"1.5px solid #252535",borderRadius:"16px",padding:"22px",position:"relative",overflow:"hidden",boxShadow:"0 1px 0 0 #2a2a3a inset, 0 -1px 0 0 #080810 inset, 2px 0 0 0 #1a1a28 inset"}}>
-              
-              <p style={{margin:"0 0 10px",color:"#666",fontSize:"13px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>Dias Operados</p>
-              <p style={{margin:"0 0 10px",color:"#f0f0f0",fontSize:"28px",fontWeight:"800",fontFamily:"monospace"}}>{diasOp}</p>
-              <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
-                {semanas.map((sem,si)=>(
-                  <div key={si} style={{display:"flex",gap:"4px"}}>
-                    {Array.from({length:7}).map((_,di)=>{
-                      const cel = sem[di];
-                      if(cel===undefined||cel===null) return <div key={di} style={{width:"8px",height:"8px"}}/>;
-                      const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
-                      const operado = diasOperadosSet.has(dKey);
-                      const isHoje = cel===hoje.getDate();
-                      return <div key={di} style={{width:"8px",height:"8px",borderRadius:"50%",background:operado?"#00d4aa":isHoje?"#2a2a3a":"#1a1a2e",border:isHoje&&!operado?"1px solid #333":"none",transition:"background 0.2s"}}/>;
-                    })}
-                  </div>
-                ))}
+            <div style={kpiCard}>
+              <p style={kpiLabel}>Dias Operados</p>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+                <p style={{...kpiValue,color:"#7fd8ff"}}><CountUp value={diasOp}/></p>
+                <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
+                  {semanas.map((sem,si)=>(
+                    <div key={si} style={{display:"flex",gap:"3px"}}>
+                      {Array.from({length:7}).map((_,di)=>{
+                        const cel = sem[di];
+                        if(cel===undefined||cel===null) return <div key={di} style={{width:"6px",height:"6px"}}/>;
+                        const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
+                        const operado = diasOperadosSet.has(dKey);
+                        const isHoje = cel===hoje.getDate();
+                        return <div key={di} title={cel+"/"+(mes+1)} style={{width:"6px",height:"6px",borderRadius:"50%",background:operado?"var(--accent)":isHoje?"#3a4d44":"var(--line-strong)",boxShadow:operado?"0 0 5px rgba(46,230,160,0.7)":"none",outline:isHoje?"1px solid #5d6f67":"none",outlineOffset:"1px"}}/>;
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
+              <p style={kpiSub}>
+                <span style={{display:"inline-block",width:"6px",height:"6px",borderRadius:"50%",background:streakVerde>0?"var(--warn)":"var(--line-strong)",marginRight:"6px",verticalAlign:"middle"}}/>
+                {streakVerde} dia{streakVerde!==1?"s":""} no verde
+              </p>
             </div>
           );
         })()}
+
+        {/* Max Drawdown */}
+        <div style={kpiCard}>
+          <p style={kpiLabel}>Max Drawdown</p>
+          <p style={{...kpiValue,color:maxDD>0?"var(--neg)":"var(--text-2)"}}>
+            <CountUp value={-maxDD} format={v=>v<-0.005?fmtBRL(v):"R$ 0,00"}/>
+          </p>
+          <p style={kpiSub}>{ddPct!==null ? ddPct.toFixed(1)+"% do pico" : "sem recuo no período"}</p>
+        </div>
       </div>
 
-      {/* LINHA 3: Curva Capital (60%) + Origem Ganho + Origem Perda */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"5fr 3fr 3fr",gap:"16px",marginBottom:"36px"}}>
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
-          <p style={{margin:"0 0 4px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Curva de Capital</p>
-          <p style={{margin:"0 0 14px",color:totalResult>=0?"#27b589":"#c94a4a",fontSize:"18px",fontWeight:"700",fontFamily:"monospace"}}>
-            R$ {totalResult>=0?"+":""}{totalResult.toLocaleString("pt-BR",{minimumFractionDigits:2})}
-          </p>
-          <LineChart points={capitalPoints}/>
+      {/* LINHA 3: Curva de Capital + Resultado Diário */}
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:"14px",marginBottom:"14px"}}>
+        <div style={chartCard}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"12px",gap:"8px"}}>
+            <p className="mtp-card-title">Curva de Capital</p>
+            <p style={{margin:0,color:totalResult>=0?"var(--pos)":"var(--neg)",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>
+              R$ {totalResult>=0?"+":""}{totalResult.toLocaleString("pt-BR",{minimumFractionDigits:2})}
+            </p>
+          </div>
+          <CapitalChart points={capitalPoints}/>
         </div>
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+        <div style={chartCard}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"12px",gap:"8px"}}>
+            <p className="mtp-card-title">Resultado Diário</p>
+            <p style={{margin:0,color:"var(--text-3)",fontSize:"11px",fontFamily:"var(--font-mono)"}}>
+              <span style={{color:"var(--pos)"}}>{dailyBars.filter(b=>b.val>0).length}</span> / <span style={{color:"var(--neg)"}}>{dailyBars.filter(b=>b.val<0).length}</span> dias
+            </p>
+          </div>
+          <DailyBars bars={dailyBars}/>
+        </div>
+      </div>
+
+      {/* LINHA 3b: Origem do Ganho + Origem da Perda */}
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:"14px",marginBottom:"36px"}}>
+        <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            <p style={{margin:0,color:"#00d4aa",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem do Ganho</p>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            <p style={{margin:0,color:"#2ee6a0",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem do Ganho</p>
           </div>
           {Object.entries(gByEst).sort(([,a],[,b])=>b-a).map(([n,v],i)=>{
             const pct = totGanho>0 ? Math.round((v/totGanho)*100) : 0;
@@ -356,9 +378,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 <div style={{flex:1}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
                     <span style={{color:"#ccc",fontSize:"12px",fontWeight:"600"}}>{n}</span>
-                    <span style={{color:"#27b589",fontSize:"12px",fontWeight:"700",fontFamily:"monospace"}}>+R$ {v.toFixed(2)}</span>
+                    <span style={{color:"#2ee6a0",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>+R$ {v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
                   </div>
-                  <div style={{height:"3px",borderRadius:"2px",background:"#1a1a2e"}}>
+                  <div style={{height:"3px",borderRadius:"2px",background:"#18241f"}}>
                     <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:colors[i%colors.length]}}/>
                   </div>
                 </div>
@@ -368,25 +390,25 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           })}
           {Object.keys(gByEst).length===0&&<p style={{color:"#444",fontSize:"12px"}}>Nenhum ganho</p>}
         </div>
-        <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+        <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-            <p style={{margin:0,color:"#ff4d4d",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem da Perda</p>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff5470" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            <p style={{margin:0,color:"#ff5470",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem da Perda</p>
           </div>
           {Object.entries(pByEst).sort(([,a],[,b])=>a-b).map(([n,v],i)=>{
             const pct = totPerda<0 ? Math.round((v/totPerda)*100) : 0;
             return (
               <div key={n} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
-                <div style={{width:"26px",height:"26px",borderRadius:"6px",background:"#ff4d4d22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <span style={{color:"#ff4d4d",fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
+                <div style={{width:"26px",height:"26px",borderRadius:"6px",background:"#ff547022",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{color:"#ff5470",fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
                 </div>
                 <div style={{flex:1}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
                     <span style={{color:"#ccc",fontSize:"12px",fontWeight:"600"}}>{n}</span>
-                    <span style={{color:"#c94a4a",fontSize:"12px",fontWeight:"700",fontFamily:"monospace"}}>R$ {v.toFixed(2)}</span>
+                    <span style={{color:"#ff5470",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>-R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
                   </div>
-                  <div style={{height:"3px",borderRadius:"2px",background:"#1a1a2e"}}>
-                    <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:"#ff4d4d"}}/>
+                  <div style={{height:"3px",borderRadius:"2px",background:"#18241f"}}>
+                    <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:"#ff5470"}}/>
                   </div>
                 </div>
                 <span style={{color:"#555",fontSize:"11px",minWidth:"28px",textAlign:"right"}}>{pct}%</span>
@@ -397,12 +419,81 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         </div>
       </div>
 
+      {/* Onde você ganha e perde: por mercado e por ativo */}
+      {allTrades.length > 0 && (() => {
+        const MOEDA = { B3:"R$", Forex:"$", Cripto:"$", Americano:"$" };
+        const COR_M = { B3:"#2ee6a0", Forex:"#f5b941", Cripto:"#a78bfa", Americano:"#60a5fa" };
+        const agrupa = chave => {
+          const g = {};
+          allTrades.forEach(t => {
+            const k = chave(t);
+            if (!g[k]) g[k] = { ops:0, wins:0, res:0, mercado:t.mercado };
+            g[k].ops++; g[k].res += t.resultado || 0; if (t.tipo === "WIN") g[k].wins++;
+          });
+          return Object.entries(g).sort((a,b) => b[1].res - a[1].res);
+        };
+        const porMercado = agrupa(t => t.mercado || "B3");
+        const porAtivo   = agrupa(t => (t.mercado || "B3") + "|" + ativoDoTrade(t));
+        const listaAtivo = verTodosAtivos ? porAtivo : porAtivo.slice(0, 7);
+        const Linha = ({ rot, sub, g, cor, maxAbs, mono }) => {
+          const wr = Math.round(g.wins / g.ops * 100);
+          const pos = g.res >= 0;
+          return (
+            <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1.3fr) minmax(0,1fr) auto", alignItems:"center", gap:"14px", padding:"10px 0", borderBottom:"1px solid var(--line)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"10px", minWidth:0 }}>
+                <i className="mtp-dot" style={{ background:cor }}/>
+                <div style={{ minWidth:0 }}>
+                  <p style={{ margin:0, color:"var(--text)", fontSize:"13.5px", fontWeight:"700", fontFamily: mono ? "var(--font-mono)" : "var(--font-sans)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{rot}</p>
+                  <p style={{ margin:"2px 0 0", color:"var(--text-3)", fontSize:"11.5px", fontFamily:"var(--font-mono)" }}>{sub ? sub+" · " : ""}{g.ops} ops · <span style={{ color: wr>=60?"#2ee6a0":wr>=40?"#f5b941":"#ff5470" }}>{wr}%</span></p>
+                </div>
+              </div>
+              <div style={{ position:"relative", height:"6px", borderRadius:"6px", background:"var(--line)" }}>
+                <div style={{ position:"absolute", top:0, bottom:0, left:"50%", width:"1px", background:"var(--line-strong)" }}/>
+                <div style={{ position:"absolute", top:0, bottom:0, borderRadius:"6px", [pos?"left":"right"]:"50%", width:(Math.abs(g.res)/maxAbs*50)+"%", background: pos ? "linear-gradient(90deg,#2ee6a055,#2ee6a0)" : "linear-gradient(270deg,#ff547055,#ff5470)", boxShadow:"0 0 8px "+(pos?"#2ee6a066":"#ff547066") }}/>
+              </div>
+              <span style={{ color: pos ? "#2ee6a0" : "#ff5470", fontSize:"13.5px", fontWeight:"700", fontFamily:"var(--font-mono)", textAlign:"right", minWidth:"110px" }}>
+                {pos?"+":"-"}{MOEDA[g.mercado]||"R$"} {Math.abs(g.res).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+              </span>
+            </div>
+          );
+        };
+        const maxM = Math.max(1, ...porMercado.map(([,g]) => Math.abs(g.res)));
+        const maxA = Math.max(1, ...porAtivo.map(([,g]) => Math.abs(g.res)));
+        return (
+          <div style={{marginBottom:"36px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+              <p className="mtp-section-title">Onde você ganha e perde</p>
+              <span className="mtp-section-hint">por mercado e por ativo</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1.3fr",gap:"14px"}}>
+              <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px 6px"}}>
+                <p className="mtp-card-title" style={{marginBottom:"6px"}}>Por mercado</p>
+                {porMercado.map(([k,g]) => <Linha key={k} rot={k} g={g} cor={COR_M[k]||"#888"} maxAbs={maxM}/>)}
+              </div>
+              <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px 6px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"6px"}}>
+                  <p className="mtp-card-title">Por ativo</p>
+                  {porAtivo.length > 7 && <button onClick={()=>setVerTodosAtivos(!verTodosAtivos)} className="mtp-ctx-ghost" style={{padding:"4px 8px"}}>{verTodosAtivos ? "ver menos" : "ver todos ("+porAtivo.length+")"}</button>}
+                </div>
+                {listaAtivo.map(([k,g]) => {
+                  const [m, a] = k.split("|");
+                  return <Linha key={k} rot={a} sub={m} g={g} cor={a===SEM_ATIVO ? "var(--text-3)" : (COR_M[m]||"#888")} maxAbs={maxA} mono={a!==SEM_ATIVO}/>;
+                })}
+                {porAtivo.some(([k]) => k.endsWith("|"+SEM_ATIVO)) && (
+                  <p style={{margin:"10px 0 8px",color:"var(--text-3)",fontSize:"11.5px"}}>Operações antigas não têm ativo — os novos registros no Diário já guardam.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* LINHA 4: Métricas por Estratégia full width */}
       {Object.keys(estratStats).length > 0 && (
         <div style={{marginBottom:"36px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-            <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Métricas por Estratégia</p>
-            <span style={{color:"#333",fontSize:"11px"}}>clique para ver operações</span>
+            <p className="mtp-section-title">Métricas por Estratégia</p>
+            <span className="mtp-section-hint">clique para ver operações</span>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             {Object.entries(estratStats).map(([n,s],i)=>{
@@ -412,9 +503,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               const isSelected = panelEst === n;
               return (
                 <div key={n} onClick={()=>setPanelEst(isSelected?null:n)}
-                  style={{background:"#0d0d14",border:"1px solid "+(isSelected?cor+"66":"#1e1e2e"),borderRadius:"14px",padding:"18px",cursor:"pointer",transition:"all 0.2s",boxShadow:isSelected?"0 0 0 1px "+cor+"33":"none"}}
+                  style={{background:"var(--card)",border:"1px solid "+(isSelected?cor+"66":"#1b2823"),borderRadius:"14px",padding:"18px",cursor:"pointer",transition:"all 0.2s",boxShadow:isSelected?"0 0 0 1px "+cor+"33":"none"}}
                   onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor=cor+"44";}}}
-                  onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor="#1e1e2e";}}}>
+                  onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor="#1b2823";}}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
                     <div style={{padding:"4px 8px",borderRadius:"6px",background:cor+"22",border:"1px solid "+cor+"44",flexShrink:0}}>
                       <span style={{color:cor,fontSize:"11px",fontWeight:"800",letterSpacing:"0.5px"}}>{n.slice(0,3).toUpperCase()}</span>
@@ -422,17 +513,17 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                     <span style={{color:"#aaa",fontSize:"13px",fontWeight:"500",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{nomeAtual[n]||n}</span>
                     {isSelected && <span style={{color:cor,fontSize:"11px"}}>▸</span>}
                   </div>
-                  <p style={{margin:"0 0 3px",color:"#27b589",fontSize:"22px",fontWeight:"800",fontFamily:"monospace",letterSpacing:"-0.5px"}}>
+                  <p style={{margin:"0 0 3px",color:"#2ee6a0",fontSize:"22px",fontWeight:"800",fontFamily:"var(--font-mono)",letterSpacing:"-0.5px"}}>
                     {s.pontos>=0?"+":""}{s.pontos.toFixed(1)} pts
                   </p>
-                  <p style={{margin:"0 0 14px",color:s.resultado>=0?"#27b589":"#c94a4a",fontSize:"14px",fontWeight:"700",fontFamily:"monospace"}}>
-                    {s.resultado>=0?"+":""}R$ {Math.abs(s.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2})}
+                  <p style={{margin:"0 0 14px",color:s.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>
+                    {s.resultado>=0?"+":"-"}R$ {Math.abs(s.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
                   </p>
                   <div style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"12px",color:"#555",flexWrap:"wrap"}}>
-                    <span>Assertividade <span style={{color:ass>=60?"#27b589":ass>=40?"#f59e0b":"#c94a4a",fontWeight:"700"}}>{ass}%</span></span>
-                    <span style={{color:"#2a2a3a"}}>·</span>
+                    <span>Assertividade <span style={{color:ass>=60?"#2ee6a0":ass>=40?"#f59e0b":"#ff5470",fontWeight:"700"}}>{ass}%</span></span>
+                    <span style={{color:"#26352e"}}>·</span>
                     <span>{s.total} ops</span>
-                    <span style={{color:"#2a2a3a"}}>·</span>
+                    <span style={{color:"#26352e"}}>·</span>
                     <span>{parseFloat(mediaPts)>=0?"+":""}{mediaPts} /op</span>
                   </div>
                 </div>
@@ -455,10 +546,10 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           <>
             {/* Overlay click-outside */}
             <div onClick={()=>setPanelEst(null)} style={{position:"fixed",inset:0,zIndex:399,background:"rgba(0,0,0,0.4)"}}/>
-            <div style={{position:"fixed",top:0,right:0,bottom:0,width:"380px",background:"#0a0a12",borderLeft:"1px solid #1a1a2e",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
+            <div style={{position:"fixed",top:0,right:0,bottom:0,width:"380px",background:"#070d0a",borderLeft:"1px solid #18241f",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
             <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
             {/* Header */}
-            <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #1a1a2e",flexShrink:0}}>
+            <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #18241f",flexShrink:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                   <div style={{padding:"5px 10px",borderRadius:"7px",background:cor+"22",border:"1px solid "+cor+"44"}}>
@@ -470,17 +561,17 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               </div>
               {/* Stats resumo */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
-                <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
                   <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Pts</p>
-                  <p style={{margin:0,color:"#00d4aa",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{totalPtsEst>=0?"+":""}{totalPtsEst.toFixed(0)}</p>
+                  <p style={{margin:0,color:"#2ee6a0",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalPtsEst>=0?"+":""}{totalPtsEst.toFixed(0)}</p>
                 </div>
-                <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
                   <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>R$</p>
-                  <p style={{margin:0,color:totalResEst>=0?"#27b589":"#c94a4a",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{totalResEst>=0?"+":""}{ Math.abs(totalResEst).toFixed(0)}</p>
+                  <p style={{margin:0,color:totalResEst>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalResEst>=0?"+":""}{ Math.abs(totalResEst).toFixed(0)}</p>
                 </div>
-                <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
                   <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Acerto</p>
-                  <p style={{margin:0,color:winsEst/ops.length>=0.6?"#27b589":"#f59e0b",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{ops.length>0?Math.round((winsEst/ops.length)*100):0}%</p>
+                  <p style={{margin:0,color:winsEst/ops.length>=0.6?"#2ee6a0":"#f59e0b",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{ops.length>0?Math.round((winsEst/ops.length)*100):0}%</p>
                 </div>
               </div>
             </div>
@@ -488,17 +579,17 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
             <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
               <p style={{margin:"0 0 12px",color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>{ops.length} operações no período</p>
               {ops.map((t,i)=>(
-                <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"#0d0d14",border:"1px solid #1a1a2e",marginBottom:"8px"}}>
+                <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"#0b1210",border:"1px solid #18241f",marginBottom:"8px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                      <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(0,212,170,0.15)":"rgba(255,77,77,0.15)",color:t.tipo==="WIN"?"#00d4aa":"#ff4d4d"}}>{t.tipo}</span>
+                      <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                       <span style={{color:"#aaa",fontSize:"12px"}}>{t.mercado}</span>
                     </div>
                     <span style={{color:"#888",fontSize:"11px"}}>{t._date.split("-").reverse().join("/")}</span>
                   </div>
                   <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
-                    {t.pontos!=null&&<span style={{color:"#f0f0f0",fontSize:"13px",fontFamily:"monospace",fontWeight:"600"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
-                    {t.resultado!=null&&<span style={{color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"13px",fontFamily:"monospace",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</span>}
+                    {t.pontos!=null&&<span style={{color:"#f0f0f0",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"600"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
+                    {t.resultado!=null&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</span>}
                   </div>
                   {t.observacao&&<p style={{margin:"6px 0 0",color:"#888",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</p>}
                 </div>
@@ -510,28 +601,34 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         );
       })()}
 
-      {/* LINHA 5: Médias */}
+      {/* LINHA 5: Métricas Complementares */}
       {allTrades.length > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:"16px",marginBottom:"36px"}}>
+        <div style={{marginBottom:"36px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+          <p className="mtp-section-title">Métricas Complementares</p>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:"14px"}}>
           {[
-            {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),color:"#00d4aa",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
-            {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),color:"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
-            {label:"Risco × Retorno",sub:"razão média",val:rr+":1",color:parseFloat(rr)>=1.5?"#00d4aa":parseFloat(rr)>=1?"#f59e0b":"#ff4d4d",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>},
+            {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),num:mediaVenc,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"#2ee6a0",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
+            {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),num:mediaPerd,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"#ff5470",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff5470" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
+            {label:"Risco × Retorno",sub:"razão média",val:rr+":1",num:mediaPerd>0?mediaVenc/mediaPerd:null,fmtN:v=>v.toFixed(2)+":1",color:parseFloat(rr)>=1.5?"#2ee6a0":parseFloat(rr)>=1?"#f59e0b":"#ff5470",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>},
+            {label:"Profit Factor",sub:"ganho / perda total",val:profitFactor!==null?profitFactor.toFixed(2):"—",num:profitFactor,fmtN:v=>v.toFixed(2),color:profitFactor>=1.5?"#f5b941":profitFactor>=1?"#f59e0b":"#ff5470",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>},
           ].map((s,i)=>(
-            <div key={i} style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"18px",display:"flex",alignItems:"center",gap:"14px"}}>
-              <div style={{width:"38px",height:"38px",borderRadius:"10px",background:s.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:s.color}}>{s.icon}</div>
-              <div>
-                <p style={{margin:"0 0 2px",color:"#666",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>{s.label}</p>
-                <p style={{margin:"0 0 1px",color:s.color,fontSize:"20px",fontWeight:"800",fontFamily:"monospace"}}>{s.val}</p>
-                <p style={{margin:0,color:"#444",fontSize:"11px"}}>{s.sub}</p>
+            <div key={i} style={{...kpiCard,minHeight:"112px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}}>
+                <p style={kpiLabel}>{s.label}</p>
+                <div style={{width:"28px",height:"28px",borderRadius:"8px",background:s.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:s.color}}>{s.icon}</div>
               </div>
+              <p style={{...kpiValue,fontSize:isMobile?"19px":"clamp(17px,1.4vw,22px)",color:s.color}}>{s.num!=null&&isFinite(s.num) ? <CountUp value={s.num} format={s.fmtN}/> : s.val}</p>
+              <p style={kpiSub}>{s.sub}</p>
             </div>
           ))}
+        </div>
         </div>
       )}
 
       {filtered.length === 0 && (
-        <div style={{textAlign:"center",padding:"60px 20px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",marginBottom:"36px"}}>
+        <div style={{textAlign:"center",padding:"60px 20px",background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",marginBottom:"36px"}}>
           <p style={{color:"#888",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
           <p style={{color:"#222",fontSize:"12px",margin:"6px 0 0"}}>Registre operações no Diário para ver as métricas.</p>
         </div>
@@ -539,7 +636,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
 
       {/* ── SEÇÃO: CORRELAÇÃO EMOÇÃO × RESULTADO ── */}
       {allTrades.length >= 3 && (() => {
-        const EMOCAO_COLORS = {"Focado":"#00d4aa","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+        const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
         const emocaoStats = {};
         filtered.forEach(([,e]) => {
           const tot = (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0);
@@ -557,10 +654,10 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         return (
           <div style={{marginBottom:"36px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Correlação Emoção × Resultado</p>
-              <span style={{color:"#333",fontSize:"11px"}}>impacto no seu trading</span>
+              <p className="mtp-section-title">Correlação Emoção × Resultado</p>
+              <span className="mtp-section-hint">impacto no seu trading</span>
             </div>
-            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px"}}>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                 {emList.map(([em,s])=>{
                   const cor = EMOCAO_COLORS[em]||"#888";
@@ -573,10 +670,10 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                         <span style={{fontSize:"12px",fontWeight:"700",color:cor}}>{em}</span>
                         <p style={{margin:0,color:"#444",fontSize:"10px"}}>{s.dias} dia{s.dias!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
                       </div>
-                      <div style={{flex:1,height:"3px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:barW+"%",background:pos?"#27b589":"#c94a4a",borderRadius:"4px",transition:"width 0.3s"}}/>
+                      <div style={{flex:1,height:"3px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px",transition:"width 0.3s"}}/>
                       </div>
-                      <span style={{width:"80px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#27b589":"#c94a4a",flexShrink:0}}>
+                      <span style={{width:"80px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"#2ee6a0":"#ff5470",flexShrink:0}}>
                         {pos?"+":""}R$ {s.resultado.toFixed(0)}
                       </span>
                     </div>
@@ -617,23 +714,23 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         return (
           <div style={{marginBottom:"36px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Streak de Disciplina</p>
-              <span style={{color:"#333",fontSize:"11px"}}>dias consecutivos ≥80%</span>
+              <p className="mtp-section-title">Streak de Disciplina</p>
+              <span className="mtp-section-hint">dias consecutivos ≥80%</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"14px"}}>
-              <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
+              <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
                 <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Streak Atual</p>
-                <p style={{margin:0,color:streak>=7?"#27b589":streak>=3?"#f59e0b":"#c94a4a",fontSize:"36px",fontWeight:"800",fontFamily:"monospace"}}>{streak}</p>
+                <p style={{margin:0,color:streak>=7?"#2ee6a0":streak>=3?"#f59e0b":"#ff5470",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{streak}</p>
                 <p style={{margin:0,color:"#444",fontSize:"11px"}}>dias seguidos</p>
               </div>
-              <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
+              <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
                 <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Recorde</p>
-                <p style={{margin:0,color:"#f59e0b",fontSize:"36px",fontWeight:"800",fontFamily:"monospace"}}>{maxStreak}</p>
+                <p style={{margin:0,color:"#f59e0b",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{maxStreak}</p>
                 <p style={{margin:0,color:"#444",fontSize:"11px"}}>dias seguidos</p>
               </div>
-              <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
+              <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
                 <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Salvos</p>
-                <p style={{margin:0,color:"#aaa",fontSize:"36px",fontWeight:"800",fontFamily:"monospace"}}>{savedDays.length}</p>
+                <p style={{margin:0,color:"#aaa",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{savedDays.length}</p>
                 <p style={{margin:0,color:"#444",fontSize:"11px"}}>total registrado</p>
               </div>
             </div>
@@ -657,27 +754,27 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         return (
           <div style={{marginBottom:"36px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Performance por Horário</p>
-              <span style={{color:"#333",fontSize:"11px"}}>baseado nas operações registradas</span>
+              <p className="mtp-section-title">Performance por Horário</p>
+              <span className="mtp-section-hint">baseado nas operações registradas</span>
             </div>
-            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px"}}>
+            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px"}}>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                 {horaList.map(([hora,s])=>{
                   const wr = Math.round((s.wins/s.total)*100);
                   const pos = s.resultado >= 0;
                   const barW = Math.round((Math.abs(s.resultado)/maxRes)*100);
-                  const cor = wr>=60?"#27b589":wr>=40?"#f59e0b":"#c94a4a";
+                  const cor = wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470";
                   return (
                     <div key={hora} style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                      <span style={{width:"36px",color:"#aaa",fontSize:"12px",fontFamily:"monospace",fontWeight:"700",flexShrink:0}}>{hora}</span>
+                      <span style={{width:"36px",color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700",flexShrink:0}}>{hora}</span>
                       <div style={{width:"40px",textAlign:"center",flexShrink:0}}>
                         <span style={{fontSize:"11px",fontWeight:"700",color:cor}}>{wr}%</span>
                         <p style={{margin:0,color:"#444",fontSize:"9px"}}>{s.total} ops</p>
                       </div>
-                      <div style={{flex:1,height:"3px",background:"#1a1a2e",borderRadius:"2px",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:barW+"%",background:pos?"#27b589":"#c94a4a",borderRadius:"4px"}}/>
+                      <div style={{flex:1,height:"3px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px"}}/>
                       </div>
-                      <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"monospace",color:pos?"#27b589":"#c94a4a",flexShrink:0}}>
+                      <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"#2ee6a0":"#ff5470",flexShrink:0}}>
                         {pos?"+":""}R$ {s.resultado.toFixed(0)}
                       </span>
                     </div>
@@ -691,7 +788,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
 
       {/* ── SEÇÃO: CURVA DE CAPITAL POR ESTRATÉGIA ── */}
       {Object.keys(estratStats).length >= 2 && (() => {
-        const colors2 = ["#00d4aa","#f59e0b","#a78bfa","#f472b6","#34d399","#e05656","#60a5fa"];
+        const colors2 = ["#2ee6a0","#f59e0b","#a78bfa","#f472b6","#34d399","#f0506e","#60a5fa"];
         const estratDays = {};
         filtered.forEach(([d,e]) => {
           (e.trades||[]).forEach(t => {
@@ -724,10 +821,10 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         return (
           <div style={{marginBottom:"36px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Curva de Capital por Estratégia</p>
-              <span style={{color:"#333",fontSize:"11px"}}>resultado acumulado R$</span>
+              <p className="mtp-section-title">Curva de Capital por Estratégia</p>
+              <span className="mtp-section-hint">resultado acumulado R$</span>
             </div>
-            <div style={{background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"20px 20px 14px"}}>
+            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px 20px 14px"}}>
               <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block",marginBottom:"14px"}}>
                 {yTicks.map(({v,y},i)=>(
                   <g key={i}>
@@ -754,13 +851,13 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               </svg>
               <div style={{display:"flex",flexWrap:"wrap",gap:"8px 14px"}}>
                 {curves.map(({n,last,color})=>(
-                  <div key={n} style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",padding:"6px 10px",borderRadius:"8px",border:"1px solid #1a1a2e",transition:"border-color 0.15s"}}
+                  <div key={n} style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",padding:"6px 10px",borderRadius:"8px",border:"1px solid #18241f",transition:"border-color 0.15s"}}
                     onClick={()=>setPanelEst(n)}
                     onMouseEnter={e=>e.currentTarget.style.borderColor=color+"55"}
-                    onMouseLeave={e=>e.currentTarget.style.borderColor="#1a1a2e"}>
+                    onMouseLeave={e=>e.currentTarget.style.borderColor="#18241f"}>
                     <div style={{width:"22px",height:"3px",borderRadius:"2px",background:color,flexShrink:0}}/>
                     <span style={{fontSize:"12px",color:"#aaa"}}>{n}</span>
-                    <span style={{fontSize:"12px",fontWeight:"800",fontFamily:"monospace",color:last>=0?"#27b589":"#c94a4a"}}>{last>=0?"+":""}R${Math.abs(last)<1000?last.toFixed(0):(last/1000).toFixed(1)+"k"}</span>
+                    <span style={{fontSize:"12px",fontWeight:"800",fontFamily:"var(--font-mono)",color:last>=0?"#2ee6a0":"#ff5470"}}>{last>=0?"+":""}R${Math.abs(last)<1000?last.toFixed(0):(last/1000).toFixed(1)+"k"}</span>
                   </div>
                 ))}
               </div>
@@ -790,42 +887,42 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         });
         const entries2 = Object.entries(seqStats);
         if (entries2.length === 0) return null;
-        const colors2 = ["#00d4aa","#f59e0b","#a78bfa","#f472b6","#34d399","#e05656","#60a5fa"];
+        const colors2 = ["#2ee6a0","#f59e0b","#a78bfa","#f472b6","#34d399","#f0506e","#60a5fa"];
         return (
           <div style={{marginBottom:"36px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>Sequências WIN/LOSS por Estratégia</p>
-              <span style={{color:"#333",fontSize:"11px"}}>detecta fases de cada setup</span>
+              <p className="mtp-section-title">Sequências WIN/LOSS por Estratégia</p>
+              <span className="mtp-section-hint">detecta fases de cada setup</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"12px"}}>
               {entries2.map(([n,s],i)=>{
                 const cor = colors2[i%colors2.length];
-                const streakColor = s.curType==="WIN"?"#27b589":"#c94a4a";
+                const streakColor = s.curType==="WIN"?"#2ee6a0":"#ff5470";
                 const alert = s.curLoss >= 3 || (s.curType==="LOSS" && s.curStreak>=2);
                 return (
-                  <div key={n} style={{background:"#0d0d14",border:"1px solid "+(alert?"#e0565633":"#1a1a2e"),borderRadius:"14px",padding:"16px",cursor:"pointer"}}
+                  <div key={n} style={{background:"var(--card)",border:"1px solid "+(alert?"#f0506e33":"#18241f"),borderRadius:"14px",padding:"16px",cursor:"pointer"}}
                     onClick={()=>setPanelEst(n)}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px"}}>
                       <div style={{padding:"3px 7px",borderRadius:"5px",background:cor+"22",border:"1px solid "+cor+"33"}}>
                         <span style={{color:cor,fontSize:"10px",fontWeight:"800"}}>{n.slice(0,3).toUpperCase()}</span>
                       </div>
                       <span style={{color:"#aaa",fontSize:"12px",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n}</span>
-                      {alert && <span style={{fontSize:"10px",color:"#c94a4a"}}>⚠</span>}
+                      {alert && <span style={{fontSize:"10px",color:"#ff5470"}}>⚠</span>}
                     </div>
                     <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
-                      <div style={{flex:1,textAlign:"center",background:"rgba(45,201,154,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
-                        <p style={{margin:0,color:"#27b589",fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{s.maxWin}</p>
+                      <div style={{flex:1,textAlign:"center",background:"rgba(63,232,168,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
+                        <p style={{margin:0,color:"#2ee6a0",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{s.maxWin}</p>
                         <p style={{margin:0,color:"#444",fontSize:"9px",textTransform:"uppercase"}}>Max WIN</p>
                       </div>
-                      <div style={{flex:1,textAlign:"center",background:"rgba(224,86,86,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
-                        <p style={{margin:0,color:"#c94a4a",fontSize:"18px",fontWeight:"800",fontFamily:"monospace"}}>{s.maxLoss}</p>
+                      <div style={{flex:1,textAlign:"center",background:"rgba(240,80,110,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
+                        <p style={{margin:0,color:"#ff5470",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{s.maxLoss}</p>
                         <p style={{margin:0,color:"#444",fontSize:"9px",textTransform:"uppercase"}}>Max LOSS</p>
                       </div>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
                       <span style={{fontSize:"11px",color:"#555"}}>Agora:</span>
                       <span style={{padding:"2px 8px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:streakColor+"18",color:streakColor}}>{s.curStreak}× {s.curType}</span>
-                      {s.curType==="LOSS"&&s.curStreak>=2&&<span style={{fontSize:"10px",color:"#c94a4a"}}>— revisar setup</span>}
+                      {s.curType==="LOSS"&&s.curStreak>=2&&<span style={{fontSize:"10px",color:"#ff5470"}}>— revisar setup</span>}
                     </div>
                   </div>
                 );
@@ -845,42 +942,42 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         const tradesList = isWR
           ? [...allTrades].map((t,i)=>({...t,_idx:i}))
           : [...allTrades].map((t,i)=>({...t,_idx:i})).sort((a,b)=>(b.resultado||0)-(a.resultado||0));
-        const EMOCAO_COLORS = {"Focado":"#27b589","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#c94a4a","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+        const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ff5470","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
         return (
           <>
             <div onClick={()=>setPanelDrill(null)} style={{position:"fixed",inset:0,zIndex:399,background:"rgba(0,0,0,0.4)"}}/>
-            <div style={{position:"fixed",top:0,right:0,bottom:0,width:"400px",background:"#0a0a12",borderLeft:"1px solid #1a1a2e",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
+            <div style={{position:"fixed",top:0,right:0,bottom:0,width:"400px",background:"#070d0a",borderLeft:"1px solid #18241f",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
               <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
               {/* Header */}
-              <div style={{padding:"20px",borderBottom:"1px solid #1a1a2e",flexShrink:0}}>
+              <div style={{padding:"20px",borderBottom:"1px solid #18241f",flexShrink:0}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
                   <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{title}</p>
                   <button onClick={()=>setPanelDrill(null)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
                 </div>
                 {/* Resumo */}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
-                  <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                  <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
                     <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Total</p>
-                    <p style={{margin:0,color:totalResult>=0?"#27b589":"#c94a4a",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{totalResult>=0?"+":""}R${Math.abs(totalResult).toFixed(0)}</p>
+                    <p style={{margin:0,color:totalResult>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalResult>=0?"+":""}R${Math.abs(totalResult).toFixed(0)}</p>
                   </div>
-                  <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                  <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
                     <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Win Rate</p>
-                    <p style={{margin:0,color:winRate>=60?"#27b589":winRate>=40?"#f59e0b":"#c94a4a",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{winRate||0}%</p>
+                    <p style={{margin:0,color:winRate>=60?"#2ee6a0":winRate>=40?"#f59e0b":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{winRate||0}%</p>
                   </div>
-                  <div style={{background:"#12121e",borderRadius:"8px",padding:"10px 12px"}}>
+                  <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
                     <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Trades</p>
-                    <p style={{margin:0,color:"#ccc",fontSize:"16px",fontWeight:"800",fontFamily:"monospace"}}>{allTrades.length}</p>
+                    <p style={{margin:0,color:"#ccc",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{allTrades.length}</p>
                   </div>
                 </div>
               </div>
               {/* Filtro WIN/LOSS */}
               {isWR && (
-                <div style={{padding:"12px 20px",borderBottom:"1px solid #1a1a2e",display:"flex",gap:"8px",flexShrink:0}}>
+                <div style={{padding:"12px 20px",borderBottom:"1px solid #18241f",display:"flex",gap:"8px",flexShrink:0}}>
                   {["Todos","WIN","LOSS"].map(f=>(
                     <button key={f} onClick={()=>setPanelDrill(f==="Todos"?"winrate":f==="WIN"?"winrate-win":"winrate-loss")}
-                      style={{padding:"5px 14px",borderRadius:"20px",border:"none",cursor:"pointer",fontSize:"12px",fontWeight:"600",fontFamily:"Inter,sans-serif",
-                        background:panelDrill===("winrate"+(f==="WIN"?"-win":f==="LOSS"?"-loss":""))&&f!=="Todos"?"#2dc99a22":panelDrill==="winrate"&&f==="Todos"?"#1a1a2e22":"transparent",
-                        color:f==="WIN"?"#27b589":f==="LOSS"?"#c94a4a":"#888"}}>
+                      style={{padding:"5px 14px",borderRadius:"20px",border:"none",cursor:"pointer",fontSize:"12px",fontWeight:"600",fontFamily:"var(--font-sans)",
+                        background:panelDrill===("winrate"+(f==="WIN"?"-win":f==="LOSS"?"-loss":""))&&f!=="Todos"?"#3fe8a822":panelDrill==="winrate"&&f==="Todos"?"#18241f22":"transparent",
+                        color:f==="WIN"?"#2ee6a0":f==="LOSS"?"#ff5470":"#888"}}>
                       {f} {f==="WIN"?wins:f==="LOSS"?allTrades.length-wins:""}
                     </button>
                   ))}
@@ -891,17 +988,17 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 {tradesList
                   .filter(t => panelDrill==="winrate-win"?t.tipo==="WIN":panelDrill==="winrate-loss"?t.tipo==="LOSS":true)
                   .map((t,i)=>(
-                  <div key={i} style={{padding:"11px 14px",borderRadius:"10px",background:"#0d0d14",border:"1px solid #1a1a2e",marginBottom:"8px"}}>
+                  <div key={i} style={{padding:"11px 14px",borderRadius:"10px",background:"#0b1210",border:"1px solid #18241f",marginBottom:"8px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:t.estrategia||t.observacao?"6px":"0"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                        <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(45,201,154,0.15)":"rgba(224,86,86,0.15)",color:t.tipo==="WIN"?"#27b589":"#c94a4a"}}>{t.tipo}</span>
+                        <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(63,232,168,0.15)":"rgba(240,80,110,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                         <span style={{color:"#555",fontSize:"12px"}}>{t.mercado}</span>
                         {t.estrategia&&<span style={{color:"#0099ff",fontSize:"11px",background:"rgba(0,153,255,0.1)",padding:"2px 7px",borderRadius:"4px",cursor:"pointer"}}
                           onClick={e=>{e.stopPropagation();setPanelDrill(null);setPanelEst(t.estrategia);}}>{t.estrategia}</span>}
                       </div>
                       <div style={{textAlign:"right"}}>
-                        {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"11px",fontFamily:"monospace"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
-                        {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#27b589":"#c94a4a",fontSize:"13px",fontFamily:"monospace",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</p>}
+                        {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"11px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
+                        {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</p>}
                       </div>
                     </div>
                     {t.observacao&&<p style={{margin:0,color:"#444",fontSize:"11px",fontStyle:"italic"}}>"{t.observacao}"</p>}
@@ -1032,10 +1129,10 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
     }
   }
 
-  const cores = { critico:"#c94a4a", aviso:"#f59e0b", ok:"#27b589" };
+  const cores = { critico:"#ff5470", aviso:"#f59e0b", ok:"#2ee6a0" };
 
   return (
-    <div style={{flex:1,background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"16px",padding:"16px 18px",minWidth:"240px",marginBottom:"36px"}}>
+    <div style={{flex:1,background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"16px 18px",minWidth:"240px",marginBottom:"36px"}}>
       <p style={{margin:"0 0 12px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
         {alertas.slice(0,5).map((a,i)=>(
@@ -1134,10 +1231,10 @@ Gere um diagnóstico com:
   }
 
   return (
-    <div style={{background:"linear-gradient(135deg,rgba(0,212,170,0.05),rgba(0,153,255,0.05))",border:"1px solid #00d4aa33",borderRadius:"16px",padding:"24px"}}>
+    <div style={{background:"linear-gradient(135deg,rgba(46,230,160,0.05),rgba(0,153,255,0.05))",border:"1px solid #2ee6a033",borderRadius:"16px",padding:"24px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"12px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-          <div style={{width:"40px",height:"40px",borderRadius:"10px",background:"linear-gradient(135deg,#00d4aa,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <div style={{width:"40px",height:"40px",borderRadius:"10px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
           </div>
           <div>
@@ -1145,10 +1242,10 @@ Gere um diagnóstico com:
             <p style={{margin:0,color:"#666",fontSize:"12px"}}>Análise personalizada dos seus dados por IA</p>
           </div>
         </div>
-        <button onClick={gerarDiagnostico} disabled={loading} style={{background:loading?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#00d4aa,#00b894)",color:loading?"#555":"#000",border:"none",borderRadius:"10px",padding:"10px 20px",fontWeight:"700",fontSize:"13px",cursor:loading?"not-allowed":"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",gap:"8px",transition:"all 0.2s"}}>
+        <button onClick={gerarDiagnostico} disabled={loading} style={{background:loading?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:loading?"#555":"#000",border:"none",borderRadius:"10px",padding:"10px 20px",fontWeight:"700",fontSize:"13px",cursor:loading?"not-allowed":"pointer",fontFamily:"var(--font-sans)",display:"flex",alignItems:"center",gap:"8px",transition:"all 0.2s"}}>
           {loading ? (
             <>
-              <div style={{width:"14px",height:"14px",border:"2px solid #555",borderTop:"2px solid #00d4aa",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+              <div style={{width:"14px",height:"14px",border:"2px solid #555",borderTop:"2px solid #2ee6a0",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
               Analisando...
             </>
           ) : (
@@ -1165,13 +1262,13 @@ Gere um diagnóstico com:
       )}
 
       {erro && (
-        <div style={{padding:"14px",borderRadius:"10px",background:"rgba(255,77,77,0.08)",border:"1px solid #ff4d4d22",color:"#ff6b6b",fontSize:"13px"}}>
+        <div style={{padding:"14px",borderRadius:"10px",background:"rgba(255,84,112,0.08)",border:"1px solid #ff547022",color:"#ff7a90",fontSize:"13px"}}>
           {erro}
         </div>
       )}
 
       {diagnostico && (
-        <div style={{padding:"20px",borderRadius:"12px",background:"rgba(0,0,0,0.3)",border:"1px solid #1a1a2e"}}>
+        <div style={{padding:"20px",borderRadius:"12px",background:"rgba(0,0,0,0.3)",border:"1px solid #18241f"}}>
           <p style={{margin:0,color:"#ddd",fontSize:"14px",lineHeight:"1.8",whiteSpace:"pre-wrap"}}>{diagnostico}</p>
         </div>
       )}

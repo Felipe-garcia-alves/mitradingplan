@@ -10,6 +10,43 @@ export async function uploadTradeImage(file, userId, dateKey, tradeIdx) {
   return data.publicUrl;
 }
 
+// O bucket diario-imagens é privado: cada imagem é exibida por um link
+// assinado e temporário (1h), gerado a partir do caminho salvo no trade.
+// Os trades guardam a URL "pública" antiga só como referência do caminho.
+const assinadas = new Map(); // caminho -> url assinada (sai do cache antes de expirar)
+
+function caminhoDaImagem(url) {
+  const i = (url || "").indexOf("/diario-imagens/");
+  return i >= 0 ? decodeURIComponent(url.slice(i + "/diario-imagens/".length).split("?")[0]) : null;
+}
+
+function useImagemSegura(url) {
+  const local = !url || url.startsWith("blob:") || url.startsWith("data:");
+  const caminho = local ? null : caminhoDaImagem(url);
+  const valido = caminho ? assinadas.get(caminho) || null : null;
+  const [gerada, setGerada] = useState(null);
+  useEffect(() => {
+    if (!caminho || valido) return;
+    let vivo = true;
+    supabase.storage.from("diario-imagens").createSignedUrl(caminho, 3600).then(({ data }) => {
+      if (!data?.signedUrl) return;
+      assinadas.set(caminho, data.signedUrl);
+      setTimeout(() => assinadas.delete(caminho), 50 * 60 * 1000);
+      if (vivo) setGerada(data.signedUrl);
+    });
+    return () => { vivo = false; };
+  }, [caminho, valido]);
+  if (local) return url;
+  if (!caminho) return url; // URL de fora do bucket: usa como está
+  return valido || gerada;
+}
+
+export function ImagemSegura({ url, ...props }) {
+  const src = useImagemSegura(url);
+  if (!src) return <div style={{ ...(props.style || {}), background:"rgba(255,255,255,0.04)" }}/>;
+  return <img src={src} alt="" {...props}/>;
+}
+
 export async function deleteTradeImage(url) {
   try {
     const path = url.split("/diario-imagens/")[1];
@@ -17,13 +54,14 @@ export async function deleteTradeImage(url) {
   } catch(e) { console.error(e); }
 }
 
-export default function ImageEditor({ src, onSave, onClose }) {
+export default function ImageEditor({ src: srcOriginal, onSave, onClose }) {
+  const src = useImagemSegura(srcOriginal);
   const canvasRef = useRef(null);
   const textInputRef = useRef(null);
   const lastPos = useRef(null);
   const [drawing, setDrawing] = useState(false);
   const [tool, setTool] = useState("pen");
-  const [color, setColor] = useState("#00d4aa");
+  const [color, setColor] = useState("#2ee6a0");
   const [lineW, setLineW] = useState(2);
   const [history, setHistory] = useState([]);
   const [textMode, setTextMode] = useState(null);
@@ -35,6 +73,7 @@ export default function ImageEditor({ src, onSave, onClose }) {
     const ctx = canvas.getContext("2d");
     const img = new Image();
     img.crossOrigin = "anonymous";
+    if (!src) return;
     img.onload = () => {
       const maxW = Math.min(window.innerWidth * 0.95, 1100);
       const maxH = Math.min(window.innerHeight * 0.78, 720);
@@ -110,30 +149,30 @@ export default function ImageEditor({ src, onSave, onClose }) {
     }, "image/jpeg", 0.93);
   }
 
-  const COLORS = ["#00d4aa","#f59e0b","#ef4444","#0099ff","#a78bfa","#f472b6","#f0f0f0","#000000"];
+  const COLORS = ["#2ee6a0","#f59e0b","#ef4444","#0099ff","#a78bfa","#f472b6","#f0f0f0","#000000"];
   const SIZES  = [1.5, 3, 5, 8];
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.94)",display:"flex",flexDirection:"column",alignItems:"center",padding:"10px",overflow:"auto"}}>
-      <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap",justifyContent:"center",marginBottom:"10px",background:"#0d0d14",border:"1px solid #1a1a2e",borderRadius:"12px",padding:"10px 16px",maxWidth:"1100px",width:"100%"}}>
+      <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap",justifyContent:"center",marginBottom:"10px",background:"#0b1210",border:"1px solid #18241f",borderRadius:"12px",padding:"10px 16px",maxWidth:"1100px",width:"100%"}}>
         {[["pen","✏️"],["text","T"]].map(([t,ic])=>(
-          <button key={t} onClick={()=>setTool(t)} style={{padding:"7px 12px",borderRadius:"8px",border:"none",background:tool===t?"rgba(0,212,170,0.2)":"transparent",color:tool===t?"#00d4aa":"#888",cursor:"pointer",fontSize:t==="text"?"15px":"17px",fontWeight:t==="text"?"900":"normal"}}>{ic}</button>
+          <button key={t} onClick={()=>setTool(t)} style={{padding:"7px 12px",borderRadius:"8px",border:"none",background:tool===t?"rgba(46,230,160,0.2)":"transparent",color:tool===t?"#2ee6a0":"#888",cursor:"pointer",fontSize:t==="text"?"15px":"17px",fontWeight:t==="text"?"900":"normal"}}>{ic}</button>
         ))}
-        <div style={{width:"1px",height:"24px",background:"#2a2a3a"}}/>
+        <div style={{width:"1px",height:"24px",background:"#26352e"}}/>
         {COLORS.map(col=>(
           <div key={col} onClick={()=>setColor(col)} style={{width:"22px",height:"22px",borderRadius:"50%",background:col,cursor:"pointer",border:color===col?"3px solid #fff":"2px solid transparent",flexShrink:0}}/>
         ))}
-        <div style={{width:"1px",height:"24px",background:"#2a2a3a"}}/>
+        <div style={{width:"1px",height:"24px",background:"#26352e"}}/>
         {SIZES.map(s=>(
           <div key={s} onClick={()=>setLineW(s)} style={{width:"30px",height:"30px",borderRadius:"7px",background:lineW===s?"rgba(255,255,255,0.1)":"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",border:lineW===s?"1px solid #444":"none"}}>
             <div style={{width:s*2.2,height:s*2.2,borderRadius:"50%",background:color}}/>
           </div>
         ))}
-        <div style={{width:"1px",height:"24px",background:"#2a2a3a"}}/>
-        <button onClick={undo} style={{padding:"7px 13px",borderRadius:"8px",border:"1px solid #2a2a3a",background:"transparent",color:"#888",cursor:"pointer",fontSize:"12px",fontFamily:"Inter,sans-serif"}}>↩ Desfazer</button>
+        <div style={{width:"1px",height:"24px",background:"#26352e"}}/>
+        <button onClick={undo} style={{padding:"7px 13px",borderRadius:"8px",border:"1px solid #26352e",background:"transparent",color:"#888",cursor:"pointer",fontSize:"12px",fontFamily:"var(--font-sans)"}}>↩ Desfazer</button>
         <div style={{flex:1}}/>
-        <button onClick={handleSave} disabled={saving} style={{padding:"9px 20px",borderRadius:"9px",border:"none",background:"linear-gradient(135deg,#00d4aa,#00b894)",color:"#000",fontWeight:"700",fontSize:"13px",cursor:saving?"not-allowed":"pointer",fontFamily:"Inter,sans-serif",opacity:saving?0.7:1}}>{saving?"Salvando...":"✓ Salvar"}</button>
-        <button onClick={onClose} style={{padding:"9px 14px",borderRadius:"9px",border:"1px solid #2a2a3a",background:"transparent",color:"#888",cursor:"pointer",fontSize:"13px",fontFamily:"Inter,sans-serif"}}>✕</button>
+        <button onClick={handleSave} disabled={saving} style={{padding:"9px 20px",borderRadius:"9px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"13px",cursor:saving?"not-allowed":"pointer",fontFamily:"var(--font-sans)",opacity:saving?0.7:1}}>{saving?"Salvando...":"✓ Salvar"}</button>
+        <button onClick={onClose} style={{padding:"9px 14px",borderRadius:"9px",border:"1px solid #26352e",background:"transparent",color:"#888",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>✕</button>
       </div>
 
       <div style={{position:"relative",borderRadius:"12px",overflow:"hidden",boxShadow:"0 8px 40px rgba(0,0,0,0.6)",touchAction:"none",cursor:tool==="text"?"text":"crosshair"}}>
@@ -143,7 +182,7 @@ export default function ImageEditor({ src, onSave, onClose }) {
             <input ref={textInputRef} value={textVal} onChange={e=>setTextVal(e.target.value)}
               onKeyDown={e=>{if(e.key==="Enter")commitText();if(e.key==="Escape"){setTextMode(null);setTextVal("");}}}
               placeholder="Digite e pressione Enter"
-              style={{background:"rgba(0,0,0,0.8)",border:"1px solid "+color,borderRadius:"6px",padding:"6px 10px",color:color,fontSize:"14px",fontWeight:"700",outline:"none",fontFamily:"Inter,sans-serif",minWidth:"200px"}}/>
+              style={{background:"rgba(0,0,0,0.8)",border:"1px solid "+color,borderRadius:"6px",padding:"6px 10px",color:color,fontSize:"14px",fontWeight:"700",outline:"none",fontFamily:"var(--font-sans)",minWidth:"200px"}}/>
             <button onClick={commitText} style={{background:color,border:"none",borderRadius:"6px",padding:"6px 12px",color:"#000",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>OK</button>
           </div>
         )}
@@ -156,13 +195,13 @@ export default function ImageEditor({ src, onSave, onClose }) {
 export function ImageThumb({ url, onEdit, onDelete }) {
   const [hover, setHover] = useState(false);
   return (
-    <div style={{position:"relative",width:"80px",height:"60px",borderRadius:"8px",overflow:"hidden",flexShrink:0,cursor:"pointer",border:"1px solid #1a1a2e"}}
+    <div style={{position:"relative",width:"80px",height:"60px",borderRadius:"8px",overflow:"hidden",flexShrink:0,cursor:"pointer",border:"1px solid #18241f"}}
       onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onClick={onEdit}>
-      <img src={url} alt="trade" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+      <ImagemSegura url={url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
       {hover && (
         <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",gap:"4px",alignItems:"center",justifyContent:"center"}}>
-          <button onClick={e=>{e.stopPropagation();onEdit();}} style={{background:"rgba(0,212,170,0.25)",border:"none",borderRadius:"5px",color:"#00d4aa",cursor:"pointer",padding:"4px 7px",fontSize:"12px"}}>✏️</button>
-          <button onClick={e=>{e.stopPropagation();onDelete();}} style={{background:"rgba(255,77,77,0.25)",border:"none",borderRadius:"5px",color:"#ff4d4d",cursor:"pointer",padding:"4px 7px",fontSize:"12px"}}>✕</button>
+          <button onClick={e=>{e.stopPropagation();onEdit();}} style={{background:"rgba(46,230,160,0.25)",border:"none",borderRadius:"5px",color:"#2ee6a0",cursor:"pointer",padding:"4px 7px",fontSize:"12px"}}>✏️</button>
+          <button onClick={e=>{e.stopPropagation();onDelete();}} style={{background:"rgba(255,84,112,0.25)",border:"none",borderRadius:"5px",color:"#ff5470",cursor:"pointer",padding:"4px 7px",fontSize:"12px"}}>✕</button>
         </div>
       )}
     </div>
@@ -172,7 +211,7 @@ export function ImageThumb({ url, onEdit, onDelete }) {
 export function ImageViewer({ url, onClose }) {
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.96)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out",padding:"16px"}}>
-      <img src={url} alt="trade" style={{maxWidth:"100%",maxHeight:"95vh",borderRadius:"10px",objectFit:"contain"}}/>
+      <ImagemSegura url={url} style={{maxWidth:"100%",maxHeight:"95vh",borderRadius:"10px",objectFit:"contain"}}/>
       <button style={{position:"absolute",top:"16px",right:"16px",background:"rgba(255,255,255,0.1)",border:"none",color:"#fff",borderRadius:"50%",width:"36px",height:"36px",fontSize:"18px",cursor:"pointer"}}>×</button>
     </div>
   );
