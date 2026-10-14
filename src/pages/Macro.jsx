@@ -47,11 +47,10 @@ const minutosBRT = () => {
   const brt = new Date(Date.now() - 3 * 3600 * 1000);
   return brt.getUTCHours() * 60 + brt.getUTCMinutes();
 };
-const janelaAberta = () => minutosBRT() < 9 * 60;
-/* Tolerância: o FEF2! aceita digitação até 09:10 para você não ficar trancado de fora num dia
-   de abertura atrasada. O que entrar depois das 09:00 marca o pregão como atrasado — na medição
-   esses dias aparecem identificados em vez de se misturarem com os normais. */
-const janelaFef2 = () => minutosBRT() < 9 * 60 + 10;
+/* Nada trava: o FEF2! aceita digitação a qualquer hora e os números nunca param.
+   A janela da abertura serve só para decidir se a frase de ação faz sentido — às 15h
+   "busca regiões compradoras abaixo da abertura" seria instrução falsa, porque não há abertura. */
+const naJanela = () => minutosBRT() < 9 * 60 + 20;
 
 /* Frescor pela idade da cotação, não por etiqueta fixa: a mesma fonte entrega ao vivo,
    atrasada ou fechada conforme a hora. "fech" não é defeito — é número definitivo. */
@@ -233,7 +232,8 @@ export default function Macro() {
     const [{ data: v }, { data: ag }, { data: ao }] = await Promise.all([
       supabase.from("macro_vies").select("*").eq("data_pregao", hoje).maybeSingle(),
       supabase.from("macro_calendario").select("nome, estrelas, hora_brt, pais").eq("data", hoje).order("hora_brt"),
-      supabase.from("macro_agora").select("symbol, pct, preco_em").in("symbol", CTX_ATIVOS.map((a) => a[0])),
+      // sem filtro: serve tanto o card de contexto quanto o recálculo ao vivo das pernas
+      supabase.from("macro_agora").select("symbol, pct, preco_em"),
     ]);
     setVies(v || null);
     setAgenda(ag || []);
@@ -265,7 +265,6 @@ export default function Macro() {
       const pct = txt === "" ? null : Number(String(txt).replace(",", "."));
       const { error } = await supabase.from("macro_vies").update({
         fef2_manual: Number.isNaN(pct) ? null : pct,
-        fef2_atrasado: vies.fef2_atrasado || !janelaAberta(),
         pernas: c.pernas, resultado: c.resultado, direcao: c.direcao,
         intensidade: c.intensidade, completo: c.completo, atualizado_em: new Date().toISOString(),
       }).eq("data_pregao", vies.data_pregao);
@@ -274,8 +273,7 @@ export default function Macro() {
     }, 700);
   }
 
-  const aberta = janelaAberta();
-  const podeFef2 = janelaFef2();
+  const naAbertura = naJanela();
 
   if (carregando) return (
     <div className="mx"><style>{CSS}</style><p style={{ color: "#7f8a97" }}>Carregando leitura…</p></div>
@@ -294,14 +292,27 @@ export default function Macro() {
     </div>
   );
 
-  const cor = CORES[calc.direcao];
   const temNoticia = vies.tem_noticia;
   const alt = vies.alternativa?.pernas?.length ? vies.alternativa : null;
   const altLido = alt ? fechar(alt.pernas) : null;
-  const pos = Math.max(0, Math.min(100, (Math.max(MIN, Math.min(MAX, calc.resultado)) - MIN) / (MAX - MIN) * 100));
-  const alvo = calc.resultado < MIN ? 0 : calc.resultado > MAX ? FAIXAS.length - 1
-    : FAIXAS.findIndex((f, i) => calc.resultado >= f.de && (calc.resultado < f.ate || i === FAIXAS.length - 1));
-  const maxAbs = Math.max(1, ...calc.pernas.map((p) => Math.abs(p.contribuicao ?? 0)));
+
+  /* A tela nunca para: a mesma equação, recalculada com a cotação do momento, o dia inteiro.
+     Perna sem cotação nova cai de volta no valor registrado, para o número nunca degradar.
+     O FEF2! não tem fonte automática, então segue o valor digitado.
+     O banco continua guardando a foto das 08h55 — isto aqui é leitura de tela e não escreve nada. */
+  const mostra = fechar(calc.pernas.map((p) => {
+    if (p.entrada === "manual") return p;
+    const q = aoVivo[p.symbol];
+    if (q?.pct == null) return p;
+    const pct = Number(q.pct);
+    return { ...p, pct, contribuicao: Number((p.sinal * pct).toFixed(2)), preco_em: q.preco_em };
+  }));
+
+  const cor = CORES[mostra.direcao];
+  const pos = Math.max(0, Math.min(100, (Math.max(MIN, Math.min(MAX, mostra.resultado)) - MIN) / (MAX - MIN) * 100));
+  const alvo = mostra.resultado < MIN ? 0 : mostra.resultado > MAX ? FAIXAS.length - 1
+    : FAIXAS.findIndex((f, i) => mostra.resultado >= f.de && (mostra.resultado < f.ate || i === FAIXAS.length - 1));
+  const maxAbs = Math.max(1, ...mostra.pernas.map((p) => Math.abs(p.contribuicao ?? 0)));
 
   return (
     <div className="mx" style={{ "--cor": cor }}>
@@ -310,10 +321,11 @@ export default function Macro() {
       <header className="topo">
         <h1>Viés da Abertura</h1>
         <p>WIN e WDO · leitura dos 15 primeiros minutos</p>
-        <span className={"status " + (aberta || podeFef2 ? "on" : "off")}>
-          {aberta ? "viés em aberto · congela às 09:00"
-            : podeFef2 ? "viés congelado · FEF2! ainda aceita até 09:10"
-            : `viés congelado · registrado às ${horaBRT(vies.atualizado_em)}`}
+        <span className="status on">
+          ao vivo · {(() => {
+            const t = Object.values(aoVivo).map((q) => q?.preco_em).filter(Boolean).sort().pop();
+            return t ? "cotação de " + horaBRT(t) : "sem cotação";
+          })()}
         </span>
       </header>
 
@@ -388,23 +400,31 @@ export default function Macro() {
       <section className="card">
         <h2>Cálculo</h2>
         <div className="calc-head">
-          <span className="vnum">{sg(calc.resultado, n1)}%</span>
+          <span className="vnum">{sg(mostra.resultado, n1)}%</span>
           <div className="chips">
-            <span className="chip">{calc.direcao.toUpperCase()}</span>
-            <span className={"chip" + (calc.direcao === "lateral" ? " ghost" : "")}>
-              {calc.direcao === "lateral" ? "SEM FORÇA" : calc.intensidade.toUpperCase()}
+            <span className="chip">{mostra.direcao.toUpperCase()}</span>
+            <span className={"chip" + (mostra.direcao === "lateral" ? " ghost" : "")}>
+              {mostra.direcao === "lateral" ? "SEM FORÇA" : mostra.intensidade.toUpperCase()}
             </span>
           </div>
         </div>
-        <p className="acao">{ACAO[calc.direcao](calc.intensidade.toLowerCase())}</p>
+        {/* A frase de ação fala em "abertura" — fora da janela ela seria instrução falsa,
+            porque não existe abertura às 15h. O número e a régua continuam ao vivo de qualquer jeito. */}
+        {naAbertura ? (
+          <p className="acao">{ACAO[mostra.direcao](mostra.intensidade.toLowerCase())}</p>
+        ) : (
+          <p className="acao" style={{ color: "#9aa3b0" }}>
+            Leitura do momento — fora da janela da abertura.
+          </p>
+        )}
 
         <div className="regua-bloco">
           <div className="regua-top"><span>← negativa</span><span>lateral</span><span>positiva →</span></div>
           <div className="regua-pin">
             <div className="pin" style={{ left: pos + "%" }}>
-              <i>{(Math.abs(calc.resultado) > MAX
-                ? (calc.resultado > 0 ? "+" : "−") + n1(MAX) + "+"
-                : sg(calc.resultado, n1)) + "%"}</i>
+              <i>{(Math.abs(mostra.resultado) > MAX
+                ? (mostra.resultado > 0 ? "+" : "−") + n1(MAX) + "+"
+                : sg(mostra.resultado, n1)) + "%"}</i>
               <u />
             </div>
           </div>
@@ -424,7 +444,7 @@ export default function Macro() {
         </div>
 
         <div className="pernas">
-          {calc.pernas.map((p) => {
+          {mostra.pernas.map((p) => {
             const v = p.contribuicao ?? 0;
             const w = Math.abs(v) / maxAbs * 50;
             const c = v > 0 ? "#2fc79f" : v < 0 ? "#ef6462" : "#262639";
@@ -433,10 +453,7 @@ export default function Macro() {
             const legenda = manual
               ? (salvando === "salvando" ? "salvando…"
                 : salvando === "erro" ? "não salvou — tente de novo"
-                : salvando === "salvo" ? "salvo no log"
-                : vies.fef2_atrasado ? "digitado fora da janela · dia marcado"
-                : !podeFef2 ? "registro fechado às 09:10"
-                : !aberta ? "tolerância até 09:10 — o dia fica marcado"
+                : salvando === "salvo" ? "salvo"
                 : "você digita · TradingView")
               : p.sinal === -1 ? `invertido · cotação ${horaBRT(p.preco_em)}`
               : p.parado ? "sem negócio no pré — conta 0"
@@ -452,10 +469,8 @@ export default function Macro() {
                 </span>
                 <span className="pv">
                   {manual
-                    ? (podeFef2
-                      ? <input type="number" step="0.01" inputMode="decimal" value={fef2} placeholder="0,00"
-                               onChange={(e) => digitar(e.target.value)} aria-label={`${p.rotulo} — variação em %`} />
-                      : <span style={{ color: "#7f8a97" }}>{p.pct == null ? "—" : sg(p.pct)}</span>)
+                    ? <input type="number" step="0.01" inputMode="decimal" value={fef2} placeholder="0,00"
+                             onChange={(e) => digitar(e.target.value)} aria-label={`${p.rotulo} — variação em %`} />
                     : <span style={{ color: v > 0 ? "#2fc79f" : v < 0 ? "#ef6462" : "#636d7a" }}>
                         {p.contribuicao == null ? "—" : sg(v)}
                       </span>}
@@ -467,17 +482,17 @@ export default function Macro() {
 
         <div className="total">
           <span className="lbl">Total</span>
-          <b style={{ color: cor }}>{sg(calc.resultado, n1)}%</b>
+          <b style={{ color: cor }}>{sg(mostra.resultado, n1)}%</b>
         </div>
 
-        {calc.faltando.length > 0 ? (
+        {mostra.faltando.length > 0 ? (
           <div className="alerta">
-            <b>{calc.faltando.join(", ")}</b> sem valor. A leitura está incompleta — o número na régua não é o viés final.
+            <b>{mostra.faltando.join(", ")}</b> sem valor. A leitura está incompleta — o número na régua não é o viés final.
           </div>
-        ) : calc.parados.length > 0 ? (
+        ) : mostra.parados.length > 0 ? (
           <div className="alerta">
-            <b>{calc.parados.join(", ")}</b> sem negócio no pré-mercado. Entrou como zero e puxou o resultado
-            para o lateral. Σ de {calc.pernas.length - calc.parados.length} de {calc.pernas.length}.
+            <b>{mostra.parados.join(", ")}</b> sem negócio no pré-mercado. Entrou como zero e puxou o resultado
+            para o lateral. Σ de {mostra.pernas.length - mostra.parados.length} de {mostra.pernas.length}.
           </div>
         ) : null}
       </section>
