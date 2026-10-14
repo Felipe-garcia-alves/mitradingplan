@@ -236,7 +236,8 @@ Deno.serve(async (req) => {
     if (b.status !== "fulfilled" || b.value.q.preco == null) { falhas.push((ativos ?? [])[i]?.symbol ?? "?"); continue; }
     const { a, q } = b.value;
     precos[a.symbol] = q;
-    linhas.push({ symbol: a.symbol, preco: q.preco, preco_em: q.em, pre_market: q.preMarket });
+    linhas.push({ symbol: a.symbol, preco: q.preco, fech: (q as any).fech ?? null,
+                  preco_em: q.em, pre_market: q.preMarket });
   }
   if (linhas.length) await db.from("macro_quotes").insert(linhas);
 

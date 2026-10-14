@@ -18,6 +18,19 @@ const FAIXAS = [
 const MIN = -6, MAX = 6;
 const CORES = { positiva: "#2fc79f", negativa: "#ef6462", lateral: "#d6a73f" };
 
+/* Card "Agora": os mesmos ativos ao vivo, para o resto do dia. Números crus de propósito —
+   sem régua, sem direção, sem soma. A fórmula foi validada para 09:00–09:15 e só para isso;
+   classificar uma leitura das 14h daria a ela uma autoridade que ninguém mediu. */
+const AGORA_ATIVOS = [
+  ["^VIX", "VIX", "índice do medo"],
+  ["CL=F", "CL1!", "petróleo WTI"],
+  ["ES=F", "ES=F", "S&P 500 futuro"],
+  ["NQ=F", "NQ=F", "Nasdaq futuro"],
+  ["DX=F", "DX=F", "dólar index futuro"],
+  ["EWZ", "EWZ", "ETF Brasil"],
+  ["BRL=X", "USD/BRL", "câmbio à vista"],
+];
+
 /* Frescor pela idade da cotação, não por uma etiqueta fixa: a mesma fonte entrega
    ao vivo, atrasada ou fechada conforme a hora. "fech" não é defeito — é número definitivo. */
 function frescor(em) {
@@ -100,6 +113,11 @@ const CSS = `
 .mx .topo p{margin:3px 0 0;font-size:13px;color:var(--dim)}
 .mx .relogio{display:flex;gap:20px;text-align:right}
 .mx .relogio b{display:block;font-family:var(--mono);font-size:14px;font-weight:500;margin-top:3px}
+.mx .status{display:inline-block;margin-top:9px;font-family:var(--mono);font-size:10px;letter-spacing:.8px;
+  padding:3px 9px;border-radius:6px;border:1px solid}
+.mx .status.on{color:var(--roxo);border-color:color-mix(in srgb,var(--roxo) 38%,transparent);
+  background:color-mix(in srgb,var(--roxo) 9%,transparent)}
+.mx .status.off{color:var(--faint);border-color:var(--line)}
 .mx .veredito{border-left:2px solid var(--cor)}
 .mx .vhead{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
 .mx .vnum{font-family:var(--mono);font-weight:300;font-size:clamp(46px,10vw,62px);line-height:.9;letter-spacing:-2.5px;color:var(--cor)}
@@ -216,18 +234,22 @@ export default function Macro() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(null); // null | "salvando" | "salvo" | "erro"
   const [verAlt, setVerAlt] = useState(false);
+  const [aoVivo, setAoVivo] = useState({});
   const digitando = useRef(false);
   const timer = useRef(null);
 
   const carregar = useCallback(async () => {
     const hoje = hojeBRT();
-    const [{ data: v }, { data: ag }] = await Promise.all([
+    const [{ data: v }, { data: ag }, { data: ao }] = await Promise.all([
       supabase.from("macro_vies").select("*").eq("data_pregao", hoje).maybeSingle(),
       supabase.from("macro_calendario").select("nome, estrelas, hora_brt, pais")
         .eq("data", hoje).order("hora_brt"),
+      supabase.from("macro_agora").select("symbol, pct, preco_em")
+        .in("symbol", AGORA_ATIVOS.map((a) => a[0])),
     ]);
     setVies(v || null);
     setAgenda(ag || []);
+    setAoVivo(Object.fromEntries((ao || []).map((q) => [q.symbol, q])));
     if (!digitando.current && v?.fef2_manual != null) setFef2(String(v.fef2_manual));
     setCarregando(false);
   }, []);
@@ -304,9 +326,12 @@ export default function Macro() {
         <div>
           <h1>Viés da Abertura</h1>
           <p>WIN e WDO · leitura dos 15 primeiros minutos</p>
+          <span className={"status " + (aberta ? "on" : "off")}>
+            {aberta ? "registro aberto · fecha às 09:00" : "registro fechado — leitura da manhã"}
+          </span>
         </div>
         <div className="relogio">
-          <div><span className="lbl">Coleta</span><b style={{ color: "#8b7cf6" }}>{horaBRT(vies.atualizado_em)}</b></div>
+          <div><span className="lbl">Registro</span><b style={{ color: "#8b7cf6" }}>{horaBRT(vies.atualizado_em)}</b></div>
           <div><span className="lbl">Vale das</span><b>09:00 → 09:15</b></div>
         </div>
       </header>
@@ -405,7 +430,8 @@ export default function Macro() {
                   <Selo tipo={selo} />
                 </span>
                 {manual ? (
-                  <input type="number" step="0.01" inputMode="decimal" value={fef2} placeholder="0,00"
+                  <input type="number" step="0.01" inputMode="decimal" value={fef2}
+                         placeholder={aberta ? "0,00" : "—"}
                          disabled={!aberta} onChange={(e) => digitar(e.target.value)}
                          aria-label={`${p.rotulo} — variação em %`} />
                 ) : (
@@ -502,6 +528,33 @@ export default function Macro() {
           Leitura de ambiente. Nenhum destes entra na conta do viés.
           Futuros, não índices à vista — às 08h55 a bolsa americana está fechada e o índice à vista
           só repetiria o fechamento de ontem.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>Agora</h2>
+        <div className="ctx">
+          {AGORA_ATIVOS.map(([sym, rotulo, nome]) => {
+            const q = aoVivo[sym];
+            const v = q?.pct == null ? null : Number(q.pct);
+            return (
+              <div key={sym}>
+                <span className="ctx-top">
+                  <em>{rotulo}</em>
+                  <Selo tipo={frescor(q?.preco_em)} />
+                </span>
+                <b style={{ color: v == null ? "#636d7a" : v > 0 ? "#2fc79f" : v < 0 ? "#ef6462" : "#9aa3b0" }}>
+                  {v == null ? "—" : sg(v) + "%"}
+                </b>
+                <small>{nome}</small>
+              </div>
+            );
+          })}
+        </div>
+        <p className="nota">
+          Cotação do momento, para quando você operar fora da abertura. Números crus de propósito:
+          sem régua, sem direção e sem soma. A equação foi testada para os 15 primeiros minutos do
+          pregão e vale só lá — classificar uma leitura das 14h daria a ela uma confiança que ninguém mediu.
         </p>
       </section>
 
