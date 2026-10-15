@@ -626,9 +626,11 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
 }
 .mtp-cal-dia:hover .mtp-cal-tip { opacity: 1; }
 
-.mtp-section-label::after {
+/* título à direita, linha à esquerda */
+.mtp-section-label { justify-content: flex-end; }
+.mtp-section-label::before {
   content: ""; flex: 1; height: 1px;
-  background: linear-gradient(90deg, var(--line-strong), transparent);
+  background: linear-gradient(90deg, transparent, var(--line-strong));
 }
 
 /* Disciplina: checklist enxuto (linhas, sem cards) */

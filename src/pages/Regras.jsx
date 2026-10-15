@@ -341,7 +341,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
       </div>
 
       {/* ── Checklist + regras mais quebradas ── */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.7fr) minmax(0,1fr)",gap:"14px",alignItems:"start",marginBottom:"28px"}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.7fr) minmax(0,1fr)",gap:"14px",alignItems:"stretch",marginBottom:"28px"}}>
         {/* ── Checklist ── */}
         <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"14px",flexWrap:"wrap",marginBottom:"16px"}}>
@@ -390,36 +390,65 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           </div>
         </div>
 
-        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px"}}>
-          <p className="mtp-section-title" style={{marginBottom:"4px"}}>Regras mais quebradas</p>
-          <p style={{margin:"0 0 14px",color:"var(--text-3)",fontSize:"12px"}}>{NOMES_MES[month]} · comparado a {NOMES_MES[(month+11)%12]}</p>
-          {topQuebradas.length === 0
-            ? <p style={{margin:0,color:"var(--text-3)",fontSize:"12.5px",lineHeight:1.6}}>{Object.keys(detalhes).some(k=>k.startsWith(mesAtual)) ? "Nenhuma regra quebrada neste mês. Excelente." : "Salve a disciplina do dia para ver quais regras você mais quebra."}</p>
-            : <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
-                {topQuebradas.map((r,i)=>{
-                  const pctQ = Math.round(r.quebradas/r.total*100);
-                  const idRegra = regrasList.find(x=>x.title===r.title)?.id;
-                  const ant = quebrasAnt[idRegra];
-                  const pctAnt = ant && ant.t ? Math.round(ant.q/ant.t*100) : null;
-                  const tend = pctAnt===null ? null : pctQ - pctAnt;
-                  const cor = pctQ>=60?"#ff5470":pctQ>=30?"#f5b941":"#a3b2ab";
-                  return (
-                    <div key={i}>
-                      <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginBottom:"6px"}}>
-                        <span style={{color:"var(--text)",fontSize:"12.5px",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
-                        <span style={{color:cor,fontSize:"12px",fontWeight:800,fontFamily:"var(--font-mono)",flexShrink:0}}>{r.quebradas}×</span>
+        <div style={{display:"flex",flexDirection:"column",gap:"14px",minWidth:0}}>
+          <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px"}}>
+            <p className="mtp-section-title" style={{marginBottom:"4px"}}>Regras mais quebradas</p>
+            <p style={{margin:"0 0 14px",color:"var(--text-3)",fontSize:"12px"}}>{NOMES_MES[month]} · comparado a {NOMES_MES[(month+11)%12]}</p>
+            {topQuebradas.length === 0
+              ? <p style={{margin:0,color:"var(--text-3)",fontSize:"12.5px",lineHeight:1.6}}>{Object.keys(detalhes).some(k=>k.startsWith(mesAtual)) ? "Nenhuma regra quebrada neste mês. Excelente." : "Salve a disciplina do dia para ver quais regras você mais quebra."}</p>
+              : <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+                  {topQuebradas.map((r,i)=>{
+                    const pctQ = Math.round(r.quebradas/r.total*100);
+                    const idRegra = regrasList.find(x=>x.title===r.title)?.id;
+                    const ant = quebrasAnt[idRegra];
+                    const pctAnt = ant && ant.t ? Math.round(ant.q/ant.t*100) : null;
+                    const tend = pctAnt===null ? null : pctQ - pctAnt;
+                    const cor = pctQ>=60?"#ff5470":pctQ>=30?"#f5b941":"#a3b2ab";
+                    return (
+                      <div key={i}>
+                        <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginBottom:"6px"}}>
+                          <span style={{color:"var(--text)",fontSize:"12.5px",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
+                          <span style={{color:cor,fontSize:"12px",fontWeight:800,fontFamily:"var(--font-mono)",flexShrink:0}}>{r.quebradas}×</span>
+                        </div>
+                        <div style={{height:"4px",borderRadius:"4px",background:"var(--line)",overflow:"hidden"}}>
+                          <div style={{height:"100%",width:pctQ+"%",background:cor,borderRadius:"4px"}}/>
+                        </div>
+                        <p style={{margin:"5px 0 0",fontSize:"11px",fontFamily:"var(--font-mono)",color:"var(--text-3)"}}>
+                          {pctQ}% dos dias
+                          {tend!==null && <span style={{color:tend<0?"#3fe8a8":tend>0?"#ff7a90":"var(--text-3)"}}> · {tend<0?"↓ melhorando":tend>0?"↑ piorando":"= estável"} ({pctAnt}% antes)</span>}
+                        </p>
                       </div>
-                      <div style={{height:"4px",borderRadius:"4px",background:"var(--line)",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:pctQ+"%",background:cor,borderRadius:"4px"}}/>
+                    );
+                  })}
+                </div>}
+          </div>
+          {/* Últimos 14 dias: preenche a coluna e mostra o ritmo recente */}
+          <div style={{flex:1,background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px",display:"flex",flexDirection:"column",minHeight:"200px"}}>
+            <p className="mtp-section-title" style={{marginBottom:"4px"}}>Últimos 14 dias</p>
+            <p style={{margin:"0 0 14px",color:"var(--text-3)",fontSize:"12px"}}>disciplina registrada por dia</p>
+            {(() => {
+              const dias = [];
+              let k = today;
+              for (let i = 0; i < 14; i++) { dias.unshift(k); k = menosUmDia(k); }
+              const algum = dias.some(d => valorDia(d) !== null);
+              if (!algum) return <p style={{margin:"auto 0",color:"var(--text-3)",fontSize:"12.5px",textAlign:"center"}}>Nenhum dia registrado nas últimas duas semanas.</p>;
+              return (
+                <div style={{flex:1,display:"flex",alignItems:"flex-end",gap:"5px",minHeight:"110px"}}>
+                  {dias.map(d => {
+                    const v = valorDia(d);
+                    const dt = new Date(d+"T12:00:00");
+                    const fds = dt.getDay()===0 || dt.getDay()===6;
+                    return (
+                      <div key={d} title={formatDateFull(d)+(v!==null?" · "+v+"%":" · sem registro")} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",height:"100%",justifyContent:"flex-end"}}>
+                        <div style={{width:"100%",maxWidth:"18px",height:v!==null?Math.max(6,v)+"%":"4px",borderRadius:"4px",background:v!==null?"linear-gradient(180deg,"+corPct(v)+","+corPct(v)+"66)":"var(--line)",boxShadow:v!==null?"0 0 8px "+corPct(v)+"55":"none",opacity:fds&&v===null?0.4:1}}/>
+                        <span style={{fontSize:"9.5px",fontFamily:"var(--font-mono)",color:d===today?"var(--text)":"var(--text-3)"}}>{dt.getDate()}</span>
                       </div>
-                      <p style={{margin:"5px 0 0",fontSize:"11px",fontFamily:"var(--font-mono)",color:"var(--text-3)"}}>
-                        {pctQ}% dos dias
-                        {tend!==null && <span style={{color:tend<0?"#3fe8a8":tend>0?"#ff7a90":"var(--text-3)"}}> · {tend<0?"↓ melhorando":tend>0?"↑ piorando":"= estável"} ({pctAnt}% antes)</span>}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>}
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
 
