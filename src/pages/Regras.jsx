@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Confirmar } from "../components/ui";
+import { Confirmar, CountUp, Ring, Sparkline } from "../components/ui";
+
+const kCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px",minWidth:0,minHeight:"124px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"8px"};
+const kLabel = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
+const kValor = {margin:0,fontSize:"26px",fontWeight:"700",fontFamily:"var(--font-mono)",letterSpacing:"-0.5px",lineHeight:1.15,whiteSpace:"nowrap"};
+const kSub   = {margin:0,color:"var(--text-3)",fontSize:"11.5px"};
 
 const MONTH_NAMES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
@@ -80,7 +85,6 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const [msg,       setMsg]       = useState("");
 
   const allChecked    = regrasList.every(r => !!checked[r.id]);
-  const todayComplied = compliance[today] === true;
 
   function toggleCheck(id) { setChecked(c => ({...c,[id]:!c[id]})); }
 
@@ -144,8 +148,6 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
     await saveRegras(arr);
   }
 
-  const monthDays = Object.keys(compliance).filter(k=>monthKey(k)===monthKey(today)&&compliance[k]!==undefined);
-  const complied  = monthDays.filter(k=>compliance[k]===true).length;
   // % disciplina = baseado nos checks do dia atual
   const totalRegras = regrasList.length;
   const checkedCount = regrasList.filter(r=>!!checked[r.id]).length;
@@ -156,13 +158,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const mediaMes = monthSaved.length > 0
     ? Math.round(monthSaved.reduce((s,[,v])=>s+v,0)/monthSaved.length)
     : null;
-  const mesColor = mediaMes===null?"#555":mediaMes>=80?"#3fe8a8":mediaMes>=50?"#f59e0b":"#f0506e";
 
-  // Regras mais quebradas este mês
-  const regraCumprida = {}; // {id: {cumpridas, total}}
-  Object.values(entries||{}).forEach(entry => {
-    // não temos dados granulares por regra no histórico — usamos o checklist de hoje
-  });
   // Regras mais quebradas no mês
   const detalhes = compliance._detalhes || {};
   const regraBreaks = {}; // { ruleId: { quebradas, total } }
@@ -182,7 +178,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
 
   // Correlação disciplina × resultado
   const corrDados = Object.entries(compliance)
-    .filter(([k,v])=>typeof v==="number")
+    .filter(([,v])=>typeof v==="number")
     .map(([k,v])=>{
       const entryDia = (entries||{})[k];
       const resultado = entryDia ? (entryDia.totalB3||0)+(entryDia.totalForex||0)+(entryDia.totalCripto||0)+(entryDia.totalAmericano||0) : null;
@@ -193,6 +189,52 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const diasBaixa = corrDados.filter(d=>d.pct<80);
   const mediaResAlta = diasAlta.length>0 ? diasAlta.reduce((s,d)=>s+d.resultado,0)/diasAlta.length : null;
   const mediaResBaixa = diasBaixa.length>0 ? diasBaixa.reduce((s,d)=>s+d.resultado,0)/diasBaixa.length : null;
+  // ── Dados para os cards do topo ──
+  const corPct = v => v===null||v===undefined ? "var(--text-3)" : v>=80 ? "#3fe8a8" : v>=50 ? "#f5b941" : "#ff5470";
+  const valorDia = k => { const v = compliance[k]; return typeof v==="number" ? v : v===true ? 100 : null; };
+  const diasRegistrados = Object.keys(compliance||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+  // streak: dias seguidos (corridos) com ≥80%, contando de hoje (ou de ontem, se hoje ainda não foi salvo)
+  const menosUmDia = k => { const d = new Date(k+"T12:00:00"); d.setDate(d.getDate()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+  let streakAtual = 0;
+  { let k = valorDia(today)===null ? menosUmDia(today) : today;
+    while ((valorDia(k)??-1) >= 80) { streakAtual++; k = menosUmDia(k); } }
+  let recorde = 0;
+  { let seq = 0, prev = null;
+    diasRegistrados.forEach(k => {
+      const ok = valorDia(k) >= 80;
+      seq = ok ? (prev && menosUmDia(k)===prev && seq>0 ? seq+1 : 1) : 0;
+      if (seq > recorde) recorde = seq;
+      prev = k;
+    }); }
+  const serieMes = monthSaved.sort(([a],[b])=>a.localeCompare(b)).map(([,v])=>v);
+
+  // regras mais quebradas: mês atual vs mês anterior
+  const mesAnteriorKey = (() => { const d = new Date(year, month-1, 1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); })();
+  const taxaQuebra = (mesK) => {
+    const r = {};
+    Object.entries(detalhes).forEach(([k, marcadas]) => {
+      if (!k.startsWith(mesK)) return;
+      regrasList.forEach(rg => { if (!r[rg.id]) r[rg.id] = { q:0, t:0 }; r[rg.id].t++; if (!marcadas[rg.id]) r[rg.id].q++; });
+    });
+    return r;
+  };
+  const quebrasAnt = taxaQuebra(mesAnteriorKey);
+
+  // resultado do dia no Diário (para o calendário)
+  const resultadoDoDia = k => { const e = (entries||{})[k]; if (!e) return null; return (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0)+(e.totalAmericano||0); };
+
+  async function salvarProgresso() {
+    const updated = {...compliance};
+    updated[today] = pct;
+    const det = {...(compliance._detalhes||{})};
+    det[today] = regrasList.reduce((acc,r)=>({...acc,[r.id]:!!checked[r.id]}),{});
+    updated._detalhes = det;
+    await saveCompliance(updated);
+    setMsg("✓ Disciplina de hoje salva"); setTimeout(()=>setMsg(""),2500);
+  }
+  const salvoHoje = valorDia(today);
+  const mudouDesdeSalvo = salvoHoje !== pct;
+  const isMobile = window.innerWidth < 768;
   const inp = { width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid #26352e", borderRadius:"10px", padding:"11px 13px", color:"#f0f0f0", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)" };
 
   if (editando) {
@@ -247,263 +289,221 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   return (
     <div style={{fontFamily:"var(--font-sans)"}}>
 
-      {/* Card de frases no topo */}
-      <div style={{background:"linear-gradient(135deg,rgba(46,230,160,0.06),rgba(0,153,255,0.04))",border:"1px solid #2ee6a022",borderRadius:"14px",padding:"22px 28px",marginBottom:"24px",display:"flex",gap:"0",flexWrap:"wrap"}}>
-        <div style={{flex:1,minWidth:"220px",borderRight:"1px solid #18241f",paddingRight:"28px",marginRight:"28px",textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"13px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.9"}}>O QUE GERA RESULTADO É COMPORTAMENTO,<br/>NÃO A TÉCNICA.</p>
-        </div>
-        <div style={{flex:1,minWidth:"220px",display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
-          <p style={{margin:0,color:"#f0f0f0",fontWeight:"600",fontSize:"13px",letterSpacing:"1.5px",textTransform:"uppercase",lineHeight:"1.9"}}>O PROBLEMA NÃO É A TÉCNICA — É O CLIQUE.<br/>CADA ENTRADA EXTRA FORA DO SETUP É UMA APOSTA.</p>
-        </div>
-      </div>
-
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"8px",flexWrap:"wrap",gap:"10px"}}>
+      {/* Título + frases */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
         <div>
           <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Disciplina</h1>
+          <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"13px"}}>Seu checklist antes de operar e o histórico do seu comportamento</p>
         </div>
-        <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-          {msg && <span style={{color:"#3fe8a8",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
-          {allChecked && <span style={{background:"rgba(46,230,160,0.15)",color:"#3fe8a8",padding:"6px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"700"}}>✓ Pronto para operar</span>}
-          <button onClick={abrirNova} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"9px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>+ Nova regra</button>
-        </div>
+        <button onClick={abrirNova} style={{background:"rgba(46,230,160,0.08)",border:"1px solid #2ee6a044",borderRadius:"10px",padding:"9px 16px",color:"#2ee6a0",fontWeight:"700",fontSize:"12.5px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>+ Nova regra</button>
+      </div>
+      <div className="mtp-frases">
+        <span>O que gera resultado é comportamento, não a técnica.</span>
+        <i/>
+        <span>Cada entrada fora do setup é uma aposta.</span>
       </div>
 
-
-      <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"24px"}}>
-        {regrasList.map((rule,idx) => {
-          const ok    = !!checked[rule.id];
-          const color = rule.personal ? "#f59e0b" : "#3fe8a8";
-          return (
-            <div key={rule.id} style={{background:ok?(rule.personal?"rgba(245,158,11,0.07)":"rgba(46,230,160,0.07)"):"#0e1613",border:"1px solid "+(ok?(rule.personal?"#f59e0b44":"#2ee6a044"):"#18241f"),borderRadius:"12px",padding:"12px 14px",display:"flex",gap:"10px",alignItems:"flex-start",transition:"all 0.2s"}}>
-              <div onClick={()=>toggleCheck(rule.id)} style={{width:"22px",height:"22px",borderRadius:"6px",border:"2px solid "+(ok?color:"#64766e"),background:ok?color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",cursor:"pointer",transition:"all 0.2s"}}>
-                {ok && <span style={{color:"#000",fontSize:"12px",fontWeight:"900"}}>✓</span>}
-              </div>
-              <div style={{flex:1,cursor:"pointer"}} onClick={()=>toggleCheck(rule.id)}>
-                <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"3px",flexWrap:"wrap"}}>
-                  <RuleIcon id={rule.icon} color={ok?color:"#7a8c84"} size={16}/>
-                  <span style={{color:"#f0f0f0",fontWeight:"600",fontSize:"14px"}}>{rule.title}</span>
-                  {rule.personal && <span style={{background:"rgba(245,158,11,0.15)",color:"#f59e0b",fontSize:"10px",fontWeight:"700",padding:"2px 7px",borderRadius:"20px"}}>PESSOAL</span>}
-                </div>
-                {rule.desc && <p style={{margin:0,color:"#93a39c",fontSize:"12px",lineHeight:"1.5"}}>{rule.desc}</p>}
-              </div>
-              <div style={{display:"flex",gap:"4px",flexShrink:0,alignItems:"center"}}>
-                <button onClick={()=>mover(idx,-1)} disabled={idx===0} style={{background:"none",border:"none",color:idx===0?"#26352e":"#555",cursor:idx===0?"default":"pointer",fontSize:"13px",padding:"4px"}}>▲</button>
-                <button onClick={()=>mover(idx,1)} disabled={idx===regrasList.length-1} style={{background:"none",border:"none",color:idx===regrasList.length-1?"#26352e":"#555",cursor:idx===regrasList.length-1?"default":"pointer",fontSize:"13px",padding:"4px"}}>▼</button>
-                <button onClick={()=>abrirEditar(rule)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"6px",color:"#93a39c",cursor:"pointer",fontSize:"11px",padding:"4px 8px",fontFamily:"var(--font-sans)"}}>✏️</button>
-                <button onClick={()=>excluir(rule.id)} style={{background:"rgba(255,84,112,0.06)",border:"1px solid #ff547022",borderRadius:"6px",color:"#ff7a90",cursor:"pointer",fontSize:"11px",padding:"4px 8px",fontFamily:"var(--font-sans)"}}>✕</button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Botão salvar progresso */}
-      <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"28px"}}>
-        <button onClick={async()=>{
-          const updated={...compliance};
-          // Salva porcentagem + quais regras foram marcadas (para análise de regras mais quebradas)
-          const regraSalva = {
-            pct,
-            checked: regrasList.reduce((acc,r)=>({...acc,[r.id]:!!checked[r.id]||false}),{})
-          };
-          updated[today] = regraSalva.pct;
-          // Salva detalhes de cada regra em chave separada
-          const detalhes = {...(compliance._detalhes||{})};
-          detalhes[today] = regraSalva.checked;
-          updated._detalhes = detalhes;
-          await saveCompliance(updated);
-          setMsg("✓ Disciplina salva!"); setTimeout(()=>setMsg(""),2500);
-        }} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 24px",fontWeight:"700",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Salvar progresso de hoje
-        </button>
-        {pct !== null && (
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <div style={{width:"120px",height:"6px",borderRadius:"3px",background:"#18241f",overflow:"hidden"}}>
-              <div style={{height:"100%",width:pct+"%",background:pct>=80?"#3fe8a8":pct>=50?"#f59e0b":"#f0506e",borderRadius:"3px",transition:"width 0.3s"}}/>
-            </div>
-            <span style={{color:pct>=80?"#3fe8a8":pct>=50?"#f59e0b":"#f0506e",fontSize:"14px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{pct}%</span>
-            <span style={{color:"#6f8179",fontSize:"12px"}}>{checkedCount} de {totalRegras}</span>
+      {/* ── 4 cards ── */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:"14px",marginBottom:"28px"}}>
+        <div style={kCard}>
+          <p style={kLabel}>Hoje</p>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+            <p style={{...kValor,color:corPct(pct)}}><CountUp value={pct||0} format={v=>Math.round(v)+"%"}/></p>
+            <Ring pct={pct} color={corPct(pct)} size={50}/>
           </div>
-        )}
+          <p style={kSub}>{checkedCount} de {totalRegras} regras · {salvoHoje===null ? <span style={{color:"#f5b941"}}>não salvo</span> : mudouDesdeSalvo ? <span style={{color:"#f5b941"}}>alterado, salve de novo</span> : <span style={{color:"#3fe8a8"}}>salvo</span>}</p>
+        </div>
+        <div style={{...kCard,position:"relative",overflow:"hidden"}}>
+          {serieMes.length > 1 && (
+            <div style={{position:"absolute",left:"45%",right:0,bottom:0,height:"48px",opacity:.5,pointerEvents:"none",maskImage:"linear-gradient(90deg,transparent,#000 40%)",WebkitMaskImage:"linear-gradient(90deg,transparent,#000 40%)"}}>
+              <Sparkline values={serieMes} color={corPct(mediaMes)} width="100%" height="100%"/>
+            </div>
+          )}
+          <p style={kLabel}>Média de {MONTH_NAMES[month]}</p>
+          <p style={{...kValor,color:corPct(mediaMes),position:"relative"}}>{mediaMes!==null ? <CountUp value={mediaMes} format={v=>Math.round(v)+"%"}/> : "—"}</p>
+          <p style={{...kSub,position:"relative"}}>{monthSaved.length} dia{monthSaved.length!==1?"s":""} registrado{monthSaved.length!==1?"s":""}</p>
+        </div>
+        <div style={kCard}>
+          <p style={kLabel}>Streak</p>
+          <p style={{...kValor,color:streakAtual>=5?"#3fe8a8":streakAtual>=2?"#f5b941":"var(--text)"}}><CountUp value={streakAtual}/> <span style={{fontSize:"14px",color:"var(--text-3)",fontWeight:600}}>dia{streakAtual!==1?"s":""}</span></p>
+          <p style={kSub}>seguidos com ≥80% · recorde <b style={{color:"var(--text-2)"}}>{recorde}</b></p>
+        </div>
+        <div style={kCard}>
+          <p style={kLabel}>Disciplina × Resultado</p>
+          {corrDados.length >= 3 && mediaResAlta !== null ? <>
+            <p style={{...kValor,fontSize:"20px",color:mediaResAlta>=0?"#3fe8a8":"#ff5470"}}>{mediaResAlta>=0?"+":"-"}R$ {Math.abs(mediaResAlta).toLocaleString("pt-BR",{maximumFractionDigits:0})}<span style={{fontSize:"12px",color:"var(--text-3)"}}>/dia</span></p>
+            <p style={kSub}>com ≥80%{mediaResBaixa!==null && <> · abaixo: <b style={{color:mediaResBaixa>=0?"#3fe8a8":"#ff5470"}}>{mediaResBaixa>=0?"+":"-"}R$ {Math.abs(mediaResBaixa).toLocaleString("pt-BR",{maximumFractionDigits:0})}</b></>}</p>
+          </> : <>
+            <p style={{...kValor,color:"var(--text-3)"}}>—</p>
+            <p style={kSub}>aparece após 3 dias com disciplina e operações</p>
+          </>}
+        </div>
       </div>
 
-      {/* ── STATS CARDS ── */}
-      {(mediaMes !== null || corrDados.length >= 2) && (
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"12px",marginBottom:"28px"}}>
-          {/* Média do mês */}
-          {mediaMes !== null && (
-            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"18px 20px"}}>
-              <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Média do Mês</p>
-              <p style={{margin:"0 0 2px",color:mesColor,fontSize:"28px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{mediaMes}%</p>
-              <div style={{height:"4px",borderRadius:"2px",background:"#18241f",marginTop:"8px",overflow:"hidden"}}>
-                <div style={{height:"100%",width:mediaMes+"%",background:mesColor,borderRadius:"2px",transition:"width 0.5s"}}/>
-              </div>
-              <p style={{margin:"6px 0 0",color:"#6f8179",fontSize:"11px"}}>{monthSaved.length} dia{monthSaved.length!==1?"s":""} registrados</p>
-            </div>
-          )}
-          {/* Regras mais quebradas */}
-          {topQuebradas.length > 0 && (
-            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"18px 20px"}}>
-              <p style={{margin:"0 0 12px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Regras Mais Quebradas — {MONTH_NAMES[month]}</p>
-              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-                {topQuebradas.map((r,i)=>{
-                  const pctQ = Math.round((r.quebradas/r.total)*100);
-                  const cor = pctQ>=60?"#f0506e":pctQ>=30?"#f59e0b":"#888";
-                  return (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                      <div style={{flex:1,overflow:"hidden"}}>
-                        <p style={{margin:0,color:"#ccc",fontSize:"12px",fontWeight:"600",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.title}</p>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-                        <div style={{width:"60px",height:"4px",borderRadius:"2px",background:"#18241f",overflow:"hidden"}}>
-                          <div style={{height:"100%",width:pctQ+"%",background:cor,borderRadius:"2px"}}/>
-                        </div>
-                        <span style={{color:cor,fontSize:"11px",fontWeight:"700",minWidth:"28px",textAlign:"right"}}>{r.quebradas}×</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <p style={{margin:"10px 0 0",color:"#64766e",fontSize:"10px"}}>baseado nos dias já registrados</p>
-            </div>
-          )}
-          {/* Correlação disciplina × resultado */}
-          {corrDados.length >= 3 && mediaResAlta !== null && (
-            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"18px 20px"}}>
-              <p style={{margin:"0 0 10px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Disciplina × Resultado</p>
-              <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{fontSize:"12px",color:"#86978f"}}>≥80% disciplina</span>
-                  <span style={{fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)",color:mediaResAlta>=0?"#3fe8a8":"#f0506e"}}>{mediaResAlta>=0?"+":""}R$ {mediaResAlta.toFixed(0)}/dia</span>
-                </div>
-                {mediaResBaixa !== null && (
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:"12px",color:"#86978f"}}>&lt;80% disciplina</span>
-                    <span style={{fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)",color:mediaResBaixa>=0?"#3fe8a8":"#f0506e"}}>{mediaResBaixa>=0?"+":""}R$ {mediaResBaixa.toFixed(0)}/dia</span>
+      {/* ── Checklist ── */}
+      <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px",marginBottom:"28px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"14px",flexWrap:"wrap",marginBottom:"16px"}}>
+          <div>
+            <p className="mtp-section-title">Checklist de hoje</p>
+            <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12px"}}>Marque o que você cumpriu e salve no fim do dia</p>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
+            {allChecked && <span className="mtp-pronto">✓ Pronto para operar</span>}
+            {msg && <span style={{color:"#3fe8a8",fontSize:"12.5px",fontWeight:"600"}}>{msg}</span>}
+            <button onClick={salvarProgresso} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"800",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+              {salvoHoje===null ? "Salvar disciplina de hoje" : "Atualizar disciplina de hoje"}
+            </button>
+          </div>
+        </div>
+        <div style={{height:"6px",borderRadius:"6px",background:"var(--line)",overflow:"hidden",marginBottom:"16px"}}>
+          <div style={{height:"100%",width:(pct||0)+"%",borderRadius:"6px",background:"linear-gradient(90deg,"+corPct(pct)+"77,"+corPct(pct)+")",boxShadow:"0 0 10px "+corPct(pct),transition:"width .4s var(--ease)"}}/>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:"10px"}}>
+          {regrasList.map((rule,idx) => {
+            const ok = !!checked[rule.id];
+            const cor = rule.personal ? "#f5b941" : "#3fe8a8";
+            return (
+              <div key={rule.id} className={"mtp-regra"+(ok?" ok":"")} style={{"--rc":cor}} onClick={()=>toggleCheck(rule.id)}>
+                <span className="mtp-regra-check">{ok && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#04110b" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
+                    <RuleIcon id={rule.icon} color={ok?cor:"#93a39c"} size={15}/>
+                    <span style={{color:"var(--text)",fontWeight:"650",fontSize:"13.5px"}}>{rule.title}</span>
+                    {rule.personal && <span style={{background:"rgba(245,185,65,0.12)",color:"#f5b941",fontSize:"9.5px",fontWeight:"800",padding:"2px 7px",borderRadius:"20px",letterSpacing:".5px"}}>PESSOAL</span>}
                   </div>
-                )}
-                <div style={{height:"1px",background:"#18241f",margin:"2px 0"}}/>
-                <p style={{margin:0,color:"#6f8179",fontSize:"10px",lineHeight:"1.5"}}>
-                  {mediaResAlta >= (mediaResBaixa||0)+50
-                    ? "✓ Disciplina impacta positivamente seus resultados"
-                    : "Ainda sem correlação clara — continue registrando"}
-                </p>
+                  {rule.desc && <p style={{margin:"4px 0 0",color:"var(--text-2)",fontSize:"12.5px",lineHeight:1.5}}>{rule.desc}</p>}
+                </div>
+                <div className="mtp-regra-acoes" onClick={e=>e.stopPropagation()}>
+                  <button onClick={()=>mover(idx,-1)} disabled={idx===0} title="Subir">▲</button>
+                  <button onClick={()=>mover(idx,1)} disabled={idx===regrasList.length-1} title="Descer">▼</button>
+                  <button onClick={()=>abrirEditar(rule)} title="Editar">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button onClick={()=>excluir(rule.id)} title="Excluir" className="del">✕</button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      <div style={{borderTop:"1px solid #18241f",paddingTop:"24px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
-          <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-              <h3 className="mtp-section-title" style={{fontSize:"15px"}}>Calendário</h3>
-              <div style={{display:"flex",alignItems:"center",gap:"6px",marginLeft:"6px"}}>
-                <button onClick={()=>mudarMes(-1)} aria-label="Mês anterior" style={navBtn}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <span style={{minWidth:"130px",textAlign:"center",color:"var(--text)",fontSize:"14px",fontWeight:"700"}}>{NOMES_MES[calMes.mes]} {calMes.ano}</span>
-                <button onClick={()=>mudarMes(1)} disabled={noMesAtual} aria-label="Próximo mês" style={{...navBtn,opacity:noMesAtual?0.35:1,cursor:noMesAtual?"default":"pointer"}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
-                {!noMesAtual && <button onClick={()=>setCalMes({ano:year,mes:month})} className="mtp-ctx-ghost" style={{padding:"6px 10px"}}>Mês atual</button>}
-              </div>
+      {/* ── Calendário (mapa de calor) + regras mais quebradas ── */}
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,2.2fr) minmax(0,1fr)",gap:"14px",alignItems:"start"}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap",marginBottom:"8px"}}>
+            <p className="mtp-section-title">Calendário</p>
+            <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+              <button onClick={()=>mudarMes(-1)} aria-label="Mês anterior" style={navBtn}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span style={{minWidth:"124px",textAlign:"center",color:"var(--text)",fontSize:"13.5px",fontWeight:"700"}}>{NOMES_MES[calMes.mes]} {calMes.ano}</span>
+              <button onClick={()=>mudarMes(1)} disabled={noMesAtual} aria-label="Próximo mês" style={{...navBtn,opacity:noMesAtual?0.35:1,cursor:noMesAtual?"default":"pointer"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              {!noMesAtual && <button onClick={()=>setCalMes({ano:year,mes:month})} className="mtp-ctx-ghost" style={{padding:"6px 10px"}}>Mês atual</button>}
             </div>
-            <p style={{margin:0,color:"var(--text-3)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>
-              {valsCal.length ? valsCal.length+" dia"+(valsCal.length===1?"":"s")+" registrado"+(valsCal.length===1?"":"s")+" · média " : "Nenhum registro neste mês"}
-              {mediaCal!==null && <b style={{color:mediaCal>=80?"#3fe8a8":mediaCal>=50?"#f5b941":"#ff5470"}}>{mediaCal}%</b>}
-              {valsCal.length > 0 && (
-                <button onClick={()=>setConfirmacao({
-                    titulo:"Apagar os registros de "+NOMES_MES[calMes.mes]+" "+calMes.ano+"?",
-                    texto:"Os "+valsCal.length+" dia"+(valsCal.length===1?"":"s")+" registrados neste mês serão apagados. A Streak de Disciplina e as médias são recalculadas. Não dá para desfazer.",
-                    botao:"Apagar mês",
-                    acao:async()=>{
-                      const updated={...compliance};
-                      const det={...(updated._detalhes||{})};
-                      Object.keys(updated).filter(k=>k.startsWith(chaveCal+"-")).forEach(k=>{ delete updated[k]; delete det[k]; });
-                      updated._detalhes=det;
-                      await saveCompliance(updated);
-                    }})}
-                  className="mtp-ctx-ghost" style={{marginLeft:"10px",padding:"2px 8px",color:"#ff7a90",fontFamily:"var(--font-sans)",fontSize:"11.5px"}}>
-                  apagar registros deste mês
-                </button>
-              )}
-            </p>
-            {mesesComRegistro.length > 1 && (
-              <div style={{display:"flex",gap:"6px",flexWrap:"wrap",alignItems:"center"}}>
-                <span style={{color:"var(--text-3)",fontSize:"11px"}}>Meses com registro:</span>
-                {mesesComRegistro.map(m=>{
-                  const [a,mm] = m.split("-").map(Number);
-                  const ativo = a===calMes.ano && mm-1===calMes.mes;
-                  return <button key={m} onClick={()=>setCalMes({ano:a,mes:mm-1})} className={"mtp-pill"+(ativo?" active":"")} style={{padding:"3px 10px",fontSize:"11.5px"}}>{MONTH_NAMES[mm-1]} {String(a).slice(2)}</button>;
-                })}
-              </div>
-            )}
           </div>
-          {pct !== null && (
-            <div style={{textAlign:"right"}}>
-              <p style={{margin:"0 0 2px",color:"#93a39c",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Hoje — progresso</p>
-              <p style={{margin:0,color:pct>=80?"#3fe8a8":pct>=50?"#f59e0b":"#f0506e",fontSize:"24px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{pct}%</p>
-              <p style={{margin:"2px 0 0",color:"#6f8179",fontSize:"11px"}}>{checkedCount} de {totalRegras} regras</p>
-            </div>
-          )}
-        </div>
-
-        
-        <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid #18241f",borderRadius:"14px",padding:"16px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px",marginBottom:"8px"}}>
-            {["Dom","Seg","Ter","Qua","Qui","Sex","Sab"].map(d=>(
-              <div key={d} style={{textAlign:"center",color:"#6f8179",fontSize:"10px",fontWeight:"600",padding:"4px 0"}}>{d}</div>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap",marginBottom:"14px"}}>
+            <span style={{color:"var(--text-3)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>
+              {valsCal.length ? valsCal.length+" dia"+(valsCal.length===1?"":"s")+" · média " : "Nenhum registro neste mês"}
+              {mediaCal!==null && <b style={{color:corPct(mediaCal)}}>{mediaCal}%</b>}
+            </span>
+            {valsCal.length > 0 && (
+              <button onClick={()=>setConfirmacao({
+                  titulo:"Apagar os registros de "+NOMES_MES[calMes.mes]+" "+calMes.ano+"?",
+                  texto:"Os "+valsCal.length+" dia"+(valsCal.length===1?"":"s")+" registrados neste mês serão apagados. A streak e as médias são recalculadas. Não dá para desfazer.",
+                  botao:"Apagar mês",
+                  acao:async()=>{
+                    const updated={...compliance};
+                    const det={...(updated._detalhes||{})};
+                    Object.keys(updated).filter(k=>k.startsWith(chaveCal+"-")).forEach(k=>{ delete updated[k]; delete det[k]; });
+                    updated._detalhes=det;
+                    await saveCompliance(updated);
+                  }})}
+                className="mtp-ctx-ghost" style={{padding:"2px 8px",color:"#ff7a90",fontSize:"11.5px"}}>apagar mês</button>
+            )}
+            {mesesComRegistro.length > 1 && mesesComRegistro.map(m=>{
+              const [a,mm] = m.split("-").map(Number);
+              const ativo = a===calMes.ano && mm-1===calMes.mes;
+              return <button key={m} onClick={()=>setCalMes({ano:a,mes:mm-1})} className={"mtp-pill"+(ativo?" active":"")} style={{padding:"2px 9px",fontSize:"11px"}}>{MONTH_NAMES[mm-1]} {String(a).slice(2)}</button>;
+            })}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px",marginBottom:"6px"}}>
+            {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
+              <div key={d} style={{textAlign:"center",color:"var(--text-3)",fontSize:"10px",fontWeight:"700",letterSpacing:".5px"}}>{d}</div>
             ))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px"}}>
             {Array.from({length:firstDay}).map((_,i)=><div key={"e"+i}/>)}
             {Array.from({length:daysInMon}).map((_,i)=>{
-              const d=i+1,k=calKey(d),isToday=k===today,future=k>today;
-              const status=compliance[k];
-              const hasPct = typeof status === "number";
-              const isOk   = status === true || (hasPct && status >= 80);
-              const isMid  = hasPct && status >= 50 && status < 80;
-              const isBad  = hasPct && status < 50;
-              const bg    = future?"transparent":isOk?"rgba(46,230,160,0.12)":isMid?"rgba(245,158,11,0.12)":isBad?"rgba(255,84,112,0.12)":"rgba(255,255,255,0.02)";
-              const border= isToday?"2px solid #2ee6a055":"1px solid "+(isOk?"#2ee6a022":isMid?"#f59e0b22":isBad?"#ff547022":"#18241f");
-              const accentColor = isOk?"#3fe8a8":isMid?"#f59e0b":isBad?"#f0506e":"#555";
-              const dayEntry = (entries||{})[k];
-              const emocoes = dayEntry?.emocoes || [];
-              const EMOCAO_COLORS = {"Focado":"#3fe8a8","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+              const d=i+1, k=calKey(d), isToday=k===today, future=k>today;
+              const v = valorDia(k);
+              const cor = v===null ? null : corPct(v);
+              const alpha = v===null ? 0 : 0.10 + (v/100)*0.22;
+              const bg = future ? "transparent" : v===null ? "rgba(255,255,255,0.02)" : (v>=80 ? "rgba(46,230,160,"+alpha+")" : v>=50 ? "rgba(245,185,65,"+alpha+")" : "rgba(255,84,112,"+(0.12+(1-v/100)*0.15)+")");
+              const res = resultadoDoDia(k);
+              const quebradas = v!==null && detalhes[k] ? regrasList.filter(r=>!detalhes[k][r.id]).map(r=>r.title) : [];
               return (
-                <div key={d} style={{minHeight:"80px",borderRadius:"10px",background:bg,border,cursor:(!future&&status!==undefined)?"pointer":"default",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
-                  title={!future&&status!==undefined?"Clique para apagar o registro deste dia":undefined}
+                <div key={d} className={"mtp-cal-dia"+(v!==null?" tem":"")}
+                  style={{background:bg,border:isToday?"1.5px solid #2ee6a088":"1px solid "+(v!==null?cor+"33":"var(--line)"),opacity:future?0.35:1}}
                   onClick={()=>pedirApagarDia(k)}>
-                  {/* Número do dia — topo esquerda */}
-                  <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#26352e":"#ccc",lineHeight:1}}>{d}</span>
-                  {/* Emoções — centro direita */}
-                  {!future && emocoes.length > 0 && (
-                    <div style={{position:"absolute",right:"7px",top:"50%",transform:"translateY(-50%)",display:"flex",flexDirection:"column",gap:"3px",alignItems:"flex-end"}}>
-                      {emocoes.slice(0,2).map(em=>(
-                        <span key={em} style={{fontSize:"10px",fontWeight:"600",color:EMOCAO_COLORS[em]||"#888",lineHeight:1.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textAlign:"right"}}>{em}</span>
-                      ))}
+                  <span style={{fontSize:"13px",fontWeight:isToday?800:600,color:isToday?"#fff":"var(--text-2)"}}>{d}</span>
+                  {v!==null && <span style={{fontSize:"12px",fontWeight:800,fontFamily:"var(--font-mono)",color:cor}}>{v}%</span>}
+                  {res!==null && res!==0 && <span style={{fontSize:"10px",fontFamily:"var(--font-mono)",color:res>=0?"#3fe8a8":"#ff7a90",opacity:.85}}>{res>=0?"+":"-"}{Math.abs(res)>=1000?(Math.abs(res)/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+"k":Math.round(Math.abs(res))}</span>}
+                  {v!==null && (
+                    <div className="mtp-cal-tip">
+                      <b style={{color:"var(--text)"}}>{formatDateFull(k)}</b> · <span style={{color:cor}}>{v}% disciplina</span>
+                      {res!==null && <div style={{color:res>=0?"#3fe8a8":"#ff7a90",fontFamily:"var(--font-mono)"}}>{res>=0?"+":"-"}R$ {Math.abs(res).toLocaleString("pt-BR",{minimumFractionDigits:2})} no dia</div>}
+                      {quebradas.length > 0
+                        ? <div style={{marginTop:"4px"}}><span style={{color:"var(--text-3)"}}>Quebrou:</span>{quebradas.slice(0,4).map(t=><div key={t} style={{color:"#ffb3c0"}}>• {t}</div>)}{quebradas.length>4 && <div style={{color:"var(--text-3)"}}>+{quebradas.length-4}</div>}</div>
+                        : detalhes[k] ? <div style={{color:"#3fe8a8",marginTop:"4px"}}>Cumpriu todas as regras</div> : null}
+                      <div style={{color:"var(--text-3)",marginTop:"4px",fontSize:"10.5px"}}>clique para apagar o registro</div>
                     </div>
-                  )}
-                  {/* Porcentagem — inferior esquerda */}
-                  {(hasPct || status===true) && (
-                    <span style={{position:"absolute",bottom:"7px",left:"8px",fontSize:"14px",fontWeight:"800",fontFamily:"var(--font-mono)",color:accentColor,lineHeight:1}}>
-                      {hasPct ? status+"%" : "100%"}
-                    </span>
                   )}
                 </div>
               );
             })}
           </div>
+          <p style={{margin:"12px 0 0",color:"var(--text-3)",fontSize:"11px",display:"flex",gap:"12px",flexWrap:"wrap"}}>
+            <span><i className="mtp-dot" style={{background:"#3fe8a8"}}/> ≥80%</span>
+            <span><i className="mtp-dot" style={{background:"#f5b941"}}/> 50–79%</span>
+            <span><i className="mtp-dot" style={{background:"#ff5470"}}/> &lt;50%</span>
+            <span>· cor mais forte = mais disciplina · valor embaixo = resultado do dia</span>
+          </p>
         </div>
-        <p style={{margin:"10px 0 0",color:"#6f8179",fontSize:"11px",textAlign:"center"}}>
-          <span style={{color:"#2ee6a066"}}>■</span> ≥80% &nbsp;
-          <span style={{color:"#f59e0b66"}}>■</span> 50–79% &nbsp;
-          <span style={{color:"#ff547066"}}>■</span> &lt;50% &nbsp;
-          · Salve o progresso para registrar
-        </p>
+
+        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px"}}>
+          <p className="mtp-section-title" style={{marginBottom:"4px"}}>Regras mais quebradas</p>
+          <p style={{margin:"0 0 14px",color:"var(--text-3)",fontSize:"12px"}}>{NOMES_MES[month]} · comparado a {NOMES_MES[(month+11)%12]}</p>
+          {topQuebradas.length === 0
+            ? <p style={{margin:0,color:"var(--text-3)",fontSize:"12.5px",lineHeight:1.6}}>{Object.keys(detalhes).some(k=>k.startsWith(mesAtual)) ? "Nenhuma regra quebrada neste mês. Excelente." : "Salve a disciplina do dia para ver quais regras você mais quebra."}</p>
+            : <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+                {topQuebradas.map((r,i)=>{
+                  const pctQ = Math.round(r.quebradas/r.total*100);
+                  const idRegra = regrasList.find(x=>x.title===r.title)?.id;
+                  const ant = quebrasAnt[idRegra];
+                  const pctAnt = ant && ant.t ? Math.round(ant.q/ant.t*100) : null;
+                  const tend = pctAnt===null ? null : pctQ - pctAnt;
+                  const cor = pctQ>=60?"#ff5470":pctQ>=30?"#f5b941":"#a3b2ab";
+                  return (
+                    <div key={i}>
+                      <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginBottom:"6px"}}>
+                        <span style={{color:"var(--text)",fontSize:"12.5px",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
+                        <span style={{color:cor,fontSize:"12px",fontWeight:800,fontFamily:"var(--font-mono)",flexShrink:0}}>{r.quebradas}×</span>
+                      </div>
+                      <div style={{height:"4px",borderRadius:"4px",background:"var(--line)",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:pctQ+"%",background:cor,borderRadius:"4px"}}/>
+                      </div>
+                      <p style={{margin:"5px 0 0",fontSize:"11px",fontFamily:"var(--font-mono)",color:"var(--text-3)"}}>
+                        {pctQ}% dos dias
+                        {tend!==null && <span style={{color:tend<0?"#3fe8a8":tend>0?"#ff7a90":"var(--text-3)"}}> · {tend<0?"↓ melhorando":tend>0?"↑ piorando":"= estável"} ({pctAnt}% antes)</span>}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>}
+        </div>
       </div>
       {confirmacao && (
         <Confirmar titulo={confirmacao.titulo} texto={confirmacao.texto} botao={confirmacao.botao}
