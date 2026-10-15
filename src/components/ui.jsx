@@ -191,7 +191,7 @@ export function CapitalChart({ points, height=210 }) {
 }
 
 // ── Resultado diário em barras, com médias e tooltip ─────────────
-export function DailyBars({ bars, height=210 }) {
+export function DailyBars({ bars, height=210, onBarClick }) {
   const [ref, w] = useWidth();
   const [hover, setHover] = useState(null);
   const id = useId();
@@ -225,7 +225,7 @@ export function DailyBars({ bars, height=210 }) {
   return (
     <div ref={ref} style={{position:"relative",width:"100%",height:H}}>
       {w>0 && (
-        <svg width={w} height={H} style={{display:"block"}} onMouseMove={onMove} onMouseLeave={()=>setHover(null)}>
+        <svg width={w} height={H} style={{display:"block",cursor:onBarClick&&hover!=null?"pointer":"default"}} onMouseMove={onMove} onMouseLeave={()=>setHover(null)} onClick={e=>{ if(!onBarClick) return; const r=e.currentTarget.getBoundingClientRect(); const i=Math.floor((e.clientX-r.left-PL)/slot); if(i>=0&&i<n) onBarClick(bars[i]); }}>
           <defs>
             <linearGradient id={id+"p"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3fe8a8"/><stop offset="100%" stopColor="#1fb57e"/></linearGradient>
             <linearGradient id={id+"n"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#d9435d"/><stop offset="100%" stopColor="#ff5470"/></linearGradient>

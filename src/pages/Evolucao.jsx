@@ -1,5 +1,6 @@
 // Mi Trading Plan - Evolucao
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { CountUp, Ring, Sparkline, CapitalChart, DailyBars } from "../components/ui";
 import { listaCarteiras, bancaCarteira } from "../lib/banca";
 import { contaDoTrade, entradaFiltrada } from "../lib/contas";
@@ -66,13 +67,142 @@ function DateFilter({ inicio, fim, onChange }) {
   );
 }
 
+// ── Painel lateral de operações ──────────────────────────────────
+// Todo clique de detalhe da página abre aqui. Fecha com Esc, clique fora ou ×,
+// sempre com animação de saída; vai por portal para o body não herdar transform.
+const MOEDA_M = { B3:"R$", Forex:"$", Cripto:"$", Americano:"$" };
+function fmtDiaLongo(d) { return parseDate(d).toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"}); }
+function fmtDiaCurto(d) { return d.slice(8)+"/"+d.slice(5,7); }
+function fmtRes(v, moeda="R$") { return (v>=0?"+":"-")+moeda+" "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function OpItem({ t, i, onEstrategia, comData }) {
+  const win = t.tipo==="WIN";
+  const ativo = ativoDoTrade(t);
+  return (
+    <div className="mtp-drawer-item" style={{animationDelay:Math.min(i,14)*28+"ms",padding:"11px 14px",borderRadius:"12px",background:"rgba(255,255,255,0.018)",border:"1px solid var(--line)",borderLeft:"3px solid "+(win?"var(--pos)":"var(--neg)"),marginBottom:"8px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"10px"}}>
+        <div style={{minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:"7px",flexWrap:"wrap"}}>
+            <span style={{padding:"2px 7px",borderRadius:"5px",fontSize:"10.5px",fontWeight:"800",background:win?"rgba(46,230,160,0.14)":"rgba(255,84,112,0.14)",color:win?"var(--pos)":"var(--neg)"}}>{t.tipo}</span>
+            {ativo!==SEM_ATIVO && <span style={{color:"var(--text)",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{ativo}</span>}
+            <span style={{color:"var(--text-3)",fontSize:"11.5px"}}>{t.mercado}{t.horario?" · "+t.horario.slice(0,5):""}{comData?" · "+fmtDiaCurto(t._date):""}</span>
+          </div>
+          {t.estrategia && (
+            <button onClick={()=>onEstrategia(t.estrategia)} className="mtp-chip-link" title="Ver todas desta estratégia">{t.estrategia} ›</button>
+          )}
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          {t.resultado!=null && <p style={{margin:0,color:t.resultado>=0?"var(--pos)":"var(--neg)",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>{fmtRes(t.resultado, MOEDA_M[t.mercado])}</p>}
+          {t.pontos!=null && <p style={{margin:"1px 0 0",color:"var(--text-3)",fontSize:"11px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
+        </div>
+      </div>
+      {t.observacao && <p style={{margin:"7px 0 0",color:"var(--text-3)",fontSize:"12px",fontStyle:"italic",lineHeight:1.5}}>"{t.observacao}"</p>}
+    </div>
+  );
+}
+
+function PainelOps({ painel, onClose, onEstrategia }) {
+  const [saindo, setSaindo] = useState(false);
+  const [filtro, setFiltro] = useState("todos");
+  const [ordem,  setOrdem]  = useState("data");
+  const fechar = useCallback(() => { setSaindo(true); setTimeout(onClose, 220); }, [onClose]);
+
+  useEffect(() => { setFiltro(painel.filtro || "todos"); setOrdem(painel.ordem || "data"); }, [painel]);
+  useEffect(() => {
+    const onKey = e => { if (e.key === "Escape") fechar(); };
+    window.addEventListener("keydown", onKey);
+    const ov = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ov; };
+  }, [fechar]);
+
+  const ops = painel.trades;
+  const nWin = ops.filter(t=>t.tipo==="WIN").length;
+  const total = ops.reduce((s,t)=>s+(t.resultado||0),0);
+  const pts = ops.reduce((s,t)=>s+(t.pontos||0),0);
+  const acerto = ops.length ? Math.round(nWin/ops.length*100) : null;
+  const visiveis = ops.filter(t => filtro==="todos" || (filtro==="win" ? t.tipo==="WIN" : t.tipo!=="WIN"));
+  const ordenadas = ordem==="data"
+    ? [...visiveis].sort((a,b)=>b._date.localeCompare(a._date) || (b.horario||"").localeCompare(a.horario||""))
+    : [...visiveis].sort((a,b)=>ordem==="maior" ? (b.resultado||0)-(a.resultado||0) : (a.resultado||0)-(b.resultado||0));
+  const grupos = [];
+  if (ordem==="data") ordenadas.forEach(t => {
+    const g = grupos[grupos.length-1];
+    if (g && g.d===t._date) g.ops.push(t); else grupos.push({ d:t._date, ops:[t] });
+  });
+  const cor = painel.cor || "var(--accent)";
+  const seg = (valor, atual, set, rot, corTxt) => (
+    <button key={valor} onClick={()=>set(valor)} className={"mtp-seg"+(atual===valor?" ativo":"")} style={corTxt&&atual===valor?{color:corTxt}:undefined}>{rot}</button>
+  );
+  let idx = 0;
+
+  return createPortal(
+    <>
+      <div className={"mtp-drawer-backdrop"+(saindo?" saindo":"")} onClick={fechar}/>
+      <aside className={"mtp-drawer"+(saindo?" saindo":"")} role="dialog" aria-label={painel.titulo}>
+        <div style={{padding:"20px 20px 16px",borderBottom:"1px solid var(--line)",flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",marginBottom:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",minWidth:0}}>
+              {painel.tag && <div style={{padding:"5px 9px",borderRadius:"7px",background:cor+"22",border:"1px solid "+cor+"44",flexShrink:0}}><span style={{color:cor,fontSize:"11.5px",fontWeight:"800"}}>{painel.tag}</span></div>}
+              <div style={{minWidth:0}}>
+                <p style={{margin:0,color:"var(--text)",fontSize:"16px",fontWeight:"700",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{painel.titulo}</p>
+                {painel.sub && <p style={{margin:"3px 0 0",color:"var(--text-3)",fontSize:"12px"}}>{painel.sub}</p>}
+              </div>
+            </div>
+            <button onClick={fechar} className="mtp-drawer-close" aria-label="Fechar">×</button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
+            {[
+              ["Resultado", fmtRes(total).replace(",00",""), total>=0?"var(--pos)":"var(--neg)"],
+              ["Acerto", acerto===null?"—":acerto+"%", acerto===null?"var(--text-3)":acerto>=60?"var(--pos)":acerto>=40?"var(--warn)":"var(--neg)"],
+              ["Pontos", (pts>=0?"+":"")+pts.toFixed(0), "var(--text-2)"],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{background:"rgba(255,255,255,0.025)",border:"1px solid var(--line)",borderRadius:"10px",padding:"10px 12px",minWidth:0}}>
+                <p style={{margin:"0 0 3px",color:"var(--text-3)",fontSize:"10px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"0.8px"}}>{l}</p>
+                <p style={{margin:0,color:c,fontSize:"14.5px",fontWeight:"800",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{padding:"10px 20px",borderBottom:"1px solid var(--line)",display:"flex",justifyContent:"space-between",gap:"8px",flexWrap:"wrap",flexShrink:0}}>
+          <div className="mtp-segs">
+            {seg("todos", filtro, setFiltro, "Todos "+ops.length)}
+            {seg("win",   filtro, setFiltro, "WIN "+nWin, "var(--pos)")}
+            {seg("loss",  filtro, setFiltro, "LOSS "+(ops.length-nWin), "var(--neg)")}
+          </div>
+          <div className="mtp-segs">
+            {seg("data",  ordem, setOrdem, "Recentes")}
+            {seg("maior", ordem, setOrdem, "Maiores")}
+            {seg("menor", ordem, setOrdem, "Piores")}
+          </div>
+        </div>
+        <div key={painel.chave+filtro+ordem} style={{flex:1,overflowY:"auto",padding:"14px 20px 24px"}}>
+          {ordem==="data" ? grupos.map(g => {
+            const sub = g.ops.reduce((s,t)=>s+(t.resultado||0),0);
+            return (
+              <div key={g.d} style={{marginBottom:"14px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"0 2px 8px"}}>
+                  <span style={{color:"var(--text-2)",fontSize:"11.5px",fontWeight:"700",textTransform:"capitalize"}}>{fmtDiaLongo(g.d)}</span>
+                  <span style={{color:sub>=0?"var(--pos)":"var(--neg)",fontSize:"11.5px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{fmtRes(sub)}</span>
+                </div>
+                {g.ops.map((t,j) => <OpItem key={j} t={t} i={idx++} onEstrategia={onEstrategia}/>)}
+              </div>
+            );
+          }) : ordenadas.map((t,i) => <OpItem key={i} t={t} i={i} onEstrategia={onEstrategia} comData/>)}
+          {visiveis.length===0 && <p style={{color:"var(--text-3)",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação aqui.</p>}
+        </div>
+      </aside>
+    </>,
+    document.body
+  );
+}
+
 export default function Evolucao({ entries, compliance, estrategias, setPagina, config, saveConfig }) {
   const now     = new Date();
   const ini1m   = new Date(now.getFullYear(), now.getMonth(), 1);
   const [inicio, setInicio] = useState(dayKey(ini1m));
   const [fim,    setFim]    = useState(dayKey(now));
-  const [panelEst, setPanelEst] = useState(null);
-  const [panelDrill, setPanelDrill] = useState(null);
+  const [painel, setPainel] = useState(null);
   const [filtroMercado, setFiltroMercado] = useState("todos");
   const [filtroConta,   setFiltroConta]   = useState("todas");
   const [filtroEsts,    setFiltroEsts]    = useState([]);
@@ -133,7 +263,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const diasOp         = filtered.filter(([,e])=>e.numTrades>0).length;
 
   // Win rate
-  const allTrades = filtered.flatMap(([,e])=>e.trades||[]).filter(t=>filtroMercado==="todos"||t.mercado===filtroMercado);
+  const allTrades = filtered.flatMap(([d,e])=>(e.trades||[]).map(t=>({...t,_date:d}))).filter(t=>filtroMercado==="todos"||t.mercado===filtroMercado);
   const wins      = allTrades.filter(t=>t.tipo==="WIN").length;
   const winRate   = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
 
@@ -205,10 +335,10 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const profitFactor = totPerda<0 ? totGanho/Math.abs(totPerda) : null;
 
   // Max drawdown: maior recuo do pico da curva de capital no período
-  let pico = 0, maxDD = 0, picoNoDD = 0;
-  capitalPoints.forEach(p => {
-    if (p.val > pico) pico = p.val;
-    if (pico - p.val > maxDD) { maxDD = pico - p.val; picoNoDD = pico; }
+  let pico = 0, maxDD = 0, picoNoDD = 0, iPico = 0, ddDe = 0, ddAte = 0;
+  capitalPoints.forEach((p,i) => {
+    if (p.val > pico) { pico = p.val; iPico = i; }
+    if (pico - p.val > maxDD) { maxDD = pico - p.val; picoNoDD = pico; ddDe = iPico; ddAte = i; }
   });
   const ddPct = maxDD>0 && bancaRef+picoNoDD>0 ? (maxDD/(bancaRef+picoNoDD))*100 : null;
 
@@ -223,9 +353,31 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const chartCard= {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px 12px"};
 
   const colors = ["#2ee6a0","#f59e0b","#a78bfa","#f472b6","#34d399","#f0506e","#60a5fa"];
+  const nomesEst = Object.keys(estratStats);
+  const corEst = n => colors[Math.max(0, nomesEst.indexOf(n)) % colors.length];
+
+  // Abre o painel lateral; "alternar" fecha se o mesmo item já estiver aberto
+  const mostrar = (chave, titulo, trades, extra={}) => setPainel({ chave, titulo, trades, ...extra });
+  const alternar = (chave, ...args) => painel?.chave===chave ? setPainel(null) : mostrar(chave, ...args);
+  const sub = n => n+" operaç"+(n===1?"ão":"ões");
+  const abrirEst = (n, extra={}) => {
+    const ops = allTrades.filter(t=>(t.estrategia||"Sem nome")===n);
+    mostrar("est:"+n, nomeAtual[n]||n, ops, { tag:n.slice(0,3).toUpperCase(), cor:corEst(n), sub:sub(ops.length)+" no período", ...extra });
+  };
+  const abrirDia = d => {
+    // respeita os filtros; dia fora do período (bolinha do calendário) mostra o dia inteiro
+    let ops = allTrades.filter(t=>t._date===d);
+    if (!ops.length) ops = (entries[d]?.trades||[]).map(t=>({...t,_date:d}));
+    mostrar("dia:"+d, fmtDiaLongo(d), ops, { sub:sub(ops.length) });
+  };
+  const abrirDD = () => {
+    const de = ddDe>0 ? capitalPoints[ddDe].d : "", ate = capitalPoints[ddAte].d;
+    const ops = allTrades.filter(t=>t._date>de && t._date<=ate);
+    mostrar("dd", "Max Drawdown", ops, { cor:"#ff5470", sub:(de?"do pico em "+fmtDiaCurto(de):"do início")+" até o fundo em "+fmtDiaCurto(ate) });
+  };
 
   return (
-    <div style={{fontFamily:"var(--font-sans)"}}>
+    <div className="mtp-evo" style={{fontFamily:"var(--font-sans)"}}>
       {/* Conta + filtros */}
       <div style={{marginBottom:"32px"}}>
         <FiltrosBarra config={config} saveConfig={saveConfig}
@@ -255,7 +407,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         </div>
 
         {/* Resultado Total */}
-        <div onClick={()=>setPanelDrill("resultado")} style={{...kpiCard,cursor:"pointer"}}>
+        <div onClick={()=>alternar("resultado","Resultado do período",allTrades,{sub:sub(allTrades.length)+" · "+diasOp+" dias",ordem:"maior"})} style={{...kpiCard,cursor:"pointer"}}>
           <div style={{position:"absolute",left:"48%",right:0,bottom:0,height:"46px",opacity:0.5,pointerEvents:"none",maskImage:"linear-gradient(90deg,transparent,#000 35%)",WebkitMaskImage:"linear-gradient(90deg,transparent,#000 35%)"}}>
             <Sparkline values={capitalPoints.map(p=>p.val)} color={totalResult>=0?"#2ee6a0":"#ff5470"} width="100%" height="100%"/>
           </div>
@@ -272,7 +424,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         </div>
 
         {/* Win Rate */}
-        <div onClick={()=>setPanelDrill("winrate")} style={{...kpiCard,cursor:"pointer"}}>
+        <div onClick={()=>alternar("winrate","Operações do período",allTrades,{sub:wins+" WIN · "+losses+" LOSS"})} style={{...kpiCard,cursor:"pointer"}}>
           <p style={kpiLabel}>Win Rate</p>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
             <div>
@@ -303,7 +455,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           const semanas = [];
           for(let i=0;i<celulas.length;i+=7) semanas.push(celulas.slice(i,i+7));
           return (
-            <div style={kpiCard}>
+            <div onClick={()=>alternar("dias","Dias operados",allTrades,{sub:diasOp+" dias · "+sub(allTrades.length)})} style={{...kpiCard,cursor:"pointer"}}>
               <p style={kpiLabel}>Dias Operados</p>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
                 <p style={{...kpiValue,color:"#7fd8ff"}}><CountUp value={diasOp}/></p>
@@ -316,7 +468,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                         const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
                         const operado = diasOperadosSet.has(dKey);
                         const isHoje = cel===hoje.getDate();
-                        return <div key={di} title={cel+"/"+(mes+1)} style={{width:"6px",height:"6px",borderRadius:"50%",background:operado?"var(--accent)":isHoje?"#3a4d44":"var(--line-strong)",boxShadow:operado?"0 0 5px rgba(46,230,160,0.7)":"none",outline:isHoje?"1px solid #5d6f67":"none",outlineOffset:"1px"}}/>;
+                        return <div key={di} title={cel+"/"+(mes+1)+(operado?" — ver operações":"")} className={operado?"mtp-dia-dot":undefined}
+                          onClick={operado?e=>{e.stopPropagation();abrirDia(dKey);}:undefined}
+                          style={{width:"6px",height:"6px",borderRadius:"50%",background:operado?"var(--accent)":isHoje?"#3a4d44":"var(--line-strong)",boxShadow:operado?"0 0 5px rgba(46,230,160,0.7)":"none",outline:isHoje?"1px solid #5d6f67":"none",outlineOffset:"1px"}}/>;
                       })}
                     </div>
                   ))}
@@ -331,7 +485,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         })()}
 
         {/* Max Drawdown */}
-        <div style={kpiCard}>
+        <div onClick={maxDD>0?abrirDD:undefined} style={{...kpiCard,cursor:maxDD>0?"pointer":"default"}}>
           <p style={kpiLabel}>Max Drawdown</p>
           <p style={{...kpiValue,color:maxDD>0?"var(--neg)":"var(--text-2)"}}>
             <CountUp value={-maxDD} format={v=>v<-0.005?fmtBRL(v):"R$ 0,00"}/>
@@ -358,7 +512,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               <span style={{color:"var(--pos)"}}>{dailyBars.filter(b=>b.val>0).length}</span> / <span style={{color:"var(--neg)"}}>{dailyBars.filter(b=>b.val<0).length}</span> dias
             </p>
           </div>
-          <DailyBars bars={dailyBars}/>
+          <DailyBars bars={dailyBars} onBarClick={b=>abrirDia(b.d)}/>
         </div>
       </div>
 
@@ -372,7 +526,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           {Object.entries(gByEst).sort(([,a],[,b])=>b-a).map(([n,v],i)=>{
             const pct = totGanho>0 ? Math.round((v/totGanho)*100) : 0;
             return (
-              <div key={n} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+              <div key={n} className="mtp-click-row" onClick={()=>abrirEst(n,{filtro:"win",ordem:"maior"})} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
                 <div style={{width:"26px",height:"26px",borderRadius:"6px",background:colors[i%colors.length]+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <span style={{color:colors[i%colors.length],fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
                 </div>
@@ -399,7 +553,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           {Object.entries(pByEst).sort(([,a],[,b])=>a-b).map(([n,v],i)=>{
             const pct = totPerda<0 ? Math.round((v/totPerda)*100) : 0;
             return (
-              <div key={n} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+              <div key={n} className="mtp-click-row" onClick={()=>abrirEst(n,{filtro:"loss",ordem:"menor"})} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
                 <div style={{width:"26px",height:"26px",borderRadius:"6px",background:"#ff547022",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <span style={{color:"#ff5470",fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
                 </div>
@@ -436,11 +590,11 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         const porMercado = agrupa(t => t.mercado || "B3");
         const porAtivo   = agrupa(t => (t.mercado || "B3") + "|" + ativoDoTrade(t));
         const listaAtivo = verTodosAtivos ? porAtivo : porAtivo.slice(0, 7);
-        const Linha = ({ rot, sub, g, cor, maxAbs, mono }) => {
+        const Linha = ({ rot, sub, g, cor, maxAbs, mono, onClick }) => {
           const wr = Math.round(g.wins / g.ops * 100);
           const pos = g.res >= 0;
           return (
-            <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1.3fr) minmax(0,1fr) auto", alignItems:"center", gap:"14px", padding:"10px 0", borderBottom:"1px solid var(--line)" }}>
+            <div className="mtp-click-row" onClick={onClick} style={{ display:"grid", gridTemplateColumns:"minmax(0,1.3fr) minmax(0,1fr) auto", alignItems:"center", gap:"14px", paddingTop:"10px", paddingBottom:"10px", borderBottom:"1px solid var(--line)" }}>
               <div style={{ display:"flex", alignItems:"center", gap:"10px", minWidth:0 }}>
                 <i className="mtp-dot" style={{ background:cor }}/>
                 <div style={{ minWidth:0 }}>
@@ -469,7 +623,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1.3fr",gap:"14px"}}>
               <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px 6px"}}>
                 <p className="mtp-card-title" style={{marginBottom:"6px"}}>Por mercado</p>
-                {porMercado.map(([k,g]) => <Linha key={k} rot={k} g={g} cor={COR_M[k]||"#888"} maxAbs={maxM}/>)}
+                {porMercado.map(([k,g]) => <Linha key={k} rot={k} g={g} cor={COR_M[k]||"#888"} maxAbs={maxM}
+                  onClick={()=>{ const ops=allTrades.filter(t=>(t.mercado||"B3")===k); mostrar("mer:"+k, k, ops, {cor:COR_M[k], sub:sub(ops.length)+" no período"}); }}/>)}
               </div>
               <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px 6px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"6px"}}>
@@ -478,7 +633,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 </div>
                 {listaAtivo.map(([k,g]) => {
                   const [m, a] = k.split("|");
-                  return <Linha key={k} rot={a} sub={m} g={g} cor={a===SEM_ATIVO ? "var(--text-3)" : (COR_M[m]||"#888")} maxAbs={maxA} mono={a!==SEM_ATIVO}/>;
+                  return <Linha key={k} rot={a} sub={m} g={g} cor={a===SEM_ATIVO ? "var(--text-3)" : (COR_M[m]||"#888")} maxAbs={maxA} mono={a!==SEM_ATIVO}
+                    onClick={()=>{ const ops=allTrades.filter(t=>(t.mercado||"B3")===m && ativoDoTrade(t)===a); mostrar("atv:"+k, a, ops, {cor:COR_M[m], sub:m+" · "+sub(ops.length)}); }}/>;
                 })}
                 {porAtivo.some(([k]) => k.endsWith("|"+SEM_ATIVO)) && (
                   <p style={{margin:"10px 0 8px",color:"var(--text-3)",fontSize:"11.5px"}}>Operações antigas não têm ativo — os novos registros no Diário já guardam.</p>
@@ -501,10 +657,10 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
               const cor = colors[i%colors.length];
               const mediaPts = s.total>0 ? (s.pontos/s.total).toFixed(1) : "0.0";
-              const isSelected = panelEst === n;
+              const isSelected = painel?.chave === "est:"+n;
               return (
-                <div key={n} onClick={()=>setPanelEst(isSelected?null:n)}
-                  style={{background:"var(--card)",border:"1px solid "+(isSelected?cor+"66":"#1b2823"),borderRadius:"14px",padding:"18px",cursor:"pointer",transition:"all 0.2s",boxShadow:isSelected?"0 0 0 1px "+cor+"33":"none"}}
+                <div key={n} onClick={()=>isSelected?setPainel(null):abrirEst(n)}
+                  style={{background:"var(--card)",border:"1px solid "+(isSelected?cor+"66":"#1b2823"),borderRadius:"14px",padding:"18px",cursor:"pointer",...(isSelected?{boxShadow:"0 0 0 1px "+cor+"33"}:{})}}
                   onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor=cor+"44";}}}
                   onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor="#1b2823";}}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
@@ -534,74 +690,6 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         </div>
       )}
 
-      {/* PAINEL LATERAL — operações da estratégia selecionada */}
-      {panelEst && (() => {
-        const cor = colors[Object.keys(estratStats).indexOf(panelEst) % colors.length];
-        const ops = filtered.flatMap(([d,e])=>
-          (e.trades||[]).filter(t=>t.estrategia===panelEst).map(t=>({...t,_date:d}))
-        ).sort((a,b)=>b._date.localeCompare(a._date));
-        const totalPtsEst = ops.reduce((s,t)=>s+(t.pontos||0),0);
-        const totalResEst = ops.reduce((s,t)=>s+(t.resultado||0),0);
-        const winsEst = ops.filter(t=>t.tipo==="WIN").length;
-        return (
-          <>
-            {/* Overlay click-outside */}
-            <div onClick={()=>setPanelEst(null)} style={{position:"fixed",inset:0,zIndex:399,background:"rgba(0,0,0,0.4)"}}/>
-            <div style={{position:"fixed",top:0,right:0,bottom:0,width:"380px",background:"#070d0a",borderLeft:"1px solid #18241f",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
-            <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
-            {/* Header */}
-            <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #18241f",flexShrink:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                  <div style={{padding:"5px 10px",borderRadius:"7px",background:cor+"22",border:"1px solid "+cor+"44"}}>
-                    <span style={{color:cor,fontSize:"12px",fontWeight:"800"}}>{panelEst.slice(0,3).toUpperCase()}</span>
-                  </div>
-                  <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{panelEst}</p>
-                </div>
-                <button onClick={()=>setPanelEst(null)} style={{background:"none",border:"none",color:"#7a8c84",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
-              </div>
-              {/* Stats resumo */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
-                <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Pts</p>
-                  <p style={{margin:0,color:"#2ee6a0",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalPtsEst>=0?"+":""}{totalPtsEst.toFixed(0)}</p>
-                </div>
-                <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>R$</p>
-                  <p style={{margin:0,color:totalResEst>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalResEst>=0?"+":""}{ Math.abs(totalResEst).toFixed(0)}</p>
-                </div>
-                <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Acerto</p>
-                  <p style={{margin:0,color:winsEst/ops.length>=0.6?"#2ee6a0":"#f59e0b",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{ops.length>0?Math.round((winsEst/ops.length)*100):0}%</p>
-                </div>
-              </div>
-            </div>
-            {/* Lista de operações */}
-            <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-              <p style={{margin:"0 0 12px",color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>{ops.length} operações no período</p>
-              {ops.map((t,i)=>(
-                <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"#0b1210",border:"1px solid #18241f",marginBottom:"8px"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                      <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
-                      <span style={{color:"#aaa",fontSize:"12px"}}>{t.mercado}</span>
-                    </div>
-                    <span style={{color:"#a3b2ab",fontSize:"11px"}}>{t._date.split("-").reverse().join("/")}</span>
-                  </div>
-                  <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
-                    {t.pontos!=null&&<span style={{color:"#f0f0f0",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"600"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
-                    {t.resultado!=null&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</span>}
-                  </div>
-                  {t.observacao&&<p style={{margin:"6px 0 0",color:"#a3b2ab",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</p>}
-                </div>
-              ))}
-              {ops.length===0&&<p style={{color:"#7a8c84",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação no período selecionado.</p>}
-            </div>
-          </div>
-          </>
-        );
-      })()}
-
       {/* LINHA 5: Métricas Complementares */}
       {allTrades.length > 0 && (
         <div style={{marginBottom:"36px"}}>
@@ -610,12 +698,12 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         </div>
         <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:"14px"}}>
           {[
-            {label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),num:mediaVenc,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"#2ee6a0",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
-            {label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),num:mediaPerd,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"#ff5470",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff5470" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
+            {abrir:()=>mostrar("venc","Operações vencedoras",ganhos,{cor:"#2ee6a0",sub:sub(ganhos.length)+" · média R$ "+mediaVenc.toFixed(2),ordem:"maior"}),label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),num:mediaVenc,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"#2ee6a0",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
+            {abrir:()=>mostrar("perd","Operações perdedoras",perdas,{cor:"#ff5470",sub:sub(perdas.length)+" · média R$ "+mediaPerd.toFixed(2),ordem:"menor"}),label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),num:mediaPerd,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"#ff5470",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff5470" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
             {label:"Risco × Retorno",sub:"razão média",val:rr+":1",num:mediaPerd>0?mediaVenc/mediaPerd:null,fmtN:v=>v.toFixed(2)+":1",color:parseFloat(rr)>=1.5?"#2ee6a0":parseFloat(rr)>=1?"#f59e0b":"#ff5470",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>},
             {label:"Profit Factor",sub:"ganho / perda total",val:profitFactor!==null?profitFactor.toFixed(2):"—",num:profitFactor,fmtN:v=>v.toFixed(2),color:profitFactor>=1.5?"#f5b941":profitFactor>=1?"#f59e0b":"#ff5470",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>},
           ].map((s,i)=>(
-            <div key={i} style={{...kpiCard,minHeight:"112px"}}>
+            <div key={i} onClick={s.abrir} style={{...kpiCard,minHeight:"112px",cursor:s.abrir?"pointer":"default"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}}>
                 <p style={kpiLabel}>{s.label}</p>
                 <div style={{width:"28px",height:"28px",borderRadius:"8px",background:s.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:s.color}}>{s.icon}</div>
@@ -635,154 +723,104 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         </div>
       )}
 
-      {/* ── SEÇÃO: CORRELAÇÃO EMOÇÃO × RESULTADO ── */}
-      {allTrades.length >= 3 && (() => {
+      {/* ── EMOÇÃO × RESULTADO + PERFORMANCE POR HORÁRIO (lado a lado) ── */}
+      {(() => {
         const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
         const emocaoStats = {};
-        filtered.forEach(([,e]) => {
-          const tot = (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0);
+        if (allTrades.length >= 3) filtered.forEach(([d,e]) => {
+          const tot = (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0)+(e.totalAmericano||0);
           const wr = e.winRate;
           (e.emocoes||[]).forEach(em => {
-            if (!emocaoStats[em]) emocaoStats[em] = { resultado:0, dias:0, winRates:[] };
+            if (!emocaoStats[em]) emocaoStats[em] = { resultado:0, dias:[], winRates:[] };
             emocaoStats[em].resultado += tot;
-            emocaoStats[em].dias++;
+            emocaoStats[em].dias.push(d);
             if (wr !== undefined) emocaoStats[em].winRates.push(wr);
           });
         });
         const emList = Object.entries(emocaoStats).sort(([,a],[,b])=>b.resultado-a.resultado);
-        if (emList.length === 0) return null;
-        const maxAbs = Math.max(1, ...emList.map(([,s])=>Math.abs(s.resultado)));
-        return (
-          <div style={{marginBottom:"36px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p className="mtp-section-title">Correlação Emoção × Resultado</p>
-              <span className="mtp-section-hint">impacto no seu trading</span>
-            </div>
-            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px"}}>
-              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-                {emList.map(([em,s])=>{
-                  const cor = EMOCAO_COLORS[em]||"#888";
-                  const avgWR = s.winRates.length>0 ? Math.round(s.winRates.reduce((a,b)=>a+b,0)/s.winRates.length) : null;
-                  const barW = Math.round((Math.abs(s.resultado)/maxAbs)*100);
-                  const pos = s.resultado >= 0;
-                  return (
-                    <div key={em} style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                      <div style={{width:"90px",flexShrink:0}}>
-                        <span style={{fontSize:"12px",fontWeight:"700",color:cor}}>{em}</span>
-                        <p style={{margin:0,color:"#6f8179",fontSize:"10px"}}>{s.dias} dia{s.dias!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
-                      </div>
-                      <div style={{flex:1,height:"3px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px",transition:"width 0.3s"}}/>
-                      </div>
-                      <span style={{width:"80px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"#2ee6a0":"#ff5470",flexShrink:0}}>
-                        {pos?"+":""}R$ {s.resultado.toFixed(0)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+        const maxEm = Math.max(1, ...emList.map(([,s])=>Math.abs(s.resultado)));
 
-      {/* ── SEÇÃO: STREAK DE DISCIPLINA ── */}
-      {(() => {
-        const savedDays = Object.entries(compliance||{})
-          .filter(([,v])=>typeof v==="number"||v===true)
-          .sort(([a],[b])=>b.localeCompare(a));
-        if (savedDays.length === 0) return null;
-        let streak = 0, maxStreak = 0, curStreak = 0;
-        const sortedAsc = [...savedDays].sort(([a],[b])=>a.localeCompare(b));
-        let prevDate = null;
-        sortedAsc.forEach(([k,v]) => {
-          const pct = typeof v==="number" ? v : 100;
-          const cur = new Date(k+"T12:00:00");
-          if (prevDate) {
-            const diff = (cur-prevDate)/(1000*60*60*24);
-            if (diff === 1 && pct >= 80) curStreak++;
-            else curStreak = pct >= 80 ? 1 : 0;
-          } else {
-            curStreak = pct >= 80 ? 1 : 0;
-          }
-          if (curStreak > maxStreak) maxStreak = curStreak;
-          prevDate = cur;
-        });
-        streak = curStreak;
-        const todayVal = (compliance||{})[dayKey(new Date())];
-        const todayPct = typeof todayVal==="number" ? todayVal : todayVal===true ? 100 : 0;
-        if (todayPct < 80) streak = 0;
-        return (
-          <div style={{marginBottom:"36px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p className="mtp-section-title">Streak de Disciplina</p>
-              <span className="mtp-section-hint">dias consecutivos ≥80%</span>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"14px"}}>
-              <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
-                <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Streak Atual</p>
-                <p style={{margin:0,color:streak>=7?"#2ee6a0":streak>=3?"#f59e0b":"#ff5470",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{streak}</p>
-                <p style={{margin:0,color:"#6f8179",fontSize:"11px"}}>dias seguidos</p>
-              </div>
-              <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
-                <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Recorde</p>
-                <p style={{margin:0,color:"#f59e0b",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{maxStreak}</p>
-                <p style={{margin:0,color:"#6f8179",fontSize:"11px"}}>dias seguidos</p>
-              </div>
-              <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
-                <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Salvos</p>
-                <p style={{margin:0,color:"#aaa",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{savedDays.length}</p>
-                <p style={{margin:0,color:"#6f8179",fontSize:"11px"}}>total registrado</p>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── SEÇÃO: ANÁLISE POR HORÁRIO ── */}
-      {allTrades.filter(t=>t.horario).length >= 3 && (() => {
+        const comHorario = allTrades.filter(t=>t.horario);
         const horarioStats = {};
-        allTrades.filter(t=>t.horario).forEach(t => {
+        if (comHorario.length >= 3) comHorario.forEach(t => {
           const hora = t.horario.slice(0,2)+"h";
-          if (!horarioStats[hora]) horarioStats[hora] = {wins:0,total:0,resultado:0,pontos:0};
+          if (!horarioStats[hora]) horarioStats[hora] = {wins:0,total:0,resultado:0};
           horarioStats[hora].total++;
           horarioStats[hora].resultado += t.resultado||0;
-          horarioStats[hora].pontos    += t.pontos||0;
           if (t.tipo==="WIN") horarioStats[hora].wins++;
         });
         const horaList = Object.entries(horarioStats).sort(([a],[b])=>a.localeCompare(b));
-        const maxRes = Math.max(1, ...horaList.map(([,s])=>Math.abs(s.resultado)));
-        return (
-          <div style={{marginBottom:"36px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-              <p className="mtp-section-title">Performance por Horário</p>
-              <span className="mtp-section-hint">baseado nas operações registradas</span>
+        const maxHora = Math.max(1, ...horaList.map(([,s])=>Math.abs(s.resultado)));
+
+        const blocos = [];
+        if (emList.length > 0) blocos.push(
+          <div key="emo" style={{display:"flex",flexDirection:"column",minWidth:0}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",gap:"10px"}}>
+              <p className="mtp-section-title">Emoção × Resultado</p>
+              <span className="mtp-section-hint">impacto no seu trading</span>
             </div>
-            <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px"}}>
-              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-                {horaList.map(([hora,s])=>{
-                  const wr = Math.round((s.wins/s.total)*100);
-                  const pos = s.resultado >= 0;
-                  const barW = Math.round((Math.abs(s.resultado)/maxRes)*100);
-                  const cor = wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470";
-                  return (
-                    <div key={hora} style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                      <span style={{width:"36px",color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700",flexShrink:0}}>{hora}</span>
-                      <div style={{width:"40px",textAlign:"center",flexShrink:0}}>
-                        <span style={{fontSize:"11px",fontWeight:"700",color:cor}}>{wr}%</span>
-                        <p style={{margin:0,color:"#6f8179",fontSize:"9px"}}>{s.total} ops</p>
-                      </div>
-                      <div style={{flex:1,height:"3px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px"}}/>
-                      </div>
-                      <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"#2ee6a0":"#ff5470",flexShrink:0}}>
-                        {pos?"+":""}R$ {s.resultado.toFixed(0)}
-                      </span>
+            <div style={{flex:1,background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"14px 20px"}}>
+              {emList.map(([em,s])=>{
+                const cor = EMOCAO_COLORS[em]||"#888";
+                const avgWR = s.winRates.length>0 ? Math.round(s.winRates.reduce((a,b)=>a+b,0)/s.winRates.length) : null;
+                const barW = Math.round((Math.abs(s.resultado)/maxEm)*100);
+                const pos = s.resultado >= 0;
+                const nd = s.dias.length;
+                return (
+                  <div key={em} className="mtp-click-row" style={{display:"flex",alignItems:"center",gap:"12px"}}
+                    onClick={()=>{ const dias=new Set(s.dias); const ops=allTrades.filter(t=>dias.has(t._date)); mostrar("emo:"+em, em, ops, {cor, sub:nd+" dia"+(nd!==1?"s":"")+" com essa emoção · "+sub(ops.length)}); }}>
+                    <div style={{width:"96px",flexShrink:0}}>
+                      <span style={{fontSize:"12.5px",fontWeight:"700",color:cor}}>{em}</span>
+                      <p style={{margin:0,color:"#6f8179",fontSize:"10.5px"}}>{nd} dia{nd!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
                     </div>
-                  );
-                })}
-              </div>
+                    <div style={{flex:1,height:"4px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
+                      <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px",transition:"width 0.3s"}}/>
+                    </div>
+                    <span style={{width:"78px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"#2ee6a0":"#ff5470",flexShrink:0}}>
+                      {pos?"+":""}R$ {s.resultado.toFixed(0)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
+          </div>
+        );
+        if (horaList.length > 0) blocos.push(
+          <div key="hora" style={{display:"flex",flexDirection:"column",minWidth:0}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",gap:"10px"}}>
+              <p className="mtp-section-title">Performance por Horário</p>
+              <span className="mtp-section-hint">pelas operações com horário</span>
+            </div>
+            <div style={{flex:1,background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"14px 20px"}}>
+              {horaList.map(([hora,s])=>{
+                const wr = Math.round((s.wins/s.total)*100);
+                const pos = s.resultado >= 0;
+                const barW = Math.round((Math.abs(s.resultado)/maxHora)*100);
+                const cor = wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470";
+                return (
+                  <div key={hora} className="mtp-click-row" style={{display:"flex",alignItems:"center",gap:"12px"}}
+                    onClick={()=>{ const ops=comHorario.filter(t=>t.horario.slice(0,2)+"h"===hora); mostrar("hora:"+hora, "Operações das "+hora, ops, {sub:sub(ops.length)+" · "+wr+"% de acerto"}); }}>
+                    <span style={{width:"36px",color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700",flexShrink:0}}>{hora}</span>
+                    <div style={{width:"44px",textAlign:"center",flexShrink:0}}>
+                      <span style={{fontSize:"11.5px",fontWeight:"700",color:cor}}>{wr}%</span>
+                      <p style={{margin:0,color:"#6f8179",fontSize:"10px"}}>{s.total} ops</p>
+                    </div>
+                    <div style={{flex:1,height:"4px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
+                      <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px"}}/>
+                    </div>
+                    <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"#2ee6a0":"#ff5470",flexShrink:0}}>
+                      {pos?"+":""}R$ {s.resultado.toFixed(0)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+        if (blocos.length === 0) return null;
+        return (
+          <div style={{display:"grid",gridTemplateColumns:isMobile||blocos.length===1?"1fr":"1fr 1fr",gap:"14px",marginBottom:"36px",alignItems:"stretch"}}>
+            {blocos}
           </div>
         );
       })()}
@@ -853,7 +891,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               <div style={{display:"flex",flexWrap:"wrap",gap:"8px 14px"}}>
                 {curves.map(({n,last,color})=>(
                   <div key={n} style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",padding:"6px 10px",borderRadius:"8px",border:"1px solid #18241f",transition:"border-color 0.15s"}}
-                    onClick={()=>setPanelEst(n)}
+                    onClick={()=>abrirEst(n)}
                     onMouseEnter={e=>e.currentTarget.style.borderColor=color+"55"}
                     onMouseLeave={e=>e.currentTarget.style.borderColor="#18241f"}>
                     <div style={{width:"22px",height:"3px",borderRadius:"2px",background:color,flexShrink:0}}/>
@@ -902,7 +940,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 const alert = s.curLoss >= 3 || (s.curType==="LOSS" && s.curStreak>=2);
                 return (
                   <div key={n} style={{background:"var(--card)",border:"1px solid "+(alert?"#f0506e33":"#18241f"),borderRadius:"14px",padding:"16px",cursor:"pointer"}}
-                    onClick={()=>setPanelEst(n)}>
+                    onClick={()=>abrirEst(n)}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px"}}>
                       <div style={{padding:"3px 7px",borderRadius:"5px",background:cor+"22",border:"1px solid "+cor+"33"}}>
                         <span style={{color:cor,fontSize:"10px",fontWeight:"800"}}>{n.slice(0,3).toUpperCase()}</span>
@@ -933,83 +971,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         );
       })()}
 
-      {/* LINHA 6: Diagnóstico IA full width */}
-      {allTrades.length >= 3 && <DiagnosticoIA trades={allTrades} entries={filtered} totalResult={totalResult} winRate={winRate} mediaVenc={mediaVenc} mediaPerd={mediaPerd} rr={rr} estratStats={estratStats} diasOp={diasOp}/>}
-
-      {/* PAINEL DRILL-DOWN — WinRate ou Resultado */}
-      {panelDrill && (() => {
-        const isWR = panelDrill === "winrate";
-        const title = isWR ? "Operações do Período" : "Resultado Detalhado";
-        const tradesList = isWR
-          ? [...allTrades].map((t,i)=>({...t,_idx:i}))
-          : [...allTrades].map((t,i)=>({...t,_idx:i})).sort((a,b)=>(b.resultado||0)-(a.resultado||0));
-        const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ff5470","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
-        return (
-          <>
-            <div onClick={()=>setPanelDrill(null)} style={{position:"fixed",inset:0,zIndex:399,background:"rgba(0,0,0,0.4)"}}/>
-            <div style={{position:"fixed",top:0,right:0,bottom:0,width:"400px",background:"#070d0a",borderLeft:"1px solid #18241f",zIndex:400,display:"flex",flexDirection:"column",boxShadow:"-8px 0 40px rgba(0,0,0,0.6)",animation:"slideIn 0.25s ease"}}>
-              <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
-              {/* Header */}
-              <div style={{padding:"20px",borderBottom:"1px solid #18241f",flexShrink:0}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-                  <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{title}</p>
-                  <button onClick={()=>setPanelDrill(null)} style={{background:"none",border:"none",color:"#7a8c84",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
-                </div>
-                {/* Resumo */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
-                  <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                    <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Total</p>
-                    <p style={{margin:0,color:totalResult>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalResult>=0?"+":""}R${Math.abs(totalResult).toFixed(0)}</p>
-                  </div>
-                  <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                    <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Win Rate</p>
-                    <p style={{margin:0,color:winRate>=60?"#2ee6a0":winRate>=40?"#f59e0b":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{winRate||0}%</p>
-                  </div>
-                  <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                    <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Trades</p>
-                    <p style={{margin:0,color:"#ccc",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{allTrades.length}</p>
-                  </div>
-                </div>
-              </div>
-              {/* Filtro WIN/LOSS */}
-              {isWR && (
-                <div style={{padding:"12px 20px",borderBottom:"1px solid #18241f",display:"flex",gap:"8px",flexShrink:0}}>
-                  {["Todos","WIN","LOSS"].map(f=>(
-                    <button key={f} onClick={()=>setPanelDrill(f==="Todos"?"winrate":f==="WIN"?"winrate-win":"winrate-loss")}
-                      style={{padding:"5px 14px",borderRadius:"20px",border:"none",cursor:"pointer",fontSize:"12px",fontWeight:"600",fontFamily:"var(--font-sans)",
-                        background:panelDrill===("winrate"+(f==="WIN"?"-win":f==="LOSS"?"-loss":""))&&f!=="Todos"?"#3fe8a822":panelDrill==="winrate"&&f==="Todos"?"#18241f22":"transparent",
-                        color:f==="WIN"?"#2ee6a0":f==="LOSS"?"#ff5470":"#888"}}>
-                      {f} {f==="WIN"?wins:f==="LOSS"?allTrades.length-wins:""}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {/* Lista */}
-              <div style={{flex:1,overflowY:"auto",padding:"14px 20px"}}>
-                {tradesList
-                  .filter(t => panelDrill==="winrate-win"?t.tipo==="WIN":panelDrill==="winrate-loss"?t.tipo==="LOSS":true)
-                  .map((t,i)=>(
-                  <div key={i} style={{padding:"11px 14px",borderRadius:"10px",background:"#0b1210",border:"1px solid #18241f",marginBottom:"8px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:t.estrategia||t.observacao?"6px":"0"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                        <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(63,232,168,0.15)":"rgba(240,80,110,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
-                        <span style={{color:"#7a8c84",fontSize:"12px"}}>{t.mercado}</span>
-                        {t.estrategia&&<span style={{color:"#0099ff",fontSize:"11px",background:"rgba(0,153,255,0.1)",padding:"2px 7px",borderRadius:"4px",cursor:"pointer"}}
-                          onClick={e=>{e.stopPropagation();setPanelDrill(null);setPanelEst(t.estrategia);}}>{t.estrategia}</span>}
-                      </div>
-                      <div style={{textAlign:"right"}}>
-                        {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"11px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
-                        {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</p>}
-                      </div>
-                    </div>
-                    {t.observacao&&<p style={{margin:0,color:"#6f8179",fontSize:"11px",fontStyle:"italic"}}>"{t.observacao}"</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        );
-      })()}
+      {painel && <PainelOps painel={painel} onClose={()=>setPainel(null)} onEstrategia={n=>abrirEst(n)}/>}
     </div>
   );
 }
@@ -1142,137 +1104,6 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-
-const GROQ_KEY = import.meta.env.VITE_GROQ_KEY;
-
-function DiagnosticoIA({ trades, entries, totalResult, winRate, mediaVenc, mediaPerd, rr, estratStats, diasOp }) {
-  const [loading, setLoading] = useState(false);
-  const [diagnostico, setDiagnostico] = useState("");
-  const [erro, setErro] = useState("");
-
-  async function gerarDiagnostico() {
-    setLoading(true); setErro(""); setDiagnostico("");
-
-    // Build data summary
-    const emocaoStats = {};
-    entries.forEach(([,e]) => {
-      const tot = (e.totalB3||0)+(e.totalForex||0);
-      (e.emocoes||[]).forEach(em => {
-        if (!emocaoStats[em]) emocaoStats[em] = { dias:0, resultado:0 };
-        emocaoStats[em].dias++;
-        emocaoStats[em].resultado += tot;
-      });
-    });
-
-    const estratResumo = Object.entries(estratStats).map(([n,s]) => {
-      const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
-      return `${n}: ${s.total} trades, ${ass}% acerto, R$ ${s.resultado.toFixed(2)}`;
-    }).join("\n");
-
-    const emocaoResumo = Object.entries(emocaoStats).map(([em,s]) => {
-      const media = (s.resultado/s.dias).toFixed(2);
-      return `${em}: ${s.dias} dias, resultado médio R$ ${media}`;
-    }).join("\n");
-
-    const prompt = `Você é um coach especialista em trading brasileiro. Analise os dados abaixo e gere um diagnóstico personalizado, direto e útil em português. Seja específico, use os números reais, aponte padrões, forças e fraquezas. Máximo 300 palavras.
-
-DADOS DO PERÍODO:
-- Total de trades: ${trades.length}
-- Dias operados: ${diasOp}
-- Resultado total: R$ ${totalResult.toFixed(2)}
-- Win Rate: ${winRate}%
-- Média vencedora: R$ ${mediaVenc.toFixed(2)}
-- Média perdedora: R$ ${mediaPerd.toFixed(2)}
-- Risco/Retorno: ${rr}:1
-
-DESEMPENHO POR ESTRATÉGIA:
-${estratResumo}
-
-EMOÇÕES vs RESULTADO:
-${emocaoResumo}
-
-Gere um diagnóstico com:
-1. Ponto forte principal
-2. Principal problema a corrigir
-3. Recomendação prática e específica`;
-
-    try {
-      const key = GROQ_KEY;
-      if (!key) { setErro("Chave API não configurada no Vercel."); setLoading(false); return; }
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + key
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-          max_tokens: 600
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(()=>({}));
-        setErro("Erro " + res.status + ": " + (errData?.error?.message || "Tente novamente."));
-        setLoading(false); return;
-      }
-      const data = await res.json();
-      const texto = data?.choices?.[0]?.message?.content;
-      if (texto) setDiagnostico(texto);
-      else setErro("Resposta vazia. Tente novamente.");
-    } catch(e) {
-      setErro("Erro: " + e.message);
-    }
-    setLoading(false);
-  }
-
-  return (
-    <div style={{background:"linear-gradient(135deg,rgba(46,230,160,0.05),rgba(0,153,255,0.05))",border:"1px solid #2ee6a033",borderRadius:"16px",padding:"24px"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"12px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-          <div style={{width:"40px",height:"40px",borderRadius:"10px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
-          </div>
-          <div>
-            <p style={{margin:"0 0 2px",color:"#f0f0f0",fontSize:"16px",fontWeight:"700"}}>Diagnóstico IA</p>
-            <p style={{margin:0,color:"#86978f",fontSize:"12px"}}>Análise personalizada dos seus dados por IA</p>
-          </div>
-        </div>
-        <button onClick={gerarDiagnostico} disabled={loading} style={{background:loading?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:loading?"#555":"#000",border:"none",borderRadius:"10px",padding:"10px 20px",fontWeight:"700",fontSize:"13px",cursor:loading?"not-allowed":"pointer",fontFamily:"var(--font-sans)",display:"flex",alignItems:"center",gap:"8px",transition:"all 0.2s"}}>
-          {loading ? (
-            <>
-              <div style={{width:"14px",height:"14px",border:"2px solid #555",borderTop:"2px solid #2ee6a0",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-              Analisando...
-            </>
-          ) : (
-            <>✨ {diagnostico?"Gerar novamente":"Gerar diagnóstico"}</>
-          )}
-        </button>
-      </div>
-
-      {!diagnostico && !erro && !loading && (
-        <div style={{textAlign:"center",padding:"32px 20px",color:"#6f8179",fontSize:"13px"}}>
-          <p style={{margin:"0 0 6px",fontSize:"15px"}}>🧠</p>
-          <p style={{margin:0}}>Clique em "Gerar diagnóstico" para receber uma análise personalizada dos seus trades, emoções e estratégias.</p>
-        </div>
-      )}
-
-      {erro && (
-        <div style={{padding:"14px",borderRadius:"10px",background:"rgba(255,84,112,0.08)",border:"1px solid #ff547022",color:"#ff7a90",fontSize:"13px"}}>
-          {erro}
-        </div>
-      )}
-
-      {diagnostico && (
-        <div style={{padding:"20px",borderRadius:"12px",background:"rgba(0,0,0,0.3)",border:"1px solid #18241f"}}>
-          <p style={{margin:0,color:"#ddd",fontSize:"14px",lineHeight:"1.8",whiteSpace:"pre-wrap"}}>{diagnostico}</p>
-        </div>
-      )}
     </div>
   );
 }
