@@ -11,6 +11,7 @@ import Diario      from "./pages/Diario";
 import Historico   from "./pages/Historico";
 import Estrategias from "./pages/Estrategias";
 import Sidebar     from "./components/Sidebar";
+import { hojeLocal } from "./lib/datas";
 
 const Banca       = lazy(()=>import("./pages/Banca"));
 const Regras      = lazy(()=>import("./pages/Regras"));
@@ -88,7 +89,7 @@ function AssinaturaInativa({ perfil, onSair }) {
 function UserHeader({ nomeUsuario, entries }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const today = new Date().toISOString().slice(0,10);
+  const today = hojeLocal();
   const todayEntry = entries[today];
   const totalHoje = todayEntry ? (todayEntry.totalB3||0)+(todayEntry.totalForex||0) : null;
   const inicial = nomeUsuario ? nomeUsuario[0].toUpperCase() : "U";
@@ -241,6 +242,8 @@ function AppInterno() {
   const [nomeUsuario, setNomeUsuario] = useState("");
   const [perfil,      setPerfil]      = useState({ papel:"trader", status:"ativa", ate:null });
   const [hoje,        setHoje]        = useState(hojeBRT);
+  const [aviso,       setAviso]       = useState("");
+  const avisar = txt => { setAviso(txt); setTimeout(() => setAviso(""), 6000); };
   const [loading,     setLoading]     = useState(true);
   const [onboarding,  setOnboarding]  = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -342,22 +345,34 @@ function AppInterno() {
   },[uid]);
 
   // ── SAVE FUNCTIONS ──
+  // Retorna true/false. Atualiza a tela na hora e desfaz se o banco recusar.
   const saveEntry = async (k, dados) => {
-    // Atualização otimista — atualiza UI imediatamente
+    const anterior = entries[k];
     setEntries(prev => ({...prev, [k]: dados}));
+    let error = null;
     try {
-      await supabase.from("diario").upsert(
+      ({ error } = await supabase.from("diario").upsert(
         { usuario_id:uid, data_key:k, dados },
         { onConflict: "usuario_id,data_key" }
-      );
-    } catch(e){ console.error(e); }
+      ));
+    } catch(e){ error = e; }
+    if (error) {
+      console.error("salvar diário:", error);
+      setEntries(prev => { const n = {...prev}; if (anterior) n[k] = anterior; else delete n[k]; return n; });
+      avisar("Não foi possível salvar no servidor. Verifique sua conexão e tente de novo.");
+      return false;
+    }
+    return true;
   };
 
   const deleteEntry = async k => {
+    let error = null;
     try {
-      await supabase.from("diario").delete().eq("usuario_id",uid).eq("data_key",k);
-      setEntries(prev=>{ const n={...prev}; delete n[k]; return n; });
-    } catch(e){ console.error(e); }
+      ({ error } = await supabase.from("diario").delete().eq("usuario_id",uid).eq("data_key",k));
+    } catch(e){ error = e; }
+    if (error) { console.error("apagar dia:", error); avisar("Não foi possível apagar. Tente de novo."); return false; }
+    setEntries(prev=>{ const n={...prev}; delete n[k]; return n; });
+    return true;
   };
 
   const saveConfig = async c => {
@@ -427,7 +442,7 @@ function AppInterno() {
       case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries} setPagina={setPagina}/></Suspense>;
       case "crescimento": return <Suspense fallback={<Spinner/>}><Crescimento entries={entries} config={config}/></Suspense>;
       case "patrimonio":  return <Suspense fallback={<Spinner/>}><Patrimonio entries={entries} config={config}/></Suspense>;
-      case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario} setPagina={setPagina} isAdmin={perfil.papel==="admin"} entries={entries}/></Suspense>;
+      case "config":      return <Suspense fallback={<Spinner/>}><Config config={config} saveConfig={saveConfig} nomeUsuario={nomeUsuario} setPagina={setPagina} isAdmin={perfil.papel==="admin"} entries={entries} compliance={compliance} saveCompliance={saveComplianceData}/></Suspense>;
       case "usuarios":    return perfil.papel==="admin"
                             ? <Suspense fallback={<Spinner/>}><Usuarios onVoltar={()=>setPagina("config")}/></Suspense>
                             : null;
@@ -482,7 +497,7 @@ function AppInterno() {
           <AvisoVencimento perfil={perfil} hoje={hoje}/>
           {/* Lembrete de disciplina — aparece se hoje ainda não foi salvo */}
           {(() => {
-            const today = new Date().toISOString().slice(0,10);
+            const today = hojeLocal();
             const salvouHoje = compliance[today] !== undefined;
             if (salvouHoje || pagina === "regras") return null;
             return (
@@ -499,6 +514,11 @@ function AppInterno() {
             );
           })()}
           <div key={pagina} className="mtp-page">{renderPage()}</div>
+          {aviso && (
+            <div role="alert" style={{position:"fixed",right:"24px",bottom:"24px",zIndex:700,maxWidth:"380px",padding:"12px 16px",borderRadius:"12px",background:"rgba(40,10,16,0.96)",border:"1px solid #ff547055",color:"#ffb3c0",fontSize:"13px",lineHeight:1.5,boxShadow:"0 18px 50px -12px rgba(0,0,0,0.8)",animation:"mtpFadeUp .3s var(--ease) both"}}>
+              {aviso}
+            </div>
+          )}
         </div>
       </main>
     </div>

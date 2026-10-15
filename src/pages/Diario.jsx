@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Select, TimePicker } from "../components/ui";
+import { useState, useRef, useEffect } from "react";
+import { Select, TimePicker, Confirmar } from "../components/ui";
 import { listaContas, contaPadrao, contaDoTrade, TIPOS_CONTA } from "../lib/contas";
 import { ATIVOS_SUGERIDOS, opcoesDeAtivo, ativosUsados, normalizarAtivo, rotuloAtivo } from "../lib/ativos";
 import { supabase } from "../supabase";
@@ -40,6 +40,42 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const [viewerImg, setViewerImg]   = useState(null);  // url — viewer aberto
   const [uploadingIdx, setUploadingIdx] = useState(null);
   const fileInputRef = useRef(null);
+  const [confirmacao, setConfirmacao] = useState(null); // { titulo, texto, botao, acao }
+
+  // Operações adicionadas e ainda não salvas: avisa antes de fechar/recarregar a aba
+  useEffect(() => {
+    if (trades.length === 0) return;
+    const fn = e => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", fn);
+    return () => window.removeEventListener("beforeunload", fn);
+  }, [trades.length]);
+
+  // Recalcula os totais do dia a partir dos trades (mesma regra do salvar)
+  function montarDia(entry, lista) {
+    const soma = m => lista.filter(t=>t.mercado===m).reduce((s,t)=>s+(t.resultado||0),0);
+    const wins = lista.filter(t=>t.tipo==="WIN").length;
+    const dia = { ...entry, trades: lista, numTrades: lista.length, totalPts: lista.reduce((s,t)=>s+(t.pontos||0),0) };
+    for (const [m,k] of [["B3","totalB3"],["Forex","totalForex"],["Cripto","totalCripto"],["Americano","totalAmericano"]]) {
+      const v = soma(m); if (v !== 0) dia[k] = v; else delete dia[k];
+    }
+    if (lista.length) dia.winRate = Math.round(wins/lista.length*100); else delete dia.winRate;
+    return dia;
+  }
+
+  // Apaga uma operação já salva (e as fotos dela)
+  async function apagarOperacaoSalva(dateKey, idx) {
+    const entry = entries[dateKey];
+    if (!entry) return;
+    const alvo = entry.trades[idx];
+    const resto = entry.trades.filter((_, i) => i !== idx);
+    const ok = resto.length === 0 && !(entry.observacao||"").trim() && !(entry.emocoes||[]).length
+      ? await deleteEntry(dateKey)
+      : await saveEntry(dateKey, montarDia(entry, resto));
+    if (ok !== false) {
+      for (const url of (alvo?.imagens || [])) await deleteTradeImage(url);
+      setMsg("✓ Operação apagada."); setTimeout(()=>setMsg(""), 2500);
+    }
+  }
 
   function startEditTrade(dateKey, index, trade) {
     setEditingTrade({
@@ -257,7 +293,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     if (totalAmericano !== 0) data.totalAmericano = totalAmericano;
     if (winRate    !== null) data.winRate = winRate;
 
-    await saveEntry(selectedDate, data);
+    const ok = await saveEntry(selectedDate, data);
+    if (ok === false) { setMsg("Não foi possível salvar. Suas operações continuam aqui — tente de novo."); return; }
     const label = selectedDate === today ? "hoje" : "em "+formatDateFull(selectedDate);
     setMsg("✓ Salvo! "+allTrades.length+" trades "+label); setTimeout(()=>setMsg(""),2500);
     setTrades([]); setEmocoes([]); setObservacao("");
@@ -451,7 +488,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           return (
             <div style={{marginBottom:"20px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px",gap:"12px",flexWrap:"wrap"}}>
-                <span className="mtp-section-hint">{trades.length} {trades.length===1?"operação":"operações"} a salvar</span>
+                <span className="mtp-section-hint" style={{color:"#f5b941"}}>● {trades.length} {trades.length===1?"operação":"operações"} ainda não {trades.length===1?"salva":"salvas"} — clique em Salvar dia</span>
                 <span style={{fontFamily:"var(--font-mono)",fontSize:"12.5px",color:"var(--text-3)"}}>
                   <b style={{color:tot>=0?"#2ee6a0":"#ff5470"}}>{tot>=0?"+":"-"}{Math.abs(tot).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b> · {Math.round(w/trades.length*100)}% acerto
                 </span>
@@ -479,7 +516,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                             <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) handleImageFile(e.target.files[0],t.id); e.target.value="";}}/>
                             {uploadingIdx===t.id ? "enviando…" : <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto</>}
                           </label>
-                          <button onClick={()=>removeTrade(t.id)} aria-label="Remover operação" style={{background:"none",border:"none",color:"var(--text-3)",cursor:"pointer",fontSize:"15px",padding:"2px 6px"}}>✕</button>
+                          <button onClick={()=>setConfirmacao({titulo:"Remover esta operação?",texto:"Ela ainda não foi salva e vai sair da lista do dia.",botao:"Remover",acao:()=>removeTrade(t.id)})} aria-label="Remover operação" style={{background:"none",border:"none",color:"var(--text-3)",cursor:"pointer",fontSize:"15px",padding:"2px 6px"}}>✕</button>
                         </div>
                       </div>
                       {t.observacao && <p style={{margin:"8px 0 0",color:"var(--text-3)",fontSize:"12.5px",fontStyle:"italic"}}>"{t.observacao}"</p>}
@@ -542,7 +579,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 <div style={{display:"flex",alignItems:"center",gap:"12px",flexShrink:0}}>
                   {entry.totalPts !== undefined && <span style={{color:entry.totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{entry.totalPts>=0?"+":""}{Number((+entry.totalPts).toFixed(1))} pts</span>}
                   <span style={{color:total>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{total>=0?"+":"-"}R$ {Math.abs(total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-                  <button onClick={e=>{e.stopPropagation();deleteEntry(ds);}} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
+                  <button title="Apagar o dia inteiro" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar o dia "+formatDateFull(ds)+"?",texto:"Isso apaga "+((entries[ds]?.trades||[]).length)+" operação(ões), as emoções e a observação desse dia. Não dá para desfazer.",botao:"Apagar dia",acao:()=>deleteEntry(ds)});}} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
                 </div>
               </div>
               {isOpen && (
@@ -595,7 +632,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                               <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
                               {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
-                              {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
+                              {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":"-"}{t.mercado==="B3"?"R$":"$"} {Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>}
                               {t.contratos&&<span style={{color:"#a3b2ab",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
                               {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(46,230,160,0.15)","A":"rgba(46,230,160,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(240,80,110,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#2ee6a0","A":"#2ee6a0","B":"#f59e0b","C":"#f0506e"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
                               {t.estrategia&&<span style={{color:"#86978f",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
@@ -619,6 +656,11 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                   onMouseLeave={e=>{e.currentTarget.style.borderColor="#26352e";e.currentTarget.style.color="#555";}}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                   Editar
+                                </button>
+                                <button title="Apagar esta operação" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar esta operação?",texto:(t.tipo||"")+" "+(t.mercado||"")+(t.ativo?" "+t.ativo:"")+(t.resultado!=null?" · "+(t.resultado>=0?"+":"-")+"R$ "+Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2}):"")+" — os totais do dia são recalculados. Não dá para desfazer.",botao:"Apagar",acao:()=>apagarOperacaoSalva(ds,i)});}}
+                                  style={{background:"none",border:"1px solid #ff547033",borderRadius:"5px",color:"#ff7a90",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px"}}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                                  Apagar
                                 </button>
                               </div>
                             </div>
@@ -689,6 +731,11 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
       {/* Image Viewer fullscreen */}
       {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)}/>}
+      {confirmacao && (
+        <Confirmar titulo={confirmacao.titulo} texto={confirmacao.texto} botao={confirmacao.botao}
+          onCancelar={()=>setConfirmacao(null)}
+          onConfirmar={async()=>{ await confirmacao.acao(); setConfirmacao(null); }}/>
+      )}
     </div>
   );
 }

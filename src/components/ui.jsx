@@ -518,3 +518,33 @@ export function TimePicker({ value, onChange, style, horas = [9,10,11,12,13,14,1
     </>
   );
 }
+
+// ── Confirmação (substitui o window.confirm) ─────────────────────
+export function Confirmar({ titulo, texto, botao = "Apagar", perigo = true, onConfirmar, onCancelar }) {
+  const [ocupado, setOcupado] = useState(false);
+  const cor = perigo ? "#ff5470" : "#2ee6a0";
+  return (
+    <Modal onClose={onCancelar} width={420}>
+      <div style={{ padding:"24px 26px", display:"flex", flexDirection:"column", gap:"16px" }}>
+        <div style={{ display:"flex", gap:"14px", alignItems:"flex-start" }}>
+          <div style={{ width:"40px", height:"40px", borderRadius:"12px", flexShrink:0, background:cor+"18", border:"1px solid "+cor+"44", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            {perigo
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+          </div>
+          <div style={{ minWidth:0 }}>
+            <p style={{ margin:0, color:"var(--text)", fontSize:"16.5px", fontWeight:"800" }}>{titulo}</p>
+            {texto && <p style={{ margin:"6px 0 0", color:"var(--text-2)", fontSize:"13px", lineHeight:1.6 }}>{texto}</p>}
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:"10px", justifyContent:"flex-end" }}>
+          <button onClick={onCancelar} disabled={ocupado} style={{ background:"transparent", color:"var(--text-2)", border:"1px solid var(--line)", borderRadius:"10px", padding:"10px 16px", fontSize:"13px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Cancelar</button>
+          <button autoFocus disabled={ocupado} onClick={async () => { setOcupado(true); try { await onConfirmar(); } finally { setOcupado(false); } }}
+            style={{ background: perigo ? "linear-gradient(135deg,#ff5470,#e03a58)" : "linear-gradient(135deg,#2ee6a0,#1fc98a)", color: perigo ? "#fff" : "#000", border:"none", borderRadius:"10px", padding:"10px 18px", fontSize:"13px", fontWeight:"800", cursor: ocupado ? "wait" : "pointer", fontFamily:"var(--font-sans)" }}>
+            {ocupado ? "Aguarde..." : botao}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}

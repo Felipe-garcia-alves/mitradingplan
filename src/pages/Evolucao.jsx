@@ -15,7 +15,8 @@ function fmtBRL(v) {
   return (v<0?"-":"+")+"R$ "+a.toLocaleString("pt-BR",opts);
 }
 function fmtPts(v) { return (v>=0?"+":"")+v.toFixed(1)+" pts"; }
-function dayKey(d) { return d.toISOString().slice(0,10); }
+// data local (toISOString é UTC e vira o dia às 21h em Brasília)
+function dayKey(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function parseDate(s) { const [y,m,d]=s.split("-"); return new Date(+y,+m-1,+d); }
 
 function DateFilter({ inicio, fim, onChange }) {
@@ -1016,7 +1017,7 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
   if (!trades || trades.length < 3) return null;
 
   const alertas = [];
-  const today = new Date().toISOString().slice(0,10);
+  const today = dayKey(new Date());
 
   // ── 1. OVERTRADING (max 5 trades/dia)
   const tradesHoje = entries.filter(([d])=>d===today).flatMap(([,e])=>e.trades||[]);

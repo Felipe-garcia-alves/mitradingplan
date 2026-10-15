@@ -2,13 +2,17 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import ContasConfig from "../components/ContasConfig";
+import { Confirmar } from "../components/ui";
 import { validarSenha, erroDeSenha, REGRA_SENHA } from "../lib/senha";
 
-export default function Config({ config, saveConfig, nomeUsuario, setPagina, isAdmin, entries }) {
+export default function Config({ config, saveConfig, nomeUsuario, setPagina, isAdmin, entries, compliance, saveCompliance }) {
   const { user, logout } = useAuth();
   const [senhaAtual,  setSenhaAtual]  = useState("");
   const [senhaNova,   setSenhaNova]   = useState("");
   const [msgSenha,   setMsgSenha]   = useState("");
+  const [zerarDisc,  setZerarDisc]  = useState(false);
+  const [msgDados,   setMsgDados]   = useState("");
+  const diasDisciplina = Object.keys(compliance || {}).length;
 
 
 
@@ -49,6 +53,32 @@ export default function Config({ config, saveConfig, nomeUsuario, setPagina, isA
 
       {/* Contas de trading */}
       <ContasConfig config={config} saveConfig={saveConfig} entries={entries}/>
+
+      {/* Dados */}
+      {saveCompliance && (
+        <div style={{ background:"var(--panel)", border:"1px solid #18241f", borderRadius:"14px", padding:"22px", marginBottom:"16px" }}>
+          <p style={{ margin:"0 0 6px", color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Dados</p>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:"16px", flexWrap:"wrap" }}>
+            <div>
+              <p style={{ margin:0, color:"var(--text)", fontSize:"14px", fontWeight:"700" }}>Histórico de disciplina</p>
+              <p style={{ margin:"3px 0 0", color:"var(--text-3)", fontSize:"12.5px" }}>
+                {diasDisciplina ? diasDisciplina+" dia"+(diasDisciplina===1?"":"s")+" registrados — alimenta a Streak de Disciplina e a % de disciplina." : "Nenhum dia registrado."}
+              </p>
+            </div>
+            <button disabled={!diasDisciplina} onClick={()=>setZerarDisc(true)}
+              style={{ background:"rgba(255,84,112,0.06)", border:"1px solid #ff547033", borderRadius:"10px", padding:"9px 16px", color: diasDisciplina ? "#ff7a90" : "var(--text-3)", fontSize:"12.5px", fontWeight:"700", cursor: diasDisciplina ? "pointer" : "not-allowed", fontFamily:"var(--font-sans)", opacity: diasDisciplina ? 1 : 0.5 }}>
+              Apagar histórico de disciplina
+            </button>
+          </div>
+          {msgDados && <p style={{ margin:"10px 0 0", color: msgDados.startsWith("✓") ? "#2ee6a0" : "#ff7a90", fontSize:"13px" }}>{msgDados}</p>}
+        </div>
+      )}
+      {zerarDisc && (
+        <Confirmar titulo="Apagar todo o histórico de disciplina?"
+          texto={"Os "+diasDisciplina+" dias registrados serão apagados e a Streak de Disciplina volta a zero. Suas operações do Diário não são afetadas. Não dá para desfazer."}
+          botao="Apagar histórico" onCancelar={()=>setZerarDisc(false)}
+          onConfirmar={async()=>{ await saveCompliance({}); setZerarDisc(false); setMsgDados("✓ Histórico de disciplina apagado."); setTimeout(()=>setMsgDados(""),3000); }}/>
+      )}
 
       {/* Trocar senha */}
       <div style={{ background:"var(--panel)", border:"1px solid #18241f", borderRadius:"14px", padding:"22px", marginBottom:"16px" }}>
