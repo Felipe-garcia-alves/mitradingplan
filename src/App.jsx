@@ -91,7 +91,7 @@ function UserHeader({ nomeUsuario, entries }) {
   const ref = useRef(null);
   const today = hojeLocal();
   const todayEntry = entries[today];
-  const totalHoje = todayEntry ? (todayEntry.totalB3||0)+(todayEntry.totalForex||0) : null;
+  const totalHoje = todayEntry ? (todayEntry.totalB3||0)+(todayEntry.totalForex||0)+(todayEntry.totalCripto||0)+(todayEntry.totalAmericano||0) : null;
   const inicial = nomeUsuario ? nomeUsuario[0].toUpperCase() : "U";
 
   useEffect(() => {
@@ -126,32 +126,32 @@ function UserHeader({ nomeUsuario, entries }) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0c1411",border:"1px solid #1b2823",borderRadius:"20px",padding:"0",zIndex:300,width:"300px",boxShadow:"0 24px 60px rgba(0,0,0,0.8)",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0c1411",border:"1px solid #1b2823",borderRadius:"20px",padding:"0",zIndex:300,width:"min(340px, calc(100vw - 24px))",maxHeight:"calc(100dvh - 90px)",overflowY:"auto",overscrollBehavior:"contain",boxShadow:"0 24px 60px rgba(0,0,0,0.8)",animation:"mtpPopDown .2s var(--ease) both"}}>
           
           {/* Header */}
           <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #18241f"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{today.split("-").reverse().join(" de ").replace(/(\d+) de (\d+) de (\d+)/,(_,d,m,y)=>{const meses=["","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];return `${d} de ${meses[parseInt(m)]}, ${["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][new Date(today).getDay()]}`})}</p>
+              <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700",lineHeight:1.35,paddingRight:"10px"}}>{today.split("-").reverse().join(" de ").replace(/(\d+) de (\d+) de (\d+)/,(_,d,m,y)=>{const meses=["","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];return `${d} de ${meses[parseInt(m)]}, ${["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][new Date(today+"T12:00:00").getDay()]}`})}</p>
               <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"18px",padding:"0",lineHeight:1}}>×</button>
             </div>
 
             {/* Stats topo */}
             {todayEntry ? (
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"}}>
-                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px"}}>
+                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px",minWidth:0}}>
                   <p style={{margin:"0 0 2px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos do dia</p>
-                  <p style={{margin:0,color:totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"20px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
+                  <p style={{margin:0,color:totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"17px",fontWeight:"800",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
                 </div>
-                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px"}}>
+                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px",minWidth:0}}>
                   <p style={{margin:"0 0 2px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado R$</p>
-                  <p style={{margin:0,color:totalHoje>=0?"#2ee6a0":"#ff5470",fontSize:"20px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
+                  <p style={{margin:0,color:totalHoje>=0?"#2ee6a0":"#ff5470",fontSize:"17px",fontWeight:"800",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
                 </div>
               </div>
             ) : null}
 
             {/* Trades + exec */}
             {todayEntry && (
-              <div style={{display:"flex",gap:"8px"}}>
+              <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
                 <span style={{background:"#18241f",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#aaa",fontWeight:"600"}}>{trades.length} trades</span>
                 {execPct!==null&&wins===trades.length&&<span style={{background:"rgba(46,230,160,0.1)",border:"1px solid #2ee6a033",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#2ee6a0",fontWeight:"600"}}>WIN ({wins})</span>}
                 {execPct!==null&&<span style={{background:"rgba(46,230,160,0.08)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#2ee6a0",fontWeight:"600"}}>● {execPct}% exec.</span>}
@@ -177,7 +177,7 @@ function UserHeader({ nomeUsuario, entries }) {
               <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                 {estratUsadas.map(e=>(
                   <div key={e} style={{background:"#18241f",borderRadius:"8px",padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{e.slice(0,2).toUpperCase()} — {e}</span>
+                    <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.slice(0,2).toUpperCase()} — {e}</span>
                     <span style={{color:"#7a8c84",fontSize:"12px"}}>({estratCount[e]})</span>
                   </div>
                 ))}
@@ -201,14 +201,14 @@ function UserHeader({ nomeUsuario, entries }) {
           {trades.length > 0 && (
             <div style={{padding:"14px 20px"}}>
               <p style={{margin:"0 0 10px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações ({trades.length})</p>
-              <div style={{display:"flex",flexDirection:"column",gap:"6px",maxHeight:"200px",overflowY:"auto"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                 {trades.map((t,i)=>(
                   <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#18241f",borderRadius:"8px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                       <span style={{color:"#86978f",fontSize:"11px"}}>#{i+1}</span>
                       <span style={{padding:"2px 6px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                       {t.estrategia&&<span style={{padding:"2px 7px",borderRadius:"4px",background:"rgba(0,153,255,0.15)",color:"#0099ff",fontSize:"11px",fontWeight:"600"}}>{t.estrategia.slice(0,2).toUpperCase()}</span>}
-                      {t.mercado&&<span style={{color:"#7a8c84",fontSize:"11px"}}>{t.mercado==="B3"?"Venda":"Forex"}</span>}
+                      {t.mercado&&<span style={{color:"#7a8c84",fontSize:"11px"}}>{t.mercado}</span>}
                     </div>
                     <div style={{textAlign:"right"}}>
                       {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
