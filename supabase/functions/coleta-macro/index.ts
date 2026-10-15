@@ -101,6 +101,27 @@ async function dalian() {
            fonte: "eastmoney", conferencia_pct: v };
 }
 
+// O continuo CL=F do Yahoo MISTURA CONTRATOS durante a rolagem mensal do WTI.
+// Medido em 15/10/2026 08:50: shortName "Crude Oil Nov 26", fechamento anterior 95,09 (novembro),
+// mas o preco intradia 94,07 era o de DEZEMBRO. Dava -1,07% quando o TradingView mostrava +0,12%:
+// a "variacao" era o spread entre os dois vencimentos, nao movimento de petroleo.
+// ES=F, NQ=F e YM=F nao tem esse defeito (conferidos contra ESZ26/NQZ26/YMZ26, batem exatamente).
+// Solucao sem manutencao: o proprio meta.shortName diz qual e o contrato da frente — le e busca
+// o vencimento explicito, que e o mesmo que o CL1! do TradingView acompanha.
+const MES_FUT: Record<string, string> = { jan:"F", feb:"G", mar:"H", apr:"J", may:"K", jun:"M",
+                                          jul:"N", aug:"Q", sep:"U", oct:"V", nov:"X", dec:"Z" };
+async function contratoPetroleo(): Promise<string> {
+  try {
+    const r = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?interval=1d&range=1d",
+      { headers: { "User-Agent": UA, "Accept": "application/json" } });
+    if (!r.ok) return "CL=F";
+    const nome = (await r.json())?.chart?.result?.[0]?.meta?.shortName ?? "";
+    const m = /Crude Oil\s+([A-Za-z]{3})\s+(\d{2})/.exec(nome);
+    const cod = m ? MES_FUT[m[1].toLowerCase()] : null;
+    return cod ? `CL${cod}${m![2]}.NYM` : "CL=F";
+  } catch { return "CL=F"; }
+}
+
 const hojeBRT = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
 const r2 = (n: number, d = 3) => Number(n.toFixed(d));
 const idadeMin = (em: string | null) => em == null ? Infinity : (Date.now() - new Date(em).getTime()) / 60000;
@@ -249,9 +270,14 @@ Deno.serve(async (req) => {
     .from("macro_assets").select("*").eq("ativo", true).is("valido_ate", null);
   if (eA) return json({ erro: eA.message }, 500);
 
+  // o petroleo e buscado no vencimento explicito, mas continua gravado como CL=F
+  const simPetroleo = (ativos ?? []).some((a: any) => a.symbol === "CL=F")
+    ? await contratoPetroleo() : "CL=F";
+
   const buscas = await Promise.allSettled((ativos ?? []).map(async (a: any) =>
     ({ a, q: await (a.symbol === "DCE:I" ? dalian()
-                  : DIARIOS.has(a.symbol) ? yahooDiario(a.symbol) : yahoo(a.symbol)) })));
+                  : DIARIOS.has(a.symbol) ? yahooDiario(a.symbol)
+                  : yahoo(a.symbol === "CL=F" ? simPetroleo : a.symbol)) })));
   const precos: Record<string, any> = {}; const linhas: any[] = []; const falhas: string[] = [];
   for (let i = 0; i < buscas.length; i++) {
     const b = buscas[i];
@@ -404,7 +430,7 @@ Deno.serve(async (req) => {
   if (eI) return json({ erro: eI.message, vies, vies_erro: viesErro }, 500);
 
   return json({
-    ok: true, vies, vies_erro: viesErro,
+    ok: true, vies, vies_erro: viesErro, contrato_petroleo: simPetroleo,
     nivel, cobertura: r2(cobertura, 1), justo_win: justoWin, mercado_win: mercadoWin,
     justo_wdo: r2(fxAgora * 1000, 1), variacao_win_pct: rIbov != null ? r2(rIbov * 100, 3) : null,
     score_trio: r2(trio, 2), trio_completo: trioCompleto, trio: { vix: vVix, petroleo: vOil, minerio: vMin },
