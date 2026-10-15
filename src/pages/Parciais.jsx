@@ -24,7 +24,7 @@ export default function Parciais({ config }) {
     <div style={{ fontFamily:"var(--font-sans)" }}>
       <div style={{ marginBottom:"24px" }}>
         <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.5px" }}>Gerenciamento de Parciais</h1>
-        <p style={{ margin:0, color:"#555", fontSize:"13px" }}>Regras ajustadas para sua banca real atual</p>
+        <p style={{ margin:0, color:"#7a8c84", fontSize:"13px" }}>Regras ajustadas para sua banca real atual</p>
       </div>
 
       {guide.map((g,i)=>(
@@ -48,7 +48,7 @@ export default function Parciais({ config }) {
 
       <div style={{ padding:"18px 22px", borderRadius:"12px", background:"rgba(0,153,255,0.05)", border:"1px solid rgba(0,153,255,0.15)" }}>
         <p style={{ margin:"0 0 8px", color:"#0099ff", fontWeight:"700", fontSize:"14px" }}>💡 A verdade sobre parciais</p>
-        <p style={{ margin:0, color:"#888", fontSize:"13px", lineHeight:"1.6" }}>Parciais reduzem o risco <strong style={{ color:"#ccc" }}>e tambem o lucro</strong>. Defina uma regra e siga — nao decida na hora da emocao. Consistencia bate otimizacao.</p>
+        <p style={{ margin:0, color:"#a3b2ab", fontSize:"13px", lineHeight:"1.6" }}>Parciais reduzem o risco <strong style={{ color:"#ccc" }}>e tambem o lucro</strong>. Defina uma regra e siga — nao decida na hora da emocao. Consistencia bate otimizacao.</p>
       </div>
     </div>
   );

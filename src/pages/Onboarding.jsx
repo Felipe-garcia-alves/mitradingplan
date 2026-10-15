@@ -69,11 +69,11 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
             <h1 style={{margin:"0 0 12px",fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>
               Bem-vindo, {nome}! 👋
             </h1>
-            <p style={{margin:"0 0 32px",color:"#666",fontSize:"15px",lineHeight:"1.7"}}>
+            <p style={{margin:"0 0 32px",color:"#86978f",fontSize:"15px",lineHeight:"1.7"}}>
               O <strong style={{color:"#f0f0f0"}}>Mi Trading Plan</strong> é a sua plataforma profissional para transformar disciplina em resultados consistentes.
             </p>
             <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px",marginBottom:"32px",textAlign:"left"}}>
-              <p style={{margin:"0 0 4px",color:"#555",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Sua configuração leva</p>
+              <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Sua configuração leva</p>
               <p style={{margin:0,color:"#f0f0f0",fontSize:"16px",fontWeight:"700"}}>menos de 2 minutos ⚡</p>
             </div>
             <button onClick={()=>setStep(1)} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"15px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
@@ -86,7 +86,7 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
         {step===1 && (
           <div style={{animation:"fadeIn 0.4s ease"}}>
             <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Em quais mercados você opera?</h2>
-            <p style={{margin:"0 0 28px",color:"#555",fontSize:"14px"}}>Selecione e informe sua banca inicial em cada mercado.</p>
+            <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"14px"}}>Selecione e informe sua banca inicial em cada mercado.</p>
             <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"32px"}}>
               {MERCADOS.map(m=>{
                 const ativo = mercadosAtivos.includes(m.id);
@@ -99,12 +99,12 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
                       </div>
                       <div style={{flex:1}}>
                         <p style={{margin:0,color:ativo?m.cor:"#aaa",fontWeight:"700",fontSize:"14px"}}>{m.label}</p>
-                        <p style={{margin:0,color:"#555",fontSize:"12px"}}>{m.desc}</p>
+                        <p style={{margin:0,color:"#7a8c84",fontSize:"12px"}}>{m.desc}</p>
                       </div>
                     </div>
                     {ativo && (
                       <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                        <span style={{color:"#666",fontSize:"13px",flexShrink:0}}>Banca inicial:</span>
+                        <span style={{color:"#86978f",fontSize:"13px",flexShrink:0}}>Banca inicial:</span>
                         <div style={{display:"flex",alignItems:"center",gap:"6px",flex:1}}>
                           <span style={{color:m.cor,fontSize:"13px",fontWeight:"700"}}>{m.cur}</span>
                           <input type="number" value={bancas[m.id]} onChange={e=>setBancas(p=>({...p,[m.id]:e.target.value}))}
@@ -117,7 +117,7 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
               })}
             </div>
             <div style={{display:"flex",gap:"10px"}}>
-              <button onClick={()=>setStep(0)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid #26352e",background:"transparent",color:"#666",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
+              <button onClick={()=>setStep(0)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid #26352e",background:"transparent",color:"#86978f",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
               <button onClick={()=>setStep(2)} disabled={mercadosAtivos.length===0}
                 style={{flex:2,padding:"14px",borderRadius:"12px",border:"none",background:mercadosAtivos.length>0?"linear-gradient(135deg,#2ee6a0,#1fc98a)":"#18241f",color:mercadosAtivos.length>0?"#000":"#444",fontWeight:"700",fontSize:"14px",cursor:mercadosAtivos.length>0?"pointer":"not-allowed",fontFamily:"var(--font-sans)"}}>
                 Próximo →
@@ -130,17 +130,17 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
         {step===2 && (
           <div style={{animation:"fadeIn 0.4s ease"}}>
             <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Qual seu principal setup?</h2>
-            <p style={{margin:"0 0 28px",color:"#555",fontSize:"14px"}}>Crie sua primeira estratégia. Você pode adicionar mais depois.</p>
+            <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"14px"}}>Crie sua primeira estratégia. Você pode adicionar mais depois.</p>
             <div style={{marginBottom:"16px"}}>
-              <label style={{color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"8px"}}>Nome da estratégia</label>
+              <label style={{color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"8px"}}>Nome da estratégia</label>
               <input style={inp} placeholder="Ex: Price Action, CF, Tape Reading..." value={nomeEst} onChange={e=>setNomeEst(e.target.value)}
                 onKeyDown={e=>e.key==="Enter"&&setStep(3)}/>
             </div>
             <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"12px",padding:"14px 16px",marginBottom:"28px"}}>
-              <p style={{margin:0,color:"#555",fontSize:"12px",lineHeight:"1.6"}}>💡 <span style={{color:"#888"}}>Traders profissionais operam no máximo 2-3 estratégias. Foco é a chave.</span></p>
+              <p style={{margin:0,color:"#7a8c84",fontSize:"12px",lineHeight:"1.6"}}>💡 <span style={{color:"#a3b2ab"}}>Traders profissionais operam no máximo 2-3 estratégias. Foco é a chave.</span></p>
             </div>
             <div style={{display:"flex",gap:"10px"}}>
-              <button onClick={()=>setStep(1)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid #26352e",background:"transparent",color:"#666",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
+              <button onClick={()=>setStep(1)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid #26352e",background:"transparent",color:"#86978f",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
               <button onClick={()=>setStep(3)}
                 style={{flex:2,padding:"14px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
                 {nomeEst.trim() ? "Próximo →" : "Pular →"}
@@ -153,14 +153,14 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
         {step===3 && (
           <div style={{animation:"fadeIn 0.4s ease"}}>
             <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Tudo pronto! 🎯</h2>
-            <p style={{margin:"0 0 28px",color:"#555",fontSize:"14px"}}>Explore os 3 recursos que vão transformar seu trading:</p>
+            <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"14px"}}>Explore os 3 recursos que vão transformar seu trading:</p>
             <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"32px"}}>
               {FEATURES.map((f,i)=>(
                 <div key={i} style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"14px",padding:"16px 20px",display:"flex",gap:"16px",alignItems:"flex-start"}}>
                   <div style={{flexShrink:0,marginTop:"2px"}}>{f.icon}</div>
                   <div>
                     <p style={{margin:"0 0 4px",color:"#f0f0f0",fontWeight:"700",fontSize:"14px"}}>{f.titulo}</p>
-                    <p style={{margin:0,color:"#666",fontSize:"13px",lineHeight:"1.5"}}>{f.desc}</p>
+                    <p style={{margin:0,color:"#86978f",fontSize:"13px",lineHeight:"1.5"}}>{f.desc}</p>
                   </div>
                 </div>
               ))}

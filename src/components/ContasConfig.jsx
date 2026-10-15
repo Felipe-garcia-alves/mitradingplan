@@ -31,7 +31,7 @@ export default function ContasConfig({ config, saveConfig, entries }) {
     <div style={{ background:"var(--panel)", border:"1px solid var(--line)", borderRadius:"14px", padding:"22px", marginBottom:"16px" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", marginBottom:"14px", flexWrap:"wrap" }}>
         <div>
-          <p style={{ margin:0, color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Contas de trading</p>
+          <p style={{ margin:0, color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Contas de trading</p>
           <p style={{ margin:"4px 0 0", color:"var(--text-3)", fontSize:"12.5px" }}>Separe resultados, banca e limites de risco por conta (real, simulador, mesa).</p>
         </div>
         <button onClick={() => setEditando(null)} style={{ background:"rgba(46,230,160,0.08)", border:"1px solid #2ee6a044", borderRadius:"8px", padding:"8px 14px", color:"#2ee6a0", fontSize:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"var(--font-sans)" }}>+ Nova conta</button>

@@ -75,7 +75,7 @@ export default function Crescimento({ entries, config }) {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:"16px", flexWrap:"wrap", marginBottom:"24px" }}>
         <div>
           <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Crescimento</h1>
-          <p style={{ margin:"4px 0 0", color:"#666", fontSize:"13px" }}>Real vs projetado — calculado a partir da banca atual</p>
+          <p style={{ margin:"4px 0 0", color:"#86978f", fontSize:"13px" }}>Real vs projetado — calculado a partir da banca atual</p>
         </div>
         <div style={{ display:"flex", gap:"6px", alignItems:"center", flexWrap:"wrap" }}>
           {carteiras.map(c=>(

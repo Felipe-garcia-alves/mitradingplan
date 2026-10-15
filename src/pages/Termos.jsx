@@ -10,13 +10,13 @@ export default function Termos({ onVoltar }) {
         {/* Header */}
         <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"32px"}}>
           {onVoltar && (
-            <button onClick={onVoltar} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",padding:"8px 14px",color:"#888",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>
+            <button onClick={onVoltar} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",padding:"8px 14px",color:"#a3b2ab",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>
               ← Voltar
             </button>
           )}
           <div>
             <h1 style={{margin:0,fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Mi Trading Plan</h1>
-            <p style={{margin:0,color:"#555",fontSize:"12px"}}>Documentos legais</p>
+            <p style={{margin:0,color:"#7a8c84",fontSize:"12px"}}>Documentos legais</p>
           </div>
         </div>
 
@@ -33,9 +33,9 @@ export default function Termos({ onVoltar }) {
         <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"36px 40px"}}>
 
           {aba === "termos" && (
-            <div style={{color:"#888",fontSize:"14px",lineHeight:"1.9"}}>
+            <div style={{color:"#a3b2ab",fontSize:"14px",lineHeight:"1.9"}}>
               <h2 style={{margin:"0 0 8px",color:"#f0f0f0",fontSize:"18px",fontWeight:"800"}}>Termos de Uso</h2>
-              <p style={{margin:"0 0 28px",color:"#555",fontSize:"12px"}}>Última atualização: março de 2026</p>
+              <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"12px"}}>Última atualização: março de 2026</p>
 
               <Section titulo="1. Aceitação dos Termos">
                 Ao criar uma conta e utilizar o <strong style={{color:"#f0f0f0"}}>Mi Trading Plan</strong>, você concorda com estes Termos de Uso. Se não concordar, não utilize o serviço.
@@ -80,9 +80,9 @@ export default function Termos({ onVoltar }) {
           )}
 
           {aba === "privacidade" && (
-            <div style={{color:"#888",fontSize:"14px",lineHeight:"1.9"}}>
+            <div style={{color:"#a3b2ab",fontSize:"14px",lineHeight:"1.9"}}>
               <h2 style={{margin:"0 0 8px",color:"#f0f0f0",fontSize:"18px",fontWeight:"800"}}>Política de Privacidade</h2>
-              <p style={{margin:"0 0 28px",color:"#555",fontSize:"12px"}}>Última atualização: março de 2026</p>
+              <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"12px"}}>Última atualização: março de 2026</p>
 
               <Section titulo="1. Dados Coletados">
                 Coletamos apenas os dados necessários para o funcionamento do serviço: nome, endereço de email, dados de operações financeiras inseridos pelo usuário (trades, estratégias, anotações) e dados de uso da plataforma.
@@ -120,7 +120,7 @@ export default function Termos({ onVoltar }) {
 
         </div>
 
-        <p style={{textAlign:"center",color:"#333",fontSize:"12px",marginTop:"24px"}}>
+        <p style={{textAlign:"center",color:"#64766e",fontSize:"12px",marginTop:"24px"}}>
           Mi Trading Plan · Felipe Garcia Alves · mitradingplan.vercel.app
         </p>
       </div>

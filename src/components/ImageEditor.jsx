@@ -169,10 +169,10 @@ export default function ImageEditor({ src: srcOriginal, onSave, onClose }) {
           </div>
         ))}
         <div style={{width:"1px",height:"24px",background:"#26352e"}}/>
-        <button onClick={undo} style={{padding:"7px 13px",borderRadius:"8px",border:"1px solid #26352e",background:"transparent",color:"#888",cursor:"pointer",fontSize:"12px",fontFamily:"var(--font-sans)"}}>↩ Desfazer</button>
+        <button onClick={undo} style={{padding:"7px 13px",borderRadius:"8px",border:"1px solid #26352e",background:"transparent",color:"#a3b2ab",cursor:"pointer",fontSize:"12px",fontFamily:"var(--font-sans)"}}>↩ Desfazer</button>
         <div style={{flex:1}}/>
         <button onClick={handleSave} disabled={saving} style={{padding:"9px 20px",borderRadius:"9px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"13px",cursor:saving?"not-allowed":"pointer",fontFamily:"var(--font-sans)",opacity:saving?0.7:1}}>{saving?"Salvando...":"✓ Salvar"}</button>
-        <button onClick={onClose} style={{padding:"9px 14px",borderRadius:"9px",border:"1px solid #26352e",background:"transparent",color:"#888",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>✕</button>
+        <button onClick={onClose} style={{padding:"9px 14px",borderRadius:"9px",border:"1px solid #26352e",background:"transparent",color:"#a3b2ab",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>✕</button>
       </div>
 
       <div style={{position:"relative",borderRadius:"12px",overflow:"hidden",boxShadow:"0 8px 40px rgba(0,0,0,0.6)",touchAction:"none",cursor:tool==="text"?"text":"crosshair"}}>
@@ -187,7 +187,7 @@ export default function ImageEditor({ src: srcOriginal, onSave, onClose }) {
           </div>
         )}
       </div>
-      <p style={{color:"#333",fontSize:"11px",marginTop:"8px"}}>{tool==="pen"?"Desenhe no gráfico":"Clique onde quer inserir texto — depois Enter"}</p>
+      <p style={{color:"#64766e",fontSize:"11px",marginTop:"8px"}}>{tool==="pen"?"Desenhe no gráfico":"Clique onde quer inserir texto — depois Enter"}</p>
     </div>
   );
 }

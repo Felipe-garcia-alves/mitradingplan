@@ -166,15 +166,15 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
     return (
       <div style={{fontFamily:"var(--font-sans)"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px"}}>
-          <button onClick={()=>setEditando(false)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"8px",padding:"8px 14px",color:"#888",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
+          <button onClick={()=>setEditando(false)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"8px",padding:"8px 14px",color:"#a3b2ab",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
           <h1 style={{margin:0,fontSize:"20px",fontWeight:"800",color:"#f0f0f0"}}>{editId?"Editar Regra":"Nova Regra"}</h1>
         </div>
         <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"14px",padding:"24px"}}>
           <div style={{marginBottom:"16px"}}>
-            <label style={{color:"#777",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"8px"}}>Icone</label>
+            <label style={{color:"#93a39c",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"8px"}}>Icone</label>
             <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
               <button onClick={()=>setShowIcons(!showIcons)} style={{width:"48px",height:"48px",fontSize:"24px",background:"rgba(255,255,255,0.05)",border:"1px solid #26352e",borderRadius:"10px",cursor:"pointer"}}>{form.icon}</button>
-              <span style={{color:"#555",fontSize:"12px"}}>Clique para escolher outro icone</span>
+              <span style={{color:"#7a8c84",fontSize:"12px"}}>Clique para escolher outro icone</span>
             </div>
             {showIcons && (
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"10px",padding:"12px",background:"rgba(255,255,255,0.03)",borderRadius:"10px",border:"1px solid #26352e"}}>
@@ -185,11 +185,11 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
             )}
           </div>
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#777",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Titulo *</label>
+            <label style={{color:"#93a39c",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Titulo *</label>
             <input style={inp} placeholder="Ex: Nao operar em dias de noticia" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
           </div>
           <div style={{marginBottom:"16px"}}>
-            <label style={{color:"#777",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Descricao</label>
+            <label style={{color:"#93a39c",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Descricao</label>
             <textarea style={{...inp,resize:"vertical",lineHeight:"1.6",minHeight:"80px"}} placeholder="Detalhes da regra..." value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} rows={3}/>
           </div>
           <div style={{marginBottom:"20px"}}>
@@ -198,12 +198,12 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
                 {form.personal && <span style={{color:"#000",fontSize:"12px",fontWeight:"900"}}>✓</span>}
               </div>
               <span style={{color:form.personal?"#f59e0b":"#888",fontWeight:"600",fontSize:"13px"}}>Regra pessoal</span>
-              <span style={{color:"#555",fontSize:"12px"}}>(badge amarelo)</span>
+              <span style={{color:"#7a8c84",fontSize:"12px"}}>(badge amarelo)</span>
             </div>
           </div>
           <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
             <button onClick={salvar} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>💾 Salvar regra</button>
-            <button onClick={()=>setEditando(false)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"10px",padding:"11px 18px",color:"#777",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Cancelar</button>
+            <button onClick={()=>setEditando(false)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"10px",padding:"11px 18px",color:"#93a39c",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Cancelar</button>
             {msg && <span style={{color:"#3fe8a8",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
           </div>
         </div>
@@ -242,21 +242,21 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           const color = rule.personal ? "#f59e0b" : "#3fe8a8";
           return (
             <div key={rule.id} style={{background:ok?(rule.personal?"rgba(245,158,11,0.07)":"rgba(46,230,160,0.07)"):"#0e1613",border:"1px solid "+(ok?(rule.personal?"#f59e0b44":"#2ee6a044"):"#18241f"),borderRadius:"12px",padding:"12px 14px",display:"flex",gap:"10px",alignItems:"flex-start",transition:"all 0.2s"}}>
-              <div onClick={()=>toggleCheck(rule.id)} style={{width:"22px",height:"22px",borderRadius:"6px",border:"2px solid "+(ok?color:"#333"),background:ok?color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",cursor:"pointer",transition:"all 0.2s"}}>
+              <div onClick={()=>toggleCheck(rule.id)} style={{width:"22px",height:"22px",borderRadius:"6px",border:"2px solid "+(ok?color:"#64766e"),background:ok?color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",cursor:"pointer",transition:"all 0.2s"}}>
                 {ok && <span style={{color:"#000",fontSize:"12px",fontWeight:"900"}}>✓</span>}
               </div>
               <div style={{flex:1,cursor:"pointer"}} onClick={()=>toggleCheck(rule.id)}>
                 <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"3px",flexWrap:"wrap"}}>
-                  <RuleIcon id={rule.icon} color={ok?color:"#555"} size={16}/>
+                  <RuleIcon id={rule.icon} color={ok?color:"#7a8c84"} size={16}/>
                   <span style={{color:"#f0f0f0",fontWeight:"600",fontSize:"14px"}}>{rule.title}</span>
                   {rule.personal && <span style={{background:"rgba(245,158,11,0.15)",color:"#f59e0b",fontSize:"10px",fontWeight:"700",padding:"2px 7px",borderRadius:"20px"}}>PESSOAL</span>}
                 </div>
-                {rule.desc && <p style={{margin:0,color:"#777",fontSize:"12px",lineHeight:"1.5"}}>{rule.desc}</p>}
+                {rule.desc && <p style={{margin:0,color:"#93a39c",fontSize:"12px",lineHeight:"1.5"}}>{rule.desc}</p>}
               </div>
               <div style={{display:"flex",gap:"4px",flexShrink:0,alignItems:"center"}}>
                 <button onClick={()=>mover(idx,-1)} disabled={idx===0} style={{background:"none",border:"none",color:idx===0?"#26352e":"#555",cursor:idx===0?"default":"pointer",fontSize:"13px",padding:"4px"}}>▲</button>
                 <button onClick={()=>mover(idx,1)} disabled={idx===regrasList.length-1} style={{background:"none",border:"none",color:idx===regrasList.length-1?"#26352e":"#555",cursor:idx===regrasList.length-1?"default":"pointer",fontSize:"13px",padding:"4px"}}>▼</button>
-                <button onClick={()=>abrirEditar(rule)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"6px",color:"#777",cursor:"pointer",fontSize:"11px",padding:"4px 8px",fontFamily:"var(--font-sans)"}}>✏️</button>
+                <button onClick={()=>abrirEditar(rule)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"6px",color:"#93a39c",cursor:"pointer",fontSize:"11px",padding:"4px 8px",fontFamily:"var(--font-sans)"}}>✏️</button>
                 <button onClick={()=>excluir(rule.id)} style={{background:"rgba(255,84,112,0.06)",border:"1px solid #ff547022",borderRadius:"6px",color:"#ff7a90",cursor:"pointer",fontSize:"11px",padding:"4px 8px",fontFamily:"var(--font-sans)"}}>✕</button>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               <div style={{height:"100%",width:pct+"%",background:pct>=80?"#3fe8a8":pct>=50?"#f59e0b":"#f0506e",borderRadius:"3px",transition:"width 0.3s"}}/>
             </div>
             <span style={{color:pct>=80?"#3fe8a8":pct>=50?"#f59e0b":"#f0506e",fontSize:"14px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{pct}%</span>
-            <span style={{color:"#444",fontSize:"12px"}}>{checkedCount} de {totalRegras}</span>
+            <span style={{color:"#6f8179",fontSize:"12px"}}>{checkedCount} de {totalRegras}</span>
           </div>
         )}
       </div>
@@ -301,18 +301,18 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           {/* Média do mês */}
           {mediaMes !== null && (
             <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"18px 20px"}}>
-              <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Média do Mês</p>
+              <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Média do Mês</p>
               <p style={{margin:"0 0 2px",color:mesColor,fontSize:"28px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{mediaMes}%</p>
               <div style={{height:"4px",borderRadius:"2px",background:"#18241f",marginTop:"8px",overflow:"hidden"}}>
                 <div style={{height:"100%",width:mediaMes+"%",background:mesColor,borderRadius:"2px",transition:"width 0.5s"}}/>
               </div>
-              <p style={{margin:"6px 0 0",color:"#444",fontSize:"11px"}}>{monthSaved.length} dia{monthSaved.length!==1?"s":""} registrados</p>
+              <p style={{margin:"6px 0 0",color:"#6f8179",fontSize:"11px"}}>{monthSaved.length} dia{monthSaved.length!==1?"s":""} registrados</p>
             </div>
           )}
           {/* Regras mais quebradas */}
           {topQuebradas.length > 0 && (
             <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"18px 20px"}}>
-              <p style={{margin:"0 0 12px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Regras Mais Quebradas — {MONTH_NAMES[month]}</p>
+              <p style={{margin:"0 0 12px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Regras Mais Quebradas — {MONTH_NAMES[month]}</p>
               <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
                 {topQuebradas.map((r,i)=>{
                   const pctQ = Math.round((r.quebradas/r.total)*100);
@@ -332,26 +332,26 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
                   );
                 })}
               </div>
-              <p style={{margin:"10px 0 0",color:"#333",fontSize:"10px"}}>baseado nos dias já registrados</p>
+              <p style={{margin:"10px 0 0",color:"#64766e",fontSize:"10px"}}>baseado nos dias já registrados</p>
             </div>
           )}
           {/* Correlação disciplina × resultado */}
           {corrDados.length >= 3 && mediaResAlta !== null && (
             <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"18px 20px"}}>
-              <p style={{margin:"0 0 10px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Disciplina × Resultado</p>
+              <p style={{margin:"0 0 10px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Disciplina × Resultado</p>
               <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{fontSize:"12px",color:"#666"}}>≥80% disciplina</span>
+                  <span style={{fontSize:"12px",color:"#86978f"}}>≥80% disciplina</span>
                   <span style={{fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)",color:mediaResAlta>=0?"#3fe8a8":"#f0506e"}}>{mediaResAlta>=0?"+":""}R$ {mediaResAlta.toFixed(0)}/dia</span>
                 </div>
                 {mediaResBaixa !== null && (
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:"12px",color:"#666"}}>&lt;80% disciplina</span>
+                    <span style={{fontSize:"12px",color:"#86978f"}}>&lt;80% disciplina</span>
                     <span style={{fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)",color:mediaResBaixa>=0?"#3fe8a8":"#f0506e"}}>{mediaResBaixa>=0?"+":""}R$ {mediaResBaixa.toFixed(0)}/dia</span>
                   </div>
                 )}
                 <div style={{height:"1px",background:"#18241f",margin:"2px 0"}}/>
-                <p style={{margin:0,color:"#444",fontSize:"10px",lineHeight:"1.5"}}>
+                <p style={{margin:0,color:"#6f8179",fontSize:"10px",lineHeight:"1.5"}}>
                   {mediaResAlta >= (mediaResBaixa||0)+50
                     ? "✓ Disciplina impacta positivamente seus resultados"
                     : "Ainda sem correlação clara — continue registrando"}
@@ -367,9 +367,9 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           <div><h3 style={{margin:0,fontSize:"15px",color:"#aaa",fontWeight:"600",letterSpacing:"0.5px"}}>Calendário</h3></div>
           {pct !== null && (
             <div style={{textAlign:"right"}}>
-              <p style={{margin:"0 0 2px",color:"#777",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Hoje — progresso</p>
+              <p style={{margin:"0 0 2px",color:"#93a39c",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Hoje — progresso</p>
               <p style={{margin:0,color:pct>=80?"#3fe8a8":pct>=50?"#f59e0b":"#f0506e",fontSize:"24px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{pct}%</p>
-              <p style={{margin:"2px 0 0",color:"#444",fontSize:"11px"}}>{checkedCount} de {totalRegras} regras</p>
+              <p style={{margin:"2px 0 0",color:"#6f8179",fontSize:"11px"}}>{checkedCount} de {totalRegras} regras</p>
             </div>
           )}
         </div>
@@ -378,7 +378,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
         <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid #18241f",borderRadius:"14px",padding:"16px"}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px",marginBottom:"8px"}}>
             {["Dom","Seg","Ter","Qua","Qui","Sex","Sab"].map(d=>(
-              <div key={d} style={{textAlign:"center",color:"#444",fontSize:"10px",fontWeight:"600",padding:"4px 0"}}>{d}</div>
+              <div key={d} style={{textAlign:"center",color:"#6f8179",fontSize:"10px",fontWeight:"600",padding:"4px 0"}}>{d}</div>
             ))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px"}}>
@@ -420,7 +420,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
             })}
           </div>
         </div>
-        <p style={{margin:"10px 0 0",color:"#444",fontSize:"11px",textAlign:"center"}}>
+        <p style={{margin:"10px 0 0",color:"#6f8179",fontSize:"11px",textAlign:"center"}}>
           <span style={{color:"#2ee6a066"}}>■</span> ≥80% &nbsp;
           <span style={{color:"#f59e0b66"}}>■</span> 50–79% &nbsp;
           <span style={{color:"#ff547066"}}>■</span> &lt;50% &nbsp;

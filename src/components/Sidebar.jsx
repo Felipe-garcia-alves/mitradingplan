@@ -64,7 +64,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
         <div style={{height:"1px",margin:"0 20px",background:"linear-gradient(90deg,transparent,var(--line-strong),transparent)"}}/>
 
         {/* Menu */}
-        <nav style={{flex:1,minHeight:0,padding:"20px 12px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"22px"}}>
+        <nav className="mtp-nav" style={{flex:1,minHeight:0,padding:"36px 12px 20px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"34px"}}>
           {SECOES.map(s=>(
             <div key={s.titulo}>
               <p className="mtp-section-label">{s.titulo}</p>

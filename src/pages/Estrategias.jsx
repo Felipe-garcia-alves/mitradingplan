@@ -63,40 +63,40 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
     return (
       <div style={{fontFamily:"var(--font-sans)"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px"}}>
-          <button onClick={()=>setModo("lista")} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",padding:"8px 14px",color:"#777",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
+          <button onClick={()=>setModo("lista")} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",padding:"8px 14px",color:"#93a39c",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
           <h1 style={{margin:0,fontSize:"20px",fontWeight:"800",color:"#f0f0f0"}}>{editId?"Editar Estratégia":"Nova Estratégia"}</h1>
         </div>
         <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"14px",padding:"24px"}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:"14px"}}>
             <div>
-              <label style={{color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Nome da estratégia *</label>
+              <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Nome da estratégia *</label>
               <input style={inp} placeholder="Ex: Rompimento de Máxima" value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))}/>
             </div>
             <div>
-              <label style={{color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Mercado</label>
+              <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Mercado</label>
               <Select style={{...inp,width:"100%"}} value={form.mercado} onChange={v=>setForm(p=>({...p,mercado:v}))}
                 options={[{value:"B3",label:"Mini Índice B3",cor:"#2ee6a0"},{value:"Forex",label:"Forex",cor:"#f5b941"},{value:"Cripto",label:"Cripto",cor:"#a78bfa"},{value:"Americano",label:"Ações Americanas",cor:"#60a5fa"},{value:"Ambos",label:"Vários mercados"}]}/>
             </div>
           </div>
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Timeframe</label>
+            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Timeframe</label>
             <input style={{...inp}} placeholder="Ex: M5, M15, H1..." value={form.timeframe} onChange={e=>setForm(p=>({...p,timeframe:e.target.value}))}/>
           </div>
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Descrição geral</label>
+            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Descrição geral</label>
             <textarea style={{...inp,resize:"vertical",lineHeight:"1.6",minHeight:"70px"}} placeholder="Descreva a lógica da estratégia..." value={form.descricao} onChange={e=>setForm(p=>({...p,descricao:e.target.value}))} rows={3}/>
           </div>
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de entrada</label>
+            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de entrada</label>
             <textarea style={{...inp,resize:"vertical",lineHeight:"1.6",minHeight:"80px"}} placeholder="Quais condições precisam ser atendidas para entrar?" value={form.regrasEntrada} onChange={e=>setForm(p=>({...p,regrasEntrada:e.target.value}))} rows={4}/>
           </div>
           <div style={{marginBottom:"20px"}}>
-            <label style={{color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de saída / Stop / Alvo</label>
+            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de saída / Stop / Alvo</label>
             <textarea style={{...inp,resize:"vertical",lineHeight:"1.6",minHeight:"80px"}} placeholder="Onde colocar o stop? Qual o alvo? Quando sair?" value={form.regrasesSaida} onChange={e=>setForm(p=>({...p,regrasesSaida:e.target.value}))} rows={4}/>
           </div>
           <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
             <button onClick={salvar} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>Salvar estratégia</button>
-            <button onClick={()=>setModo("lista")} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"10px",padding:"11px 18px",color:"#777",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Cancelar</button>
+            <button onClick={()=>setModo("lista")} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"10px",padding:"11px 18px",color:"#93a39c",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Cancelar</button>
             {msg && <span style={{color:msg.includes("✓")?"#2ee6a0":"#ff7a90",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"24px",flexWrap:"wrap",gap:"10px"}}>
         <div>
           <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Estratégias</h1>
-          <p style={{margin:"4px 0 0",color:"#666",fontSize:"13px"}}>Documente e organize seus setups operacionais</p>
+          <p style={{margin:"4px 0 0",color:"#86978f",fontSize:"13px"}}>Documente e organize seus setups operacionais</p>
         </div>
         <button onClick={novaForm} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
           + Nova estratégia
@@ -127,7 +127,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
       {lista.length === 0 ? (
         <div style={{textAlign:"center",padding:"60px 20px",background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px"}}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#26352e" strokeWidth="1.5" style={{margin:"0 auto 14px",display:"block"}}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          <p style={{color:"#444",fontSize:"14px",margin:"0 0 6px"}}>Nenhuma estratégia cadastrada.</p>
+          <p style={{color:"#6f8179",fontSize:"14px",margin:"0 0 6px"}}>Nenhuma estratégia cadastrada.</p>
           <p style={{color:"#26352e",fontSize:"12px",margin:0}}>Clique em "Nova estratégia" para começar.</p>
         </div>
       ) : (
@@ -181,7 +181,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                     </div>
                   </div>
 
-                  <p className="mtp-clamp-2" style={{margin:0,color:"var(--text-3)",fontSize:"12.5px",lineHeight:1.55,position:"relative",minHeight:"38px"}}>
+                  <p className="mtp-clamp-2" style={{margin:0,color:"var(--text-2)",fontSize:"13px",lineHeight:1.6,position:"relative",minHeight:"40px"}}>
                     {est.descricao || "Sem descrição. Clique para ver as regras."}
                   </p>
 
@@ -256,7 +256,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
               {aberta.descricao && (
                 <div>
                   <p style={{...kpiLabel,marginBottom:"8px"}}>Descrição</p>
-                  <p style={{margin:0,color:"var(--text-2)",fontSize:"14px",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{aberta.descricao}</p>
+                  <p style={{margin:0,color:"var(--text)",fontSize:"14.5px",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{aberta.descricao}</p>
                 </div>
               )}
 
@@ -268,7 +268,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/><line x1="4" y1="12" x2="15" y2="12"/></svg>
                         <p style={{margin:0,color:"#2ee6a0",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"}}>Regras de entrada</p>
                       </div>
-                      <p style={{margin:0,color:"var(--text-2)",fontSize:"13px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasEntrada}</p>
+                      <p style={{margin:0,color:"#e2ebe6",fontSize:"13.5px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasEntrada}</p>
                     </div>
                   )}
                   {aberta.regrasesSaida && (
@@ -277,7 +277,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff7a90" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
                         <p style={{margin:0,color:"#ff7a90",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"}}>Saída / Stop / Alvo</p>
                       </div>
-                      <p style={{margin:0,color:"var(--text-2)",fontSize:"13px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasesSaida}</p>
+                      <p style={{margin:0,color:"#e2ebe6",fontSize:"13.5px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasesSaida}</p>
                     </div>
                   )}
                 </div>

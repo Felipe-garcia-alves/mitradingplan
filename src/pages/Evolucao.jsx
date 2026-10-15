@@ -384,11 +384,11 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                     <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:colors[i%colors.length]}}/>
                   </div>
                 </div>
-                <span style={{color:"#555",fontSize:"11px",minWidth:"28px",textAlign:"right"}}>{pct}%</span>
+                <span style={{color:"#7a8c84",fontSize:"11px",minWidth:"28px",textAlign:"right"}}>{pct}%</span>
               </div>
             );
           })}
-          {Object.keys(gByEst).length===0&&<p style={{color:"#444",fontSize:"12px"}}>Nenhum ganho</p>}
+          {Object.keys(gByEst).length===0&&<p style={{color:"#6f8179",fontSize:"12px"}}>Nenhum ganho</p>}
         </div>
         <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
@@ -411,11 +411,11 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                     <div style={{height:"100%",width:pct+"%",borderRadius:"2px",background:"#ff5470"}}/>
                   </div>
                 </div>
-                <span style={{color:"#555",fontSize:"11px",minWidth:"28px",textAlign:"right"}}>{pct}%</span>
+                <span style={{color:"#7a8c84",fontSize:"11px",minWidth:"28px",textAlign:"right"}}>{pct}%</span>
               </div>
             );
           })}
-          {Object.keys(pByEst).length===0&&<p style={{color:"#444",fontSize:"12px"}}>Nenhuma perda</p>}
+          {Object.keys(pByEst).length===0&&<p style={{color:"#6f8179",fontSize:"12px"}}>Nenhuma perda</p>}
         </div>
       </div>
 
@@ -519,7 +519,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                   <p style={{margin:"0 0 14px",color:s.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>
                     {s.resultado>=0?"+":"-"}R$ {Math.abs(s.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
                   </p>
-                  <div style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"12px",color:"#555",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"12px",color:"#7a8c84",flexWrap:"wrap"}}>
                     <span>Assertividade <span style={{color:ass>=60?"#2ee6a0":ass>=40?"#f59e0b":"#ff5470",fontWeight:"700"}}>{ass}%</span></span>
                     <span style={{color:"#26352e"}}>·</span>
                     <span>{s.total} ops</span>
@@ -557,27 +557,27 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                   </div>
                   <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{panelEst}</p>
                 </div>
-                <button onClick={()=>setPanelEst(null)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
+                <button onClick={()=>setPanelEst(null)} style={{background:"none",border:"none",color:"#7a8c84",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
               </div>
               {/* Stats resumo */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
                 <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Pts</p>
+                  <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Pts</p>
                   <p style={{margin:0,color:"#2ee6a0",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalPtsEst>=0?"+":""}{totalPtsEst.toFixed(0)}</p>
                 </div>
                 <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>R$</p>
+                  <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>R$</p>
                   <p style={{margin:0,color:totalResEst>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalResEst>=0?"+":""}{ Math.abs(totalResEst).toFixed(0)}</p>
                 </div>
                 <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Acerto</p>
+                  <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Acerto</p>
                   <p style={{margin:0,color:winsEst/ops.length>=0.6?"#2ee6a0":"#f59e0b",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{ops.length>0?Math.round((winsEst/ops.length)*100):0}%</p>
                 </div>
               </div>
             </div>
             {/* Lista de operações */}
             <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-              <p style={{margin:"0 0 12px",color:"#444",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>{ops.length} operações no período</p>
+              <p style={{margin:"0 0 12px",color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>{ops.length} operações no período</p>
               {ops.map((t,i)=>(
                 <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"#0b1210",border:"1px solid #18241f",marginBottom:"8px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
@@ -585,16 +585,16 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                       <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                       <span style={{color:"#aaa",fontSize:"12px"}}>{t.mercado}</span>
                     </div>
-                    <span style={{color:"#888",fontSize:"11px"}}>{t._date.split("-").reverse().join("/")}</span>
+                    <span style={{color:"#a3b2ab",fontSize:"11px"}}>{t._date.split("-").reverse().join("/")}</span>
                   </div>
                   <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
                     {t.pontos!=null&&<span style={{color:"#f0f0f0",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"600"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
                     {t.resultado!=null&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</span>}
                   </div>
-                  {t.observacao&&<p style={{margin:"6px 0 0",color:"#888",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</p>}
+                  {t.observacao&&<p style={{margin:"6px 0 0",color:"#a3b2ab",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</p>}
                 </div>
               ))}
-              {ops.length===0&&<p style={{color:"#555",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação no período selecionado.</p>}
+              {ops.length===0&&<p style={{color:"#7a8c84",fontSize:"13px",textAlign:"center",marginTop:"40px"}}>Nenhuma operação no período selecionado.</p>}
             </div>
           </div>
           </>
@@ -629,7 +629,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
 
       {filtered.length === 0 && (
         <div style={{textAlign:"center",padding:"60px 20px",background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",marginBottom:"36px"}}>
-          <p style={{color:"#888",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
+          <p style={{color:"#a3b2ab",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
           <p style={{color:"#222",fontSize:"12px",margin:"6px 0 0"}}>Registre operações no Diário para ver as métricas.</p>
         </div>
       )}
@@ -668,7 +668,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                     <div key={em} style={{display:"flex",alignItems:"center",gap:"12px"}}>
                       <div style={{width:"90px",flexShrink:0}}>
                         <span style={{fontSize:"12px",fontWeight:"700",color:cor}}>{em}</span>
-                        <p style={{margin:0,color:"#444",fontSize:"10px"}}>{s.dias} dia{s.dias!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
+                        <p style={{margin:0,color:"#6f8179",fontSize:"10px"}}>{s.dias} dia{s.dias!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
                       </div>
                       <div style={{flex:1,height:"3px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
                         <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px",transition:"width 0.3s"}}/>
@@ -719,19 +719,19 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"14px"}}>
               <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
-                <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Streak Atual</p>
+                <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Streak Atual</p>
                 <p style={{margin:0,color:streak>=7?"#2ee6a0":streak>=3?"#f59e0b":"#ff5470",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{streak}</p>
-                <p style={{margin:0,color:"#444",fontSize:"11px"}}>dias seguidos</p>
+                <p style={{margin:0,color:"#6f8179",fontSize:"11px"}}>dias seguidos</p>
               </div>
               <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
-                <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Recorde</p>
+                <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Recorde</p>
                 <p style={{margin:0,color:"#f59e0b",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{maxStreak}</p>
-                <p style={{margin:0,color:"#444",fontSize:"11px"}}>dias seguidos</p>
+                <p style={{margin:0,color:"#6f8179",fontSize:"11px"}}>dias seguidos</p>
               </div>
               <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px",padding:"20px",textAlign:"center"}}>
-                <p style={{margin:"0 0 4px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Salvos</p>
+                <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Dias Salvos</p>
                 <p style={{margin:0,color:"#aaa",fontSize:"36px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{savedDays.length}</p>
-                <p style={{margin:0,color:"#444",fontSize:"11px"}}>total registrado</p>
+                <p style={{margin:0,color:"#6f8179",fontSize:"11px"}}>total registrado</p>
               </div>
             </div>
           </div>
@@ -769,7 +769,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                       <span style={{width:"36px",color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700",flexShrink:0}}>{hora}</span>
                       <div style={{width:"40px",textAlign:"center",flexShrink:0}}>
                         <span style={{fontSize:"11px",fontWeight:"700",color:cor}}>{wr}%</span>
-                        <p style={{margin:0,color:"#444",fontSize:"9px"}}>{s.total} ops</p>
+                        <p style={{margin:0,color:"#6f8179",fontSize:"9px"}}>{s.total} ops</p>
                       </div>
                       <div style={{flex:1,height:"3px",background:"#18241f",borderRadius:"2px",overflow:"hidden"}}>
                         <div style={{height:"100%",width:barW+"%",background:pos?"#2ee6a0":"#ff5470",borderRadius:"4px"}}/>
@@ -912,15 +912,15 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                     <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
                       <div style={{flex:1,textAlign:"center",background:"rgba(63,232,168,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
                         <p style={{margin:0,color:"#2ee6a0",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{s.maxWin}</p>
-                        <p style={{margin:0,color:"#444",fontSize:"9px",textTransform:"uppercase"}}>Max WIN</p>
+                        <p style={{margin:0,color:"#6f8179",fontSize:"9px",textTransform:"uppercase"}}>Max WIN</p>
                       </div>
                       <div style={{flex:1,textAlign:"center",background:"rgba(240,80,110,0.08)",borderRadius:"8px",padding:"8px 4px"}}>
                         <p style={{margin:0,color:"#ff5470",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{s.maxLoss}</p>
-                        <p style={{margin:0,color:"#444",fontSize:"9px",textTransform:"uppercase"}}>Max LOSS</p>
+                        <p style={{margin:0,color:"#6f8179",fontSize:"9px",textTransform:"uppercase"}}>Max LOSS</p>
                       </div>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                      <span style={{fontSize:"11px",color:"#555"}}>Agora:</span>
+                      <span style={{fontSize:"11px",color:"#7a8c84"}}>Agora:</span>
                       <span style={{padding:"2px 8px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:streakColor+"18",color:streakColor}}>{s.curStreak}× {s.curType}</span>
                       {s.curType==="LOSS"&&s.curStreak>=2&&<span style={{fontSize:"10px",color:"#ff5470"}}>— revisar setup</span>}
                     </div>
@@ -952,20 +952,20 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               <div style={{padding:"20px",borderBottom:"1px solid #18241f",flexShrink:0}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
                   <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{title}</p>
-                  <button onClick={()=>setPanelDrill(null)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
+                  <button onClick={()=>setPanelDrill(null)} style={{background:"none",border:"none",color:"#7a8c84",cursor:"pointer",fontSize:"20px",padding:"2px 6px",lineHeight:1}}>×</button>
                 </div>
                 {/* Resumo */}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
                   <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                    <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Total</p>
+                    <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Total</p>
                     <p style={{margin:0,color:totalResult>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalResult>=0?"+":""}R${Math.abs(totalResult).toFixed(0)}</p>
                   </div>
                   <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                    <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Win Rate</p>
+                    <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Win Rate</p>
                     <p style={{margin:0,color:winRate>=60?"#2ee6a0":winRate>=40?"#f59e0b":"#ff5470",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{winRate||0}%</p>
                   </div>
                   <div style={{background:"#111b17",borderRadius:"8px",padding:"10px 12px"}}>
-                    <p style={{margin:"0 0 2px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Trades</p>
+                    <p style={{margin:"0 0 2px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.8px"}}>Trades</p>
                     <p style={{margin:0,color:"#ccc",fontSize:"16px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{allTrades.length}</p>
                   </div>
                 </div>
@@ -992,7 +992,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:t.estrategia||t.observacao?"6px":"0"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                         <span style={{padding:"3px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(63,232,168,0.15)":"rgba(240,80,110,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
-                        <span style={{color:"#555",fontSize:"12px"}}>{t.mercado}</span>
+                        <span style={{color:"#7a8c84",fontSize:"12px"}}>{t.mercado}</span>
                         {t.estrategia&&<span style={{color:"#0099ff",fontSize:"11px",background:"rgba(0,153,255,0.1)",padding:"2px 7px",borderRadius:"4px",cursor:"pointer"}}
                           onClick={e=>{e.stopPropagation();setPanelDrill(null);setPanelEst(t.estrategia);}}>{t.estrategia}</span>}
                       </div>
@@ -1001,7 +1001,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                         {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>{t.resultado>=0?"+":""}R$ {t.resultado.toFixed(2)}</p>}
                       </div>
                     </div>
-                    {t.observacao&&<p style={{margin:0,color:"#444",fontSize:"11px",fontStyle:"italic"}}>"{t.observacao}"</p>}
+                    {t.observacao&&<p style={{margin:0,color:"#6f8179",fontSize:"11px",fontStyle:"italic"}}>"{t.observacao}"</p>}
                   </div>
                 ))}
               </div>
@@ -1133,7 +1133,7 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
 
   return (
     <div style={{flex:1,background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"16px 18px",minWidth:"240px",marginBottom:"36px"}}>
-      <p style={{margin:"0 0 12px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
+      <p style={{margin:"0 0 12px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
         {alertas.slice(0,5).map((a,i)=>(
           <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"9px 12px",borderRadius:"8px",background:cores[a.tipo]+"0d",border:"1px solid "+cores[a.tipo]+"33"}}>
@@ -1239,7 +1239,7 @@ Gere um diagnóstico com:
           </div>
           <div>
             <p style={{margin:"0 0 2px",color:"#f0f0f0",fontSize:"16px",fontWeight:"700"}}>Diagnóstico IA</p>
-            <p style={{margin:0,color:"#666",fontSize:"12px"}}>Análise personalizada dos seus dados por IA</p>
+            <p style={{margin:0,color:"#86978f",fontSize:"12px"}}>Análise personalizada dos seus dados por IA</p>
           </div>
         </div>
         <button onClick={gerarDiagnostico} disabled={loading} style={{background:loading?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:loading?"#555":"#000",border:"none",borderRadius:"10px",padding:"10px 20px",fontWeight:"700",fontSize:"13px",cursor:loading?"not-allowed":"pointer",fontFamily:"var(--font-sans)",display:"flex",alignItems:"center",gap:"8px",transition:"all 0.2s"}}>
@@ -1255,7 +1255,7 @@ Gere um diagnóstico com:
       </div>
 
       {!diagnostico && !erro && !loading && (
-        <div style={{textAlign:"center",padding:"32px 20px",color:"#444",fontSize:"13px"}}>
+        <div style={{textAlign:"center",padding:"32px 20px",color:"#6f8179",fontSize:"13px"}}>
           <p style={{margin:"0 0 6px",fontSize:"15px"}}>🧠</p>
           <p style={{margin:0}}>Clique em "Gerar diagnóstico" para receber uma análise personalizada dos seus trades, emoções e estratégias.</p>
         </div>

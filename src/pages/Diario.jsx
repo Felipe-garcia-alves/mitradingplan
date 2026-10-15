@@ -277,7 +277,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       <div style={{background:"var(--panel)",border:"1px solid "+(todayEntry?"#2ee6a022":"#18241f"),borderRadius:"16px",padding:"28px",marginBottom:"24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
           <div>
-            <p style={{margin:"0 0 8px",color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar</p>
+            <p style={{margin:"0 0 8px",color:"#a3b2ab",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar</p>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
               <button onClick={()=>changeDate(-1)} style={{background:"rgba(255,255,255,0.05)",border:"1px solid #26352e",borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#aaa",flexShrink:0}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -303,7 +303,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
         {/* Emocoes */}
         <div style={{marginBottom:"28px"}}>
-          <label style={{color:"#888",fontSize:"13px",textTransform:"uppercase",letterSpacing:"1.5px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Emoções do dia</label>
+          <label style={{color:"#a3b2ab",fontSize:"13px",textTransform:"uppercase",letterSpacing:"1.5px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Emoções do dia</label>
           <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
             {EMOCOES.map(em => {
               const sel = emocoes.includes(em);
@@ -505,7 +505,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
         {/* Observacao */}
         <div style={{marginBottom:"20px"}}>
-          <label style={{color:"#888",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"10px"}}>Observação geral do dia</label>
+          <label style={{color:"#a3b2ab",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"10px"}}>Observação geral do dia</label>
           <textarea style={{...inp,width:"100%",resize:"vertical",lineHeight:"1.6",minHeight:"80px",boxSizing:"border-box",fontSize:"14px"}} placeholder="Como foi o dia? Setup, erros, aprendizados..." value={observacao} onChange={e=>setObservacao(e.target.value)} rows={3}/>
         </div>
 
@@ -535,21 +535,21 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   <p style={{margin:0,color:isToday?"#2ee6a0":"#ccc",fontSize:"13px",fontWeight:"600"}}>{isToday?"Hoje":formatDateFull(ds)}</p>
                 </div>
                 <div style={{display:"flex",gap:"14px",flex:1,flexWrap:"wrap",alignItems:"center"}}>
-                  {entry.numTrades !== undefined && <span style={{color:"#888",fontSize:"13px"}}>{entry.numTrades} trade{entry.numTrades!==1?"s":""}</span>}
+                  {entry.numTrades !== undefined && <span style={{color:"#a3b2ab",fontSize:"13px"}}>{entry.numTrades} trade{entry.numTrades!==1?"s":""}</span>}
                   {entry.winRate   !== undefined && <span style={{color:"#2ee6a0",fontSize:"13px",fontWeight:"600"}}>{entry.winRate}% acerto</span>}
                   {entry.emocoes?.length > 0 && <span style={{color:EMOCAO_COLORS[entry.emocoes[0]]||"#888",fontSize:"13px"}}>{entry.emocoes[0]}</span>}
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:"12px",flexShrink:0}}>
                   {entry.totalPts !== undefined && <span style={{color:entry.totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{entry.totalPts>=0?"+":""}{Number((+entry.totalPts).toFixed(1))} pts</span>}
                   <span style={{color:total>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{total>=0?"+":"-"}R$ {Math.abs(total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-                  <button onClick={e=>{e.stopPropagation();deleteEntry(ds);}} style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
+                  <button onClick={e=>{e.stopPropagation();deleteEntry(ds);}} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
                 </div>
               </div>
               {isOpen && (
                 <div style={{borderTop:"1px solid #18241f",padding:"16px 18px"}}>
                   {entry.emocoes?.length>0 && (
                     <div style={{marginBottom:"14px"}}>
-                      <p style={{margin:"0 0 8px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções</p>
+                      <p style={{margin:"0 0 8px",color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções</p>
                       <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
                         {entry.emocoes.map(em=><span key={em} style={{padding:"4px 12px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"#888")+"1a",color:EMOCAO_COLORS[em]||"#888",fontSize:"13px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"#888")+"44"}}>{em}</span>)}
                       </div>
@@ -557,7 +557,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   )}
                   {entry.trades?.length>0 && (
                     <div style={{marginBottom:"14px"}}>
-                      <p style={{margin:"0 0 8px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações</p>
+                      <p style={{margin:"0 0 8px",color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações</p>
                       {entry.trades.map((t,i)=>{
                         const isEditing = editingTrade?.dateKey===ds && editingTrade?.index===i;
                         if (isEditing) {
@@ -582,7 +582,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               <input type="text" placeholder="Observação" value={ed.observacao} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,observacao:e.target.value}}))} style={{...inpE,width:"100%",boxSizing:"border-box",marginBottom:"8px"}}/>
                               <div style={{display:"flex",gap:"8px"}}>
                                 <button onClick={saveEditTrade} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"6px",padding:"7px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>Salvar</button>
-                                <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"#666",border:"1px solid #26352e",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
+                                <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"#86978f",border:"1px solid #26352e",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
                               </div>
                             </div>
                           );
@@ -596,16 +596,16 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
                               {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
                               {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}
-                              {t.contratos&&<span style={{color:"#888",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
+                              {t.contratos&&<span style={{color:"#a3b2ab",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
                               {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(46,230,160,0.15)","A":"rgba(46,230,160,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(240,80,110,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#2ee6a0","A":"#2ee6a0","B":"#f59e0b","C":"#f0506e"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
-                              {t.estrategia&&<span style={{color:"#666",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
-                              {t.observacao&&<span style={{color:"#777",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
+                              {t.estrategia&&<span style={{color:"#86978f",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
+                              {t.observacao&&<span style={{color:"#93a39c",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                               <div style={{marginLeft:"auto",display:"flex",gap:"6px",alignItems:"center",flexShrink:0}}>
-                                {temImagens&&<span style={{color:"#555",fontSize:"11px",background:"rgba(255,255,255,0.04)",padding:"2px 7px",borderRadius:"4px",display:"flex",alignItems:"center",gap:"3px"}}>
+                                {temImagens&&<span style={{color:"#7a8c84",fontSize:"11px",background:"rgba(255,255,255,0.04)",padding:"2px 7px",borderRadius:"4px",display:"flex",alignItems:"center",gap:"3px"}}>
                                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                                   {t.imagens.length}
                                 </span>}
-                                <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"4px 9px",borderRadius:"6px",border:"1px solid #26352e",color:"#555",fontSize:"11px",fontWeight:"600",background:"transparent",transition:"all 0.15s"}}
+                                <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"4px 9px",borderRadius:"6px",border:"1px solid #26352e",color:"#7a8c84",fontSize:"11px",fontWeight:"600",background:"transparent",transition:"all 0.15s"}}
                                   onMouseEnter={e=>{e.currentTarget.style.borderColor="#2ee6a044";e.currentTarget.style.color="#2ee6a0";}}
                                   onMouseLeave={e=>{e.currentTarget.style.borderColor="#26352e";e.currentTarget.style.color="#555";}}>
                                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handleSavedImageUpload(e.target.files[0],ds,i);}}/>
@@ -614,7 +614,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                     :<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
                                   Foto
                                 </label>
-                                <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} style={{background:"none",border:"1px solid #26352e",borderRadius:"5px",color:"#555",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
+                                <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} style={{background:"none",border:"1px solid #26352e",borderRadius:"5px",color:"#7a8c84",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
                                   onMouseEnter={e=>{e.currentTarget.style.borderColor="#2ee6a044";e.currentTarget.style.color="#2ee6a0";}}
                                   onMouseLeave={e=>{e.currentTarget.style.borderColor="#26352e";e.currentTarget.style.color="#555";}}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -630,7 +630,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                     <ImagemSegura url={url} style={{width:"100%",height:"70px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
                                     <div style={{display:"flex",background:"#0b1210",borderTop:"1px solid #18241f"}}>
                                       <button onClick={()=>setEditorImg({src:url,saved:true,dateKey:ds,tradeIdx:i,url})}
-                                        style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #18241f",color:"#888",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
+                                        style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #18241f",color:"#a3b2ab",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
                                         onMouseEnter={e=>e.currentTarget.style.color="#2ee6a0"}
                                         onMouseLeave={e=>e.currentTarget.style.color="#888"}>
                                         Editar
@@ -653,7 +653,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   )}
                   {entry.observacao&&(
                     <div>
-                      <p style={{margin:"0 0 6px",color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Observações</p>
+                      <p style={{margin:"0 0 6px",color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Observações</p>
                       <p style={{margin:0,color:"#aaa",fontSize:"14px",lineHeight:"1.6",fontStyle:"italic"}}>{entry.observacao}</p>
                     </div>
                   )}
@@ -663,7 +663,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           );
         })}
         {monthDays.length===0&&(
-          <div style={{textAlign:"center",padding:"48px 20px",color:"#444",fontSize:"14px"}}>Nenhum registro em {formatMonthLabel(selMonth)}.</div>
+          <div style={{textAlign:"center",padding:"48px 20px",color:"#6f8179",fontSize:"14px"}}>Nenhum registro em {formatMonthLabel(selMonth)}.</div>
         )}
       </div>
 

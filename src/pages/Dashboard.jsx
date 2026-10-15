@@ -63,21 +63,21 @@ export default function Dashboard({ entries, config, setPagina }) {
     <div style={{ fontFamily:"var(--font-sans)" }}>
       <div style={{ marginBottom:"24px" }}>
         <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.5px" }}>Dashboard</h1>
-        <p style={{ margin:0, color:"#555", fontSize:"13px" }}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</p>
+        <p style={{ margin:0, color:"#7a8c84", fontSize:"13px" }}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</p>
       </div>
 
       {/* Hoje banner */}
       {hojeTotal !== null ? (
         <div style={{ background:hojeTotal>=0?"rgba(46,230,160,0.08)":"rgba(255,84,112,0.08)", border:"1px solid "+(hojeTotal>=0?"#2ee6a033":"#ff547033"), borderRadius:"14px", padding:"16px 20px", marginBottom:"20px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <p style={{ margin:"0 0 2px", color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Resultado de Hoje</p>
+            <p style={{ margin:"0 0 2px", color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Resultado de Hoje</p>
             <p style={{ margin:0, color:hojeTotal>=0?"#2ee6a0":"#ff5470", fontSize:"24px", fontWeight:"800", fontFamily:"var(--font-mono)" }}>{fmtMoney(hojeTotal,"")}</p>
           </div>
-          {streak > 1 && <div style={{ textAlign:"right" }}><p style={{ margin:"0 0 2px", color:"#777", fontSize:"11px" }}>Sequencia positiva</p><p style={{ margin:0, color:"#f59e0b", fontSize:"20px", fontWeight:"700" }}>🔥 {streak} dias</p></div>}
+          {streak > 1 && <div style={{ textAlign:"right" }}><p style={{ margin:"0 0 2px", color:"#93a39c", fontSize:"11px" }}>Sequencia positiva</p><p style={{ margin:0, color:"#f59e0b", fontSize:"20px", fontWeight:"700" }}>🔥 {streak} dias</p></div>}
         </div>
       ) : (
         <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid #18241f", borderRadius:"14px", padding:"16px 20px", marginBottom:"20px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <p style={{ margin:0, color:"#666", fontSize:"13px" }}>Voce ainda nao registrou o resultado de hoje.</p>
+          <p style={{ margin:0, color:"#86978f", fontSize:"13px" }}>Voce ainda nao registrou o resultado de hoje.</p>
           <button onClick={()=>setPagina("diario")} style={{ background:"linear-gradient(135deg,#2ee6a0,#1fc98a)", color:"#000", border:"none", borderRadius:"8px", padding:"8px 16px", fontWeight:"700", fontSize:"12px", cursor:"pointer" }}>Registrar agora</button>
         </div>
       )}
@@ -88,11 +88,11 @@ export default function Dashboard({ entries, config, setPagina }) {
           <div key={i} style={{ background:"var(--card)", border:"1px solid "+c.color+"22", borderRadius:"14px", padding:"18px", position:"relative", overflow:"hidden" }}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:"linear-gradient(90deg,"+c.color+",transparent)" }}/>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-              <p style={{ margin:"0 0 6px", color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>{c.label}</p>
+              <p style={{ margin:"0 0 6px", color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>{c.label}</p>
               <span style={{ fontSize:"18px" }}>{c.icon}</span>
             </div>
             <p style={{ margin:"0 0 4px", color:c.color, fontSize:"22px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>{c.value}</p>
-            <p style={{ margin:0, color:"#555", fontSize:"11px", fontFamily:"var(--font-mono)" }}>{c.sub}</p>
+            <p style={{ margin:0, color:"#7a8c84", fontSize:"11px", fontFamily:"var(--font-mono)" }}>{c.sub}</p>
           </div>
         ))}
       </div>
@@ -101,10 +101,10 @@ export default function Dashboard({ entries, config, setPagina }) {
       <div style={{ background:"var(--card)", border:"1px solid #18241f", borderRadius:"14px", padding:"20px", marginBottom:"20px" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"14px" }}>
           <div>
-            <p style={{ margin:"0 0 2px", color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Evolucao Banca B3</p>
+            <p style={{ margin:"0 0 2px", color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Evolucao Banca B3</p>
             <p style={{ margin:0, color:"#2ee6a0", fontSize:"18px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>R$ {bancaRealB3.toLocaleString("pt-BR",{minimumFractionDigits:2})}</p>
           </div>
-          <button onClick={()=>setPagina("patrimonio")} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid #26352e", borderRadius:"8px", padding:"6px 12px", color:"#777", fontSize:"11px", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Ver completo →</button>
+          <button onClick={()=>setPagina("patrimonio")} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid #26352e", borderRadius:"8px", padding:"6px 12px", color:"#93a39c", fontSize:"11px", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Ver completo →</button>
         </div>
         {chartPts.length > 1 ? (
           <svg viewBox={"0 0 "+W+" "+H} style={{ width:"100%", height:"auto", display:"block" }} preserveAspectRatio="none">
@@ -113,14 +113,14 @@ export default function Dashboard({ entries, config, setPagina }) {
           </svg>
         ) : (
           <div style={{ height:"70px", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <p style={{ color:"#444", fontSize:"12px" }}>Registre operacoes para ver o grafico</p>
+            <p style={{ color:"#6f8179", fontSize:"12px" }}>Registre operacoes para ver o grafico</p>
           </div>
         )}
       </div>
 
       {/* Limites do dia */}
       <div style={{ background:"var(--card)", border:"1px solid #18241f", borderRadius:"14px", padding:"20px" }}>
-        <p style={{ margin:"0 0 14px", color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Limites do Dia — calculados sobre banca real</p>
+        <p style={{ margin:"0 0 14px", color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Limites do Dia — calculados sobre banca real</p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
           {[
             { label:"Risco/op B3",    val:"R$ "+(bancaRealB3*0.01).toFixed(2),  color:"#2ee6a0" },
@@ -131,7 +131,7 @@ export default function Dashboard({ entries, config, setPagina }) {
             { label:"Stop diario Fx", val:"$ "+(bancaRealForex*0.03).toFixed(2), color:"#ff5470" },
           ].map((item,i) => (
             <div key={i} style={{ padding:"12px 14px", borderRadius:"10px", background:"rgba(255,255,255,0.02)", border:"1px solid "+item.color+"18" }}>
-              <p style={{ margin:"0 0 3px", color:"#777", fontSize:"10px", textTransform:"uppercase", letterSpacing:"1px" }}>{item.label}</p>
+              <p style={{ margin:"0 0 3px", color:"#93a39c", fontSize:"10px", textTransform:"uppercase", letterSpacing:"1px" }}>{item.label}</p>
               <p style={{ margin:0, color:item.color, fontSize:"16px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>{item.val}</p>
             </div>
           ))}

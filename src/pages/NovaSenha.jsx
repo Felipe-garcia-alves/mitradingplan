@@ -37,7 +37,7 @@ export default function NovaSenha() {
     padding:"13px 14px", color:"#f0f0f0", fontSize:"14px",
     outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)"
   };
-  const lbl = {color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"};
+  const lbl = {color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"};
 
   return (
     <div style={{minHeight:"100vh",background:"#050907",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)",padding:"20px"}}>
@@ -47,7 +47,7 @@ export default function NovaSenha() {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
           <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Mi Trading Plan</h1>
-          <p style={{margin:0,color:"#555",fontSize:"13px"}}>Plataforma profissional para traders</p>
+          <p style={{margin:0,color:"#7a8c84",fontSize:"13px"}}>Plataforma profissional para traders</p>
         </div>
 
         <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"32px"}}>
@@ -74,7 +74,7 @@ export default function NovaSenha() {
           </button>
 
           <div style={{display:"flex",justifyContent:"center"}}>
-            <button onClick={cancelarRecovery} style={{background:"none",border:"none",color:"#555",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
+            <button onClick={cancelarRecovery} style={{background:"none",border:"none",color:"#7a8c84",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
               ← Voltar ao login
             </button>
           </div>

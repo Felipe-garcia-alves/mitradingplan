@@ -93,18 +93,18 @@ function UserHeader({ nomeUsuario, entries }) {
           <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #18241f"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
               <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>{today.split("-").reverse().join(" de ").replace(/(\d+) de (\d+) de (\d+)/,(_,d,m,y)=>{const meses=["","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];return `${d} de ${meses[parseInt(m)]}, ${["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][new Date(today).getDay()]}`})}</p>
-              <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:"18px",padding:"0",lineHeight:1}}>×</button>
+              <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"18px",padding:"0",lineHeight:1}}>×</button>
             </div>
 
             {/* Stats topo */}
             {todayEntry ? (
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"}}>
                 <div style={{background:"#18241f",borderRadius:"10px",padding:"12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos do dia</p>
+                  <p style={{margin:"0 0 2px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos do dia</p>
                   <p style={{margin:0,color:totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"20px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
                 </div>
                 <div style={{background:"#18241f",borderRadius:"10px",padding:"12px"}}>
-                  <p style={{margin:"0 0 2px",color:"#555",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado R$</p>
+                  <p style={{margin:"0 0 2px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado R$</p>
                   <p style={{margin:0,color:totalHoje>=0?"#2ee6a0":"#ff5470",fontSize:"20px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
                 </div>
               </div>
@@ -123,7 +123,7 @@ function UserHeader({ nomeUsuario, entries }) {
           {/* Emoção predominante */}
           {emocaoPred && (
             <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
-              <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoção Predominante</p>
+              <p style={{margin:"0 0 8px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoção Predominante</p>
               <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:"10px",padding:"10px 14px",display:"flex",alignItems:"center",gap:"10px"}}>
                 <span style={{fontSize:"18px"}}>🎯</span>
                 <span style={{color:"#c4b5fd",fontSize:"14px",fontWeight:"700"}}>{emocaoPred}</span>
@@ -134,12 +134,12 @@ function UserHeader({ nomeUsuario, entries }) {
           {/* Estratégias */}
           {estratUsadas.length > 0 && (
             <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
-              <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Estratégias Utilizadas</p>
+              <p style={{margin:"0 0 8px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Estratégias Utilizadas</p>
               <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                 {estratUsadas.map(e=>(
                   <div key={e} style={{background:"#18241f",borderRadius:"8px",padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{e.slice(0,2).toUpperCase()} — {e}</span>
-                    <span style={{color:"#555",fontSize:"12px"}}>({estratCount[e]})</span>
+                    <span style={{color:"#7a8c84",fontSize:"12px"}}>({estratCount[e]})</span>
                   </div>
                 ))}
               </div>
@@ -149,7 +149,7 @@ function UserHeader({ nomeUsuario, entries }) {
           {/* Emoções */}
           {todayEntry?.emocoes?.length > 0 && (
             <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
-              <p style={{margin:"0 0 8px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções Registradas</p>
+              <p style={{margin:"0 0 8px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções Registradas</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
                 {todayEntry.emocoes.map(em=>(
                   <span key={em} style={{padding:"4px 10px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"#888")+"18",color:EMOCAO_COLORS[em]||"#888",fontSize:"12px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"#888")+"33"}}>{em}</span>
@@ -161,15 +161,15 @@ function UserHeader({ nomeUsuario, entries }) {
           {/* Operações */}
           {trades.length > 0 && (
             <div style={{padding:"14px 20px"}}>
-              <p style={{margin:"0 0 10px",color:"#444",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações ({trades.length})</p>
+              <p style={{margin:"0 0 10px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações ({trades.length})</p>
               <div style={{display:"flex",flexDirection:"column",gap:"6px",maxHeight:"200px",overflowY:"auto"}}>
                 {trades.map((t,i)=>(
                   <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#18241f",borderRadius:"8px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                      <span style={{color:"#666",fontSize:"11px"}}>#{i+1}</span>
+                      <span style={{color:"#86978f",fontSize:"11px"}}>#{i+1}</span>
                       <span style={{padding:"2px 6px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                       {t.estrategia&&<span style={{padding:"2px 7px",borderRadius:"4px",background:"rgba(0,153,255,0.15)",color:"#0099ff",fontSize:"11px",fontWeight:"600"}}>{t.estrategia.slice(0,2).toUpperCase()}</span>}
-                      {t.mercado&&<span style={{color:"#555",fontSize:"11px"}}>{t.mercado==="B3"?"Venda":"Forex"}</span>}
+                      {t.mercado&&<span style={{color:"#7a8c84",fontSize:"11px"}}>{t.mercado==="B3"?"Venda":"Forex"}</span>}
                     </div>
                     <div style={{textAlign:"right"}}>
                       {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
@@ -182,7 +182,7 @@ function UserHeader({ nomeUsuario, entries }) {
           )}
 
           {!todayEntry && (
-            <div style={{padding:"30px 20px",textAlign:"center",color:"#333",fontSize:"13px"}}>
+            <div style={{padding:"30px 20px",textAlign:"center",color:"#64766e",fontSize:"13px"}}>
               Nenhum registro hoje ainda.
             </div>
           )}
@@ -387,7 +387,7 @@ function AppInterno() {
         <div style={{width:"44px",height:"44px",borderRadius:"12px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
-        <p style={{color:"#444",fontSize:"14px"}}>Carregando...</p>
+        <p style={{color:"#6f8179",fontSize:"14px"}}>Carregando...</p>
       </div>
     </div>
   );
@@ -416,7 +416,7 @@ function AppInterno() {
         onTouchEnd={e=>{if(isMobile&&window._swipeX&&(window._swipeX-e.changedTouches[0].clientX)>60){setSidebarOpen(false);window._swipeX=null;}}}>
         <div className="mtp-topbar" style={{position:"sticky",top:0,zIndex:100,padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-            {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#888",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
+            {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#a3b2ab",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
             <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"rgba(46,230,160,0.1)",border:"1px solid #2ee6a033",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <span style={{color:"#2ee6a0",fontSize:"11px",fontWeight:"800"}}>{pagina.slice(0,2).toUpperCase()}</span>
             </div>

@@ -18,7 +18,7 @@ async function chamarAdmin(body) {
 
 const PLANOS = {
   mensal:   { label:"Mensal",          status:"ativa", dias:30 },
-  teste:    { label:"Teste grátis",    status:"teste", dias:7  },
+  teste:    { label:"Teste grátis",    status:"teste", dias:15 },
   cortesia: { label:"Cortesia",        status:"ativa", dias:null },
 };
 
@@ -84,7 +84,7 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
           {onVoltar && <button onClick={onVoltar} style={{...btnSec,padding:"8px 12px"}}>← Voltar</button>}
           <div>
             <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Usuários</h1>
-            <p style={{margin:"4px 0 0",color:"#666",fontSize:"13px"}}>Crie acessos e controle as assinaturas dos seus clientes</p>
+            <p style={{margin:"4px 0 0",color:"#86978f",fontSize:"13px"}}>Crie acessos e controle as assinaturas dos seus clientes</p>
           </div>
         </div>
         <button onClick={()=>{ setNovoAberto(true); setCriado(null); }} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>

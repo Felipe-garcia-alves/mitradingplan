@@ -4,6 +4,9 @@ import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import Termos from "./Termos";
 
+// Duração do teste grátis do cadastro público — manter igual à trigger handle_new_user
+const DIAS_TESTE = 15;
+
 export default function Login() {
   const { erroLink } = useAuth();
   const [modo,    setModo]    = useState("login");
@@ -44,7 +47,7 @@ export default function Login() {
         });
         if (error) throw error;
         // O perfil em public.usuarios é criado pela trigger on_auth_user_created
-        setMsg("Cadastro realizado! Verifique seu email para confirmar a conta.");
+        setMsg("Cadastro realizado! Confirme seu email para começar seus "+DIAS_TESTE+" dias de teste grátis.");
         setLoading(false);
         return;
       }
@@ -75,7 +78,7 @@ export default function Login() {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
           <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Mi Trading Plan</h1>
-          <p style={{margin:0,color:"#555",fontSize:"13px"}}>Plataforma profissional para traders</p>
+          <p style={{margin:0,color:"#7a8c84",fontSize:"13px"}}>Plataforma profissional para traders</p>
         </div>
 
         <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"32px"}}>
@@ -107,20 +110,32 @@ export default function Login() {
           )}
 
           {!resetMode && modo==="cadastro" && (
+            <div style={{display:"flex",gap:"12px",alignItems:"center",padding:"12px 14px",borderRadius:"12px",marginBottom:"18px",background:"linear-gradient(135deg,rgba(46,230,160,0.12),rgba(0,194,255,0.06))",border:"1px solid rgba(46,230,160,0.3)"}}>
+              <div style={{width:"36px",height:"36px",borderRadius:"10px",flexShrink:0,background:"rgba(46,230,160,0.15)",border:"1px solid rgba(46,230,160,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+              </div>
+              <div>
+                <p style={{margin:0,color:"#f0f0f0",fontSize:"14px",fontWeight:"800"}}>{DIAS_TESTE} dias grátis para testar</p>
+                <p style={{margin:"2px 0 0",color:"var(--text-2)",fontSize:"12px",lineHeight:1.5}}>Acesso completo, sem cartão de crédito. Depois é só assinar para continuar.</p>
+              </div>
+            </div>
+          )}
+
+          {!resetMode && modo==="cadastro" && (
             <div style={{marginBottom:"14px"}}>
-              <label style={{color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Nome</label>
+              <label style={{color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Nome</label>
               <input style={inp} placeholder="Seu nome" value={nome} onChange={e=>setNome(e.target.value)}/>
             </div>
           )}
 
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Email</label>
+            <label style={{color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Email</label>
             <input style={inp} type="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)}/>
           </div>
 
           {!resetMode && (
             <div style={{marginBottom:"22px"}}>
-              <label style={{color:"#666",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Senha</label>
+              <label style={{color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Senha</label>
               <input style={inp} type="password" placeholder="••••••••" value={senha} onChange={e=>setSenha(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
             </div>
           )}
@@ -131,12 +146,12 @@ export default function Login() {
 
           <div style={{display:"flex",justifyContent:"center",gap:"16px"}}>
             {!resetMode && modo==="login" && (
-              <button onClick={()=>{setResetMode(true);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#555",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
+              <button onClick={()=>{setResetMode(true);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#7a8c84",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
                 Esqueci minha senha
               </button>
             )}
             {resetMode && (
-              <button onClick={()=>{setResetMode(false);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#555",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
+              <button onClick={()=>{setResetMode(false);setErro("");setMsg("");}} style={{background:"none",border:"none",color:"#7a8c84",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
                 ← Voltar ao login
               </button>
             )}

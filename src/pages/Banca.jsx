@@ -123,7 +123,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"28px", flexWrap:"wrap", gap:"10px" }}>
         <div>
           <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Gestão de Banca</h1>
-          <p style={{ margin:"4px 0 0", color:"#666", fontSize:"13px" }}>Referências de risco calculadas sobre sua banca real</p>
+          <p style={{ margin:"4px 0 0", color:"#86978f", fontSize:"13px" }}>Referências de risco calculadas sobre sua banca real</p>
         </div>
         <div style={{ display:"flex", gap:"8px", alignItems:"center", flexWrap:"wrap" }}>
           {msg && <span style={{ color:"#2ee6a0", fontSize:"13px", fontWeight:"600" }}>{msg}</span>}
@@ -144,7 +144,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             activeBancos.forEach(([tipo, meta]) => { init[tipo] = String(getBancaInicial(meta)); });
             setInputs(init);
             setEditando(!editando);
-          }} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid #26352e", borderRadius:"8px", padding:"8px 16px", color:"#888", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
+          }} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid #26352e", borderRadius:"8px", padding:"8px 16px", color:"#a3b2ab", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
             {editando ? "✕ Cancelar" : "Editar banca inicial"}
           </button>
         </div>
@@ -157,7 +157,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", zIndex:200 }}/>
           <div style={{ position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", background:"#0c1411", border:"1px solid #26352e", borderRadius:"20px", padding:"28px", zIndex:201, width:"380px", maxWidth:"92vw", boxShadow:"0 24px 60px rgba(0,0,0,0.8)" }}>
             <p style={{ margin:"0 0 4px", color:"#f0f0f0", fontSize:"16px", fontWeight:"800" }}>Criar Nova Banca</p>
-            <p style={{ margin:"0 0 22px", color:"#555", fontSize:"12px" }}>Escolha o mercado e defina o capital inicial</p>
+            <p style={{ margin:"0 0 22px", color:"#7a8c84", fontSize:"12px" }}>Escolha o mercado e defina o capital inicial</p>
             <div style={{ display:"flex", gap:"8px", marginBottom:"20px", flexWrap:"wrap" }}>
               {availableBancos.map(([tipo, meta]) => (
                 <button key={tipo} onClick={() => setNovoTipo(tipo)}
@@ -168,7 +168,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             </div>
             {novoTipo && (
               <div style={{ marginBottom:"20px" }}>
-                <label style={{ color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
+                <label style={{ color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
                   Capital inicial ({BANCOS_META[novoTipo].moeda})
                 </label>
                 <input type="number" value={novoValor} onChange={e => setNovoValor(e.target.value)}
@@ -182,7 +182,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                 Criar Banca
               </button>
               <button onClick={() => { setShowCriar(false); setNovoTipo(""); setNovoValor(""); }}
-                style={{ background:"transparent", color:"#666", border:"1px solid #26352e", borderRadius:"10px", padding:"12px 16px", fontSize:"13px", cursor:"pointer" }}>
+                style={{ background:"transparent", color:"#86978f", border:"1px solid #26352e", borderRadius:"10px", padding:"12px 16px", fontSize:"13px", cursor:"pointer" }}>
                 Cancelar
               </button>
             </div>
@@ -197,7 +197,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"14px", marginBottom:"16px" }}>
             {activeBancos.map(([tipo, meta]) => (
               <div key={tipo}>
-                <label style={{ color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
+                <label style={{ color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
                   {meta.label} ({meta.moeda})
                 </label>
                 <input type="number" value={inputs[tipo]||""} onChange={e => setInputs(p => ({ ...p, [tipo]:e.target.value }))} style={inp} placeholder={"Ex: "+getBancaInicial(meta)}/>
@@ -364,7 +364,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
         </Modal>
       )}
 
-      {!hasData && <p style={{ margin:"20px 0 0", color:"#888", fontSize:"12px", textAlign:"center" }}>Registre operações no Diário para os valores atualizarem automaticamente.</p>}
+      {!hasData && <p style={{ margin:"20px 0 0", color:"#a3b2ab", fontSize:"12px", textAlign:"center" }}>Registre operações no Diário para os valores atualizarem automaticamente.</p>}
     </div>
   );
 }
