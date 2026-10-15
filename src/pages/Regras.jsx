@@ -71,7 +71,8 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const mediaCal = valsCal.length ? Math.round(valsCal.reduce((a,b)=>a+b,0)/valsCal.length) : null;
   const NOMES_MES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-  const [checked,   setChecked]   = useState({});
+  // recarrega o que já foi marcado e salvo hoje
+  const [checked,   setChecked]   = useState(() => ({ ...((compliance||{})._detalhes?.[today] || {}) }));
   const [editando,  setEditando]  = useState(false);
   const [editId,    setEditId]    = useState(null);
   const [form,      setForm]      = useState({ icon:"🎯", title:"", desc:"", personal:false });
@@ -103,7 +104,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   }
 
   function abrirNova() {
-    setForm({ icon:"🎯", title:"", desc:"", personal:false });
+    setForm({ icon:"target", title:"", desc:"", personal:false });
     setEditId(null); setEditando(true); setShowIcons(false);
   }
 
@@ -205,13 +206,13 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           <div style={{marginBottom:"16px"}}>
             <label style={{color:"#93a39c",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"8px"}}>Icone</label>
             <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
-              <button onClick={()=>setShowIcons(!showIcons)} style={{width:"48px",height:"48px",fontSize:"24px",background:"rgba(255,255,255,0.05)",border:"1px solid #26352e",borderRadius:"10px",cursor:"pointer"}}>{form.icon}</button>
+              <button onClick={()=>setShowIcons(!showIcons)} style={{width:"48px",height:"48px",background:"rgba(255,255,255,0.05)",border:"1px solid #26352e",borderRadius:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><RuleIcon id={form.icon} size={22}/></button>
               <span style={{color:"#7a8c84",fontSize:"12px"}}>Clique para escolher outro icone</span>
             </div>
             {showIcons && (
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"10px",padding:"12px",background:"rgba(255,255,255,0.03)",borderRadius:"10px",border:"1px solid #26352e"}}>
                 {ICONS.map(ic=>(
-                  <button key={ic} onClick={()=>{setForm(f=>({...f,icon:ic}));setShowIcons(false);}} style={{width:"38px",height:"38px",fontSize:"20px",background:form.icon===ic?"rgba(46,230,160,0.2)":"rgba(255,255,255,0.04)",border:"1px solid "+(form.icon===ic?"#2ee6a044":"#26352e"),borderRadius:"8px",cursor:"pointer"}}>{ic}</button>
+                  <button key={ic} onClick={()=>{setForm(f=>({...f,icon:ic}));setShowIcons(false);}} style={{width:"38px",height:"38px",background:form.icon===ic?"rgba(46,230,160,0.2)":"rgba(255,255,255,0.04)",border:"1px solid "+(form.icon===ic?"#2ee6a044":"#26352e"),borderRadius:"8px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><RuleIcon id={ic} size={18} color={form.icon===ic?"#3fe8a8":"#a3b2ab"}/></button>
                 ))}
               </div>
             )}
@@ -234,7 +235,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
             </div>
           </div>
           <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
-            <button onClick={salvar} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>💾 Salvar regra</button>
+            <button onClick={salvar} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>Salvar regra</button>
             <button onClick={()=>setEditando(false)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #26352e",borderRadius:"10px",padding:"11px 18px",color:"#93a39c",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Cancelar</button>
             {msg && <span style={{color:"#3fe8a8",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
           </div>

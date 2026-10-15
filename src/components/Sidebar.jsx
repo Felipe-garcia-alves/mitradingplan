@@ -64,13 +64,17 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
         <div style={{height:"1px",margin:"0 20px",background:"linear-gradient(90deg,transparent,var(--line-strong),transparent)"}}/>
 
         {/* Menu */}
-        <nav className="mtp-nav" style={{flex:1,minHeight:0,padding:"36px 12px 20px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"34px"}}>
-          {SECOES.map(s=>(
-            <div key={s.titulo}>
-              <p className="mtp-section-label">{s.titulo}</p>
-              {s.ids.map(item)}
-            </div>
-          ))}
+        {/* Menu centralizado na altura disponível (margin:auto num flex em coluna
+            centraliza e ainda deixa rolar quando a tela é baixa) */}
+        <nav className="mtp-nav" style={{flex:1,minHeight:0,padding:"clamp(10px,2.5vh,24px) 12px",overflowY:"auto",display:"flex",flexDirection:"column"}}>
+          <div style={{margin:"auto 0",display:"flex",flexDirection:"column",gap:"clamp(14px,3.4vh,38px)"}}>
+            {SECOES.map(s=>(
+              <div key={s.titulo}>
+                <p className="mtp-section-label">{s.titulo}</p>
+                {s.ids.map(item)}
+              </div>
+            ))}
+          </div>
         </nav>
 
         {/* Rodapé */}
