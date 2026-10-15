@@ -1,4 +1,4 @@
-// Mi Trading Plan - banca por carteira (inicial + resultados - saques)
+// Mi Trading Plan - banca por carteira (inicial + resultados + depósitos - saques)
 //
 // Carteira = onde o dinheiro fica:
 //   • Conta Principal × mercado  (key "B3", "Forex", ...)  — bancas em config.bancaB3 etc.
@@ -7,6 +7,8 @@
 // Saques ficam em config.saques: [{ id, data, valor, carteira, mercado, obs }].
 // Saques antigos só têm `mercado` → pertencem à carteira principal daquele mercado.
 // Um saque reduz a banca, mas NÃO é resultado de trading.
+// Depósitos ficam em config.depositos, com o mesmo formato: aumentam a banca,
+// também sem contar como resultado.
 import { listaContas, contaDoTrade, limitesDaConta, ID_PRINCIPAL, TIPOS_CONTA } from "./contas";
 
 export const MERCADOS = {
@@ -63,6 +65,17 @@ export function carteiraDoSaque(s) {
   return s.carteira || s.mercado || "B3";
 }
 
+export function listaDepositos(config, cartKey) {
+  return (config?.depositos || []).filter(s => !cartKey || carteiraDoSaque(s) === cartKey);
+}
+
+// Com `ate`, só depósitos com data <= ate; com `antes`, só data < antes
+export function totalDepositos(config, cartKey, { ate, antes } = {}) {
+  return listaDepositos(config, cartKey)
+    .filter(s => (!ate || s.data <= ate) && (!antes || s.data < antes))
+    .reduce((t, s) => t + (Number(s.valor) || 0), 0);
+}
+
 export function listaSaques(config, cartKey) {
   return (config?.saques || []).filter(s => !cartKey || carteiraDoSaque(s) === cartKey);
 }
@@ -82,25 +95,24 @@ export function resultadoCarteira(entries, cart, { antes } = {}) {
 }
 
 export function bancaCarteira(entries, config, cart, opts = {}) {
-  return cart.inicial + resultadoCarteira(entries, cart, opts) - totalSaques(config, cart.key, opts);
+  return cart.inicial + resultadoCarteira(entries, cart, opts) + totalDepositos(config, cart.key, opts) - totalSaques(config, cart.key, opts);
 }
 
-// Banca dia a dia: [{ d, val, saque }], começando pelo valor inicial
+// Banca dia a dia: [{ d, val, saque, deposito }], começando pelo valor inicial
 export function curvaCarteira(entries, config, cart, rotuloInicio = "início") {
   const porDia = {};
   Object.entries(entries || {}).forEach(([d, e]) => {
     const r = resultadoDia(e, cart);
-    if (r) porDia[d] = { res: r, saque: 0 };
+    if (r) porDia[d] = { res: r, saque: 0, deposito: 0 };
   });
-  listaSaques(config, cart.key).forEach(s => {
-    if (!porDia[s.data]) porDia[s.data] = { res: 0, saque: 0 };
-    porDia[s.data].saque += Number(s.valor) || 0;
-  });
+  const dia = d => porDia[d] || (porDia[d] = { res: 0, saque: 0, deposito: 0 });
+  listaSaques(config, cart.key).forEach(s => { dia(s.data).saque += Number(s.valor) || 0; });
+  listaDepositos(config, cart.key).forEach(s => { dia(s.data).deposito += Number(s.valor) || 0; });
   let acc = cart.inicial;
-  const pontos = [{ d: rotuloInicio, val: acc, saque: 0 }];
+  const pontos = [{ d: rotuloInicio, val: acc, saque: 0, deposito: 0 }];
   Object.keys(porDia).sort().forEach(d => {
-    acc += porDia[d].res - porDia[d].saque;
-    pontos.push({ d, val: parseFloat(acc.toFixed(2)), saque: porDia[d].saque });
+    acc += porDia[d].res + porDia[d].deposito - porDia[d].saque;
+    pontos.push({ d, val: parseFloat(acc.toFixed(2)), saque: porDia[d].saque, deposito: porDia[d].deposito });
   });
   return pontos;
 }

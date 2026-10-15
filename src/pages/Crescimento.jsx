@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { CountUp } from "../components/ui";
-import { listaCarteiras, bancaCarteira, totalSaques, listaSaques, resultadoDia } from "../lib/banca";
+import { CountUp, Sparkline } from "../components/ui";
+import { listaCarteiras, bancaCarteira, totalSaques, listaSaques, totalDepositos, listaDepositos, resultadoDia, curvaCarteira } from "../lib/banca";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
@@ -17,6 +17,74 @@ function gerarProjecao(base, meses, taxa) {
   return rows;
 }
 
+// ── Todas as contas lado a lado: quanto cada uma cresceu e como vai o mês ──
+function ContasResumo({ entries, config, carteiras, taxa, selecionada, onSelecionar }) {
+  const hoje = new Date();
+  const mesAtual = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0");
+  const linhas = carteiras.map(c => {
+    const atual = bancaCarteira(entries, config, c);
+    const dep = totalDepositos(config, c.key), saq = totalSaques(config, c.key);
+    const lucro = atual + saq - dep - c.inicial;
+    const aplicado = c.inicial + dep;
+    const inicioMes = bancaCarteira(entries, config, c, { antes: mesAtual+"-01" });
+    const resMes = Object.entries(entries).filter(([d]) => d.startsWith(mesAtual)).reduce((t,[,e]) => t + resultadoDia(e, c), 0);
+    const metaMes = inicioMes * taxa / 100;
+    return { c, atual, lucro, pct: aplicado>0 ? lucro/aplicado*100 : 0, resMes, metaMes, curva: curvaCarteira(entries, config, c).map(p=>p.val) };
+  });
+  const melhor = linhas.length > 1 ? linhas.reduce((a,b) => b.pct > a.pct ? b : a) : null;
+  const fmtC = (v, cur) => cur+" "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  return (
+    <div style={{ marginBottom:"32px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
+        <p className="mtp-section-title">Crescimento das contas</p>
+        <span className="mtp-section-hint">clique para ver o detalhe</span>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:"14px" }}>
+        {linhas.map(l => {
+          const sel = l.c.key === selecionada;
+          const pos = l.pct >= 0;
+          const progresso = l.metaMes>0 ? Math.max(0, Math.min(100, l.resMes/l.metaMes*100)) : 0;
+          const bateu = l.metaMes>0 && l.resMes >= l.metaMes;
+          return (
+            <div key={l.c.key} onClick={()=>onSelecionar(l.c.key)}
+              style={{ background:"var(--card)", border:"1px solid "+(sel ? l.c.cor+"66" : "var(--line)"), borderRadius:"16px", padding:"16px 18px", cursor:"pointer", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", gap:"10px", minWidth:0 }}>
+              <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:"linear-gradient(90deg,"+l.c.cor+(sel?"":"88")+",transparent 70%)" }}/>
+              <div style={{ position:"absolute", right:0, bottom:0, width:"55%", height:"52px", opacity:0.45, pointerEvents:"none", maskImage:"linear-gradient(90deg,transparent,#000 40%)", WebkitMaskImage:"linear-gradient(90deg,transparent,#000 40%)" }}>
+                <Sparkline values={l.curva} color={l.c.cor} width="100%" height="100%"/>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:"8px", position:"relative" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"8px", minWidth:0 }}>
+                  <i className="mtp-dot" style={{ background:l.c.cor, color:l.c.cor }}/>
+                  <p style={{ margin:0, color:"var(--text)", fontSize:"13.5px", fontWeight:"700", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{l.c.label}</p>
+                </div>
+                {melhor === l && l.pct > 0 && <span style={{ fontSize:"10px", fontWeight:"700", letterSpacing:"0.8px", textTransform:"uppercase", padding:"2px 8px", borderRadius:"20px", color:"#f5b941", border:"1px solid #f5b94144", background:"#f5b94112", whiteSpace:"nowrap" }}>★ melhor</span>}
+              </div>
+              <div style={{ position:"relative" }}>
+                <p style={{ margin:0, color:pos?"var(--pos)":"var(--neg)", fontSize:"24px", fontWeight:"700", fontFamily:"var(--font-mono)", letterSpacing:"-0.5px" }}>
+                  <CountUp value={l.pct} format={v=>(v>=0?"+":"")+v.toFixed(1)+"%"}/>
+                </p>
+                <p style={{ margin:"2px 0 0", color:"var(--text-3)", fontSize:"11.5px", fontFamily:"var(--font-mono)" }}>
+                  {fmtC(l.atual, l.c.moeda)} · <span style={{ color:pos?"var(--pos)":"var(--neg)" }}>{pos?"+":"-"}{fmtC(l.lucro, l.c.moeda)}</span>
+                </p>
+              </div>
+              <div style={{ position:"relative" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"5px", fontSize:"11px", fontFamily:"var(--font-mono)" }}>
+                  <span style={{ color:"var(--text-3)" }}>mês: <span style={{ color:l.resMes>=0?"var(--pos)":"var(--neg)" }}>{l.resMes>=0?"+":"-"}{fmtC(l.resMes, l.c.moeda)}</span></span>
+                  <span style={{ color: bateu ? "var(--pos)" : "var(--text-3)" }}>{bateu ? "✓ meta" : "meta "+fmtC(l.metaMes, l.c.moeda)}</span>
+                </div>
+                <div style={{ height:"4px", borderRadius:"4px", background:"var(--line)", overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:progresso+"%", borderRadius:"4px", background:l.c.cor, boxShadow:"0 0 8px "+l.c.cor+"88" }}/>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Crescimento({ entries, config }) {
   const carteiras = listaCarteiras(config);
   const [cartKey, setCartKey] = useState(carteiras[0].key);
@@ -26,35 +94,41 @@ export default function Crescimento({ entries, config }) {
   const cur     = cart.moeda;
   const color   = cart.cor;
   const bancaIn = cart.inicial;
-  const bancaAt = bancaCarteira(entries, config, cart);   // já desconta saques
+  const bancaAt = bancaCarteira(entries, config, cart);   // já conta depósitos e saques
   const sacado  = totalSaques(config, cart.key);
+  const depositado = totalDepositos(config, cart.key);
   const projecao= gerarProjecao(bancaAt, 12, taxa/100);
 
   // Cada mês realizado tem a própria meta: banca no início do mês × taxa.
-  // Compara com o resultado de trades do mês; saque reduz a banca, mas não é prejuízo.
+  // Compara com o resultado de trades do mês; saque/depósito mexem na banca, mas não são resultado.
   const porMes = {};
   Object.entries(entries).forEach(([d,e]) => {
     const v = resultadoDia(e, cart);
     if (!v) return;
     const k = monthKey(d);
-    if (!porMes[k]) porMes[k] = { res:0, saq:0 };
+    if (!porMes[k]) porMes[k] = { res:0, saq:0, dep:0 };
     porMes[k].res += v;
   });
   listaSaques(config, cart.key).forEach(sq => {
     const k = monthKey(sq.data);
-    if (!porMes[k]) porMes[k] = { res:0, saq:0 };
+    if (!porMes[k]) porMes[k] = { res:0, saq:0, dep:0 };
     porMes[k].saq += Number(sq.valor) || 0;
+  });
+  listaDepositos(config, cart.key).forEach(dp => {
+    const k = monthKey(dp.data);
+    if (!porMes[k]) porMes[k] = { res:0, saq:0, dep:0 };
+    porMes[k].dep += Number(dp.valor) || 0;
   });
   const hoje     = new Date();
   const mesAtual = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0");
   const realizados = [];
   let bancaMes = bancaIn;
   for (const k of Object.keys(porMes).sort()) {
-    const { res, saq } = porMes[k];
+    const { res, saq, dep } = porMes[k];
     const inicio    = bancaMes;
     const metaLucro = inicio * taxa/100;
-    bancaMes = inicio + res - saq;
-    realizados.push({ mk:k, inicio, metaLucro, res, saq, fim:bancaMes, bateu: res >= metaLucro, emAndamento: k === mesAtual });
+    bancaMes = inicio + res + dep - saq;
+    realizados.push({ mk:k, inicio, metaLucro, res, saq, dep, fim:bancaMes, bateu: res >= metaLucro, emAndamento: k === mesAtual });
   }
   const fechados  = realizados.filter(r => !r.emAndamento);
   const batidos   = fechados.filter(r => r.bateu).length;
@@ -62,7 +136,7 @@ export default function Crescimento({ entries, config }) {
   const nomeFuturo = i => { const d = new Date(hoje.getFullYear(), hoje.getMonth()+i, 1); return MONTH_NAMES[d.getMonth()]+" "+d.getFullYear(); };
 
   const fmtC = v => cur+" "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  const lucroTotal = bancaAt + sacado - bancaIn; // resultado de trading
+  const lucroTotal = bancaAt + sacado - depositado - bancaIn; // resultado de trading
   const metaFinal  = projecao[11]?.metaFinal ?? bancaAt;
 
   const kpiCard  = { background:"var(--card)", border:"1px solid var(--line)", borderRadius:"16px", padding:"18px 20px", minWidth:0, display:"flex", flexDirection:"column", gap:"8px" };
@@ -89,6 +163,15 @@ export default function Crescimento({ entries, config }) {
         </div>
       </div>
 
+      {carteiras.length > 1 && <ContasResumo entries={entries} config={config} carteiras={carteiras} taxa={taxa} selecionada={cart.key} onSelecionar={setCartKey}/>}
+
+      {carteiras.length > 1 && (
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"16px" }}>
+          <i className="mtp-dot" style={{ background:color, color }}/>
+          <p className="mtp-section-title">Detalhe · {cart.label}</p>
+        </div>
+      )}
+
       {/* KPIs */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))", gap:"14px", marginBottom:"14px" }}>
         <div style={kpiCard}>
@@ -99,7 +182,7 @@ export default function Crescimento({ entries, config }) {
         <div style={{ ...kpiCard, borderColor:color+"33" }}>
           <p style={kpiLabel}>Banca real hoje</p>
           <p style={{ ...kpiValue, color, textShadow:"0 0 22px "+color+"44" }}><CountUp value={bancaAt} format={fmtC}/></p>
-          <p style={{ ...kpiSub, color:lucroTotal>=0?"var(--pos)":"var(--neg)", fontFamily:"var(--font-mono)" }}>{lucroTotal>=0?"+":"-"}{fmtC(lucroTotal)} em trades{sacado>0 && <span style={{ color:"#f5b941" }}> · -{fmtC(sacado)} sacado</span>}</p>
+          <p style={{ ...kpiSub, color:lucroTotal>=0?"var(--pos)":"var(--neg)", fontFamily:"var(--font-mono)" }}>{lucroTotal>=0?"+":"-"}{fmtC(lucroTotal)} em trades{depositado>0 && <span style={{ color:"#7fd8ff" }}> · +{fmtC(depositado)} depositado</span>}{sacado>0 && <span style={{ color:"#f5b941" }}> · -{fmtC(sacado)} sacado</span>}</p>
         </div>
         <div style={kpiCard}>
           <p style={kpiLabel}>Metas batidas</p>
@@ -155,7 +238,7 @@ export default function Crescimento({ entries, config }) {
                   </div>
                   <p style={{ margin:"7px 0 0", color:"var(--text-3)", fontSize:"11px", fontFamily:"var(--font-mono)" }}>
                     {fmtC(r.inicio)} → {fmtC(r.fim)}
-                    {r.saq>0 && <span style={{ color:"#f5b941" }}> · -{fmtC(r.saq)} saque</span>}
+                    {r.dep>0 && <span style={{ color:"#7fd8ff" }}> · +{fmtC(r.dep)} depósito</span>}{r.saq>0 && <span style={{ color:"#f5b941" }}> · -{fmtC(r.saq)} saque</span>}
                   </p>
                 </div>
               </div>

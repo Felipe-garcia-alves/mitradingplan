@@ -20,10 +20,11 @@ export default function ContasConfig({ config, saveConfig, entries }) {
 
   async function excluir(c) {
     if (ops[c.id]) return;
-    if (!window.confirm(`Excluir a conta "${c.nome}"? Os saques registrados nela também serão removidos.`)) return;
+    if (!window.confirm(`Excluir a conta "${c.nome}"? Os saques e depósitos registrados nela também serão removidos.`)) return;
     const restantes = contas.filter(x => x.id !== c.id);
     const novo = salvarContas(config, c.padrao ? restantes.map(x => ({ ...x, padrao: x.id === ID_PRINCIPAL })) : restantes);
     novo.saques = (config?.saques || []).filter(s => s.carteira !== "conta:" + c.id);
+    novo.depositos = (config?.depositos || []).filter(s => s.carteira !== "conta:" + c.id);
     await saveConfig(novo);
   }
 
