@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { validarSenha, erroDeSenha } from "../lib/senha";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import Termos from "./Termos";
@@ -34,6 +35,8 @@ export default function Login() {
 
       } else {
         if (!nome.trim()) { setErro("Digite seu nome."); setLoading(false); return; }
+        const regra = validarSenha(senha);
+        if (regra) { setErro(regra); setLoading(false); return; }
         const { error } = await supabase.auth.signUp({
           email,
           password: senha,
@@ -52,7 +55,7 @@ export default function Login() {
         "User already registered":          "Email já cadastrado.",
         "Password should be at least 6 characters": "Senha deve ter ao menos 6 caracteres.",
       };
-      setErro(msgs[e.message] || e.message || "Erro ao autenticar.");
+      setErro(msgs[e.message] || erroDeSenha(e) || e.message || "Erro ao autenticar.");
     }
     setLoading(false);
   }

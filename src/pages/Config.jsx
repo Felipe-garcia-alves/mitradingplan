@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import ContasConfig from "../components/ContasConfig";
+import { validarSenha, erroDeSenha, REGRA_SENHA } from "../lib/senha";
 
 export default function Config({ config, saveConfig, nomeUsuario, setPagina, isAdmin, entries }) {
   const { user, logout } = useAuth();
@@ -21,17 +22,14 @@ export default function Config({ config, saveConfig, nomeUsuario, setPagina, isA
 
   async function trocarSenha() {
     if (!senhaAtual || !senhaNova) { setMsgSenha("❌ Preencha os dois campos."); return; }
-    if (senhaNova.length < 6) { setMsgSenha("❌ Nova senha deve ter ao menos 6 caracteres."); return; }
-    try {
-      const { error: erroAuth } = await supabase.auth.signInWithPassword({ email: user.email, password: senhaAtual });
-      if (erroAuth) throw erroAuth;
-      const { error } = await supabase.auth.updateUser({ password: senhaNova });
-      if (error) throw error;
-      setMsgSenha("✓ Senha alterada com sucesso!"); setSenhaAtual(""); setSenhaNova("");
-      setTimeout(()=>setMsgSenha(""),3000);
-    } catch(e) {
-      setMsgSenha("❌ Senha atual incorreta."); setTimeout(()=>setMsgSenha(""),3000);
-    }
+    const regra = validarSenha(senhaNova);
+    if (regra) { setMsgSenha("❌ "+regra); return; }
+    const { error: erroAuth } = await supabase.auth.signInWithPassword({ email: user.email, password: senhaAtual });
+    if (erroAuth) { setMsgSenha("❌ Senha atual incorreta."); setTimeout(()=>setMsgSenha(""),4000); return; }
+    const { error } = await supabase.auth.updateUser({ password: senhaNova });
+    if (error) { setMsgSenha("❌ "+(erroDeSenha(error) || "Não foi possível alterar a senha. Tente novamente.")); return; }
+    setMsgSenha("✓ Senha alterada com sucesso!"); setSenhaAtual(""); setSenhaNova("");
+    setTimeout(()=>setMsgSenha(""),3000);
   }
 
   const inp = { width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid #26352e", borderRadius:"10px", padding:"11px 13px", color:"#f0f0f0", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)" };
@@ -93,7 +91,7 @@ export default function Config({ config, saveConfig, nomeUsuario, setPagina, isA
           </div>
           <div>
             <label style={{ color:"#777", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>Nova senha</label>
-            <input style={inp} type="password" value={senhaNova} onChange={e=>setSenhaNova(e.target.value)} placeholder="Minimo 6 caracteres"/>
+            <input style={inp} type="password" value={senhaNova} onChange={e=>setSenhaNova(e.target.value)} placeholder={REGRA_SENHA}/>
           </div>
         </div>
         <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>

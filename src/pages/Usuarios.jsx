@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabase";
 import { CountUp, Modal } from "../components/ui";
+import { gerarSenha, validarSenha, REGRA_SENHA } from "../lib/senha";
 
 // Chamada à Edge Function admin-usuarios (a chave secreta fica só no servidor)
 async function chamarAdmin(body) {
@@ -35,11 +36,6 @@ function maisDias(base, dias) {
 }
 function fmtData(s) { if (!s) return "—"; const p = s.slice(0,10).split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
 function diasAte(s) { if (!s) return null; return Math.round((new Date(s+"T12:00:00") - new Date(hojeISO()+"T12:00:00"))/86400000); }
-function gerarSenha() {
-  const c = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const a = crypto.getRandomValues(new Uint32Array(10));
-  return Array.from(a, n => c[n % c.length]).join("");
-}
 // status efetivo: assinatura com data passada conta como vencida
 function statusEfetivo(u) {
   if (u.papel === "admin") return "ativa";
@@ -196,6 +192,8 @@ function NovoUsuario({ api, onClose, onCriado }) {
   }
 
   async function criar() {
+    const regra = validarSenha(f.senha);
+    if (regra) { setErro(regra); return; }
     setErro(""); setSalvando(true);
     try {
       await api({ acao:"criar", nome:f.nome, email:f.email, senha:f.senha, plano:f.plano, status_assinatura:PLANOS[f.plano].status, assinatura_ate: f.ate || null });
@@ -213,7 +211,7 @@ function NovoUsuario({ api, onClose, onCriado }) {
         </div>
         <Campo label="Nome"><input style={inp} value={f.nome} autoFocus onChange={e=>setF(x=>({...x,nome:e.target.value}))} placeholder="Nome do cliente"/></Campo>
         <Campo label="E-mail"><input style={inp} type="email" value={f.email} onChange={e=>setF(x=>({...x,email:e.target.value}))} placeholder="cliente@email.com"/></Campo>
-        <Campo label="Senha temporária">
+        <Campo label={"Senha temporária · "+REGRA_SENHA.toLowerCase()}>
           <div style={{display:"flex",gap:"8px"}}>
             <input style={{...inp,fontFamily:"var(--font-mono)"}} value={f.senha} onChange={e=>setF(x=>({...x,senha:e.target.value}))}/>
             <button onClick={()=>setF(x=>({...x,senha:gerarSenha()}))} style={{...btnSec,padding:"0 14px"}}>Gerar</button>
@@ -273,6 +271,8 @@ function TrocarSenha({ api, usuario, onClose }) {
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState(false);
   async function salvar() {
+    const regra = validarSenha(senha);
+    if (regra) { setErro(regra); return; }
     setErro("");
     try { await api({ acao:"senha", id:usuario.id, senha }); setOk(true); }
     catch (e) { setErro(e.message); }

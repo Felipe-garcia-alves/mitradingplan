@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { validarSenha, erroDeSenha } from "../lib/senha";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,7 +12,8 @@ export default function NovaSenha() {
 
   async function handleSubmit() {
     setErro("");
-    if (senha.length < 6)     { setErro("Senha deve ter ao menos 6 caracteres."); return; }
+    const regra = validarSenha(senha);
+    if (regra)                { setErro(regra); return; }
     if (senha !== confirmar)  { setErro("As senhas não coincidem."); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: senha });
@@ -26,7 +28,7 @@ export default function NovaSenha() {
     };
     setErro(expirado
       ? "Este link expirou ou já foi usado. Volte ao login e peça um novo."
-      : msgs[error.code] || "Não foi possível alterar a senha. Tente novamente.");
+      : erroDeSenha(error) || msgs[error.code] || "Não foi possível alterar a senha. Tente novamente.");
   }
 
   const inp = {
