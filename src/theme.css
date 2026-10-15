@@ -282,7 +282,10 @@ button:not(:disabled):active { transform: scale(0.97); }
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
-.mtp-page { animation: mtpFadeUp .45s var(--ease) both; }
+/* "backwards" e não "both": se o transform ficar retido no fim da animação, o
+   position:fixed dos painéis laterais passa a ser relativo à página e eles
+   abrem lá no topo, fora da tela quando a página está rolada */
+.mtp-page { animation: mtpFadeUp .45s var(--ease) backwards; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Confirmar } from "../components/ui";
 
 const MONTH_NAMES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
@@ -48,6 +49,7 @@ function RuleIcon({ id, color="#3fe8a8", size=16 }) {
 export default function Regras({ regras, saveRegras, compliance, saveCompliance, entries }) {
   const regrasList  = regras && regras.length > 0 ? regras : REGRAS_PADRAO;
   const today       = todayKey();
+  const [confirmacao, setConfirmacao] = useState(null);
   const now         = new Date();
   const year        = now.getFullYear();
   const month       = now.getMonth();
@@ -67,12 +69,23 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
 
   function toggleCheck(id) { setChecked(c => ({...c,[id]:!c[id]})); }
 
-  async function toggleDay(k) {
-    if (k > today) return;
+  async function apagarDia(k) {
     const updated = {...compliance};
-    if (updated[k] !== undefined) delete updated[k];
-    else updated[k] = true;
+    delete updated[k];
+    if (updated._detalhes) { const det = {...updated._detalhes}; delete det[k]; updated._detalhes = det; }
     await saveCompliance(updated);
+  }
+
+  function pedirApagarDia(k) {
+    const v = compliance[k];
+    if (k > today || v === undefined) return;
+    const pctDia = typeof v === "number" ? v : 100;
+    setConfirmacao({
+      titulo: "Apagar o registro de " + formatDateFull(k) + "?",
+      texto: "Disciplina de " + pctDia + "% neste dia. A Streak de Disciplina e a média do mês serão recalculadas. Não dá para desfazer.",
+      botao: "Apagar registro",
+      acao: () => apagarDia(k),
+    });
   }
 
   function abrirNova() {
@@ -98,9 +111,14 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
     setMsg("Salvo!"); setTimeout(()=>setMsg(""),2500);
   }
 
-  async function excluir(id) {
-    if (!window.confirm("Excluir esta regra?")) return;
-    await saveRegras(regrasList.filter(r => r.id !== id));
+  function excluir(id) {
+    const r = regrasList.find(x => x.id === id);
+    setConfirmacao({
+      titulo: "Excluir esta regra?",
+      texto: (r?.title ? "\"" + r.title + "\" sai da sua lista de disciplina. " : "") + "Os dias já registrados não mudam.",
+      botao: "Excluir regra",
+      acao: () => saveRegras(regrasList.filter(x => x.id !== id)),
+    });
   }
 
   async function mover(idx, dir) {
@@ -397,8 +415,9 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               const emocoes = dayEntry?.emocoes || [];
               const EMOCAO_COLORS = {"Focado":"#3fe8a8","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
               return (
-                <div key={d} style={{minHeight:"80px",borderRadius:"10px",background:bg,border,cursor:future?"default":"pointer",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
-                  onClick={()=>!future&&toggleDay(k)}>
+                <div key={d} style={{minHeight:"80px",borderRadius:"10px",background:bg,border,cursor:(!future&&status!==undefined)?"pointer":"default",transition:"all 0.15s",padding:"7px 8px",position:"relative"}}
+                  title={!future&&status!==undefined?"Clique para apagar o registro deste dia":undefined}
+                  onClick={()=>pedirApagarDia(k)}>
                   {/* Número do dia — topo esquerda */}
                   <span style={{fontSize:"16px",fontWeight:isToday?"800":"600",color:isToday?"#f0f0f0":future?"#26352e":"#ccc",lineHeight:1}}>{d}</span>
                   {/* Emoções — centro direita */}
@@ -427,6 +446,11 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           · Salve o progresso para registrar
         </p>
       </div>
+      {confirmacao && (
+        <Confirmar titulo={confirmacao.titulo} texto={confirmacao.texto} botao={confirmacao.botao}
+          onCancelar={()=>setConfirmacao(null)}
+          onConfirmar={async()=>{ await confirmacao.acao(); setConfirmacao(null); }}/>
+      )}
     </div>
   );
 }

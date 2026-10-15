@@ -12,7 +12,7 @@ export default function Config({ config, saveConfig, nomeUsuario, setPagina, isA
   const [msgSenha,   setMsgSenha]   = useState("");
   const [zerarDisc,  setZerarDisc]  = useState(false);
   const [msgDados,   setMsgDados]   = useState("");
-  const diasDisciplina = Object.keys(compliance || {}).length;
+  const diasDisciplina = Object.keys(compliance || {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).length;
 
 
 
