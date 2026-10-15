@@ -293,7 +293,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
         <div>
           <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Disciplina</h1>
-          <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"13px"}}>Seu checklist antes de operar e o histórico do seu comportamento</p>
+          <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"13px"}}>Revise suas regras no fim do pregão e acompanhe seu comportamento</p>
         </div>
         <button onClick={abrirNova} style={{background:"rgba(46,230,160,0.08)",border:"1px solid #2ee6a044",borderRadius:"10px",padding:"9px 16px",color:"#2ee6a0",fontWeight:"700",fontSize:"12.5px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>+ Nova regra</button>
       </div>
@@ -347,10 +347,10 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"14px",flexWrap:"wrap",marginBottom:"16px"}}>
             <div>
               <p className="mtp-section-title">Checklist de hoje</p>
-              <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12px"}}>Marque o que você cumpriu e salve no fim do dia</p>
+              <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12px"}}>Depois de operar, marque as regras que você respeitou e salve</p>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
-              {allChecked && <span className="mtp-pronto">✓ Pronto para operar</span>}
+              {allChecked && <span className="mtp-pronto">✓ Dia 100% disciplinado</span>}
               {msg && <span style={{color:"#3fe8a8",fontSize:"12.5px",fontWeight:"600"}}>{msg}</span>}
               <button onClick={salvarProgresso} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"800",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><polyline points="20 6 9 17 4 12"/></svg>
