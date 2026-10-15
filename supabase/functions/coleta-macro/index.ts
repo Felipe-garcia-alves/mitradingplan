@@ -5,14 +5,23 @@ const MAX_IDADE_MIN = 30; // cotacao mais velha que isso nao conta como informac
 // barras diarias: isentas de MAX_IDADE_MIN, regra propria em pregoesDesde (max 3 pregoes)
 const DIARIOS = new Set(["TIO=F"]);
 
+// ATENCAO: meta.chartPreviousClose NAO serve como base antes da abertura americana.
+// No pre-mercado ele ainda aponta para o fechamento de DOIS pregoes atras e so rola quando
+// o mercado regular abre (10:30 BRT) — ou seja, errado exatamente na janela das 08h55.
+// Medido em 15/10/2026 as 08:35: VIX chartPreviousClose=15,27 (fechamento de 13/10) enquanto
+// o fechamento real de 14/10 era 16,87. Dava +15,1% no lugar de +4,2%, inflando TODAS as pernas.
+// A base correta vem da serie diaria: o ultimo fechamento cujo dia em Nova York ja terminou.
 async function yahoo(symbol: string) {
-  const u = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`
-          + `?interval=1m&range=1d&includePrePost=true`;
-  const r = await fetch(u, { headers: { "User-Agent": UA, "Accept": "application/json" } });
-  if (!r.ok) throw new Error(`${symbol}: HTTP ${r.status}`);
-  const j = await r.json();
-  const res = j?.chart?.result?.[0];
+  const base = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
+  const h = { headers: { "User-Agent": UA, "Accept": "application/json" } };
+  const [rIntra, rDia] = await Promise.all([
+    fetch(`${base}?interval=1m&range=1d&includePrePost=true`, h),
+    fetch(`${base}?interval=1d&range=7d`, h),
+  ]);
+  if (!rIntra.ok) throw new Error(`${symbol}: HTTP ${rIntra.status}`);
+  const res = (await rIntra.json())?.chart?.result?.[0];
   if (!res) throw new Error(`${symbol}: sem resultado`);
+
   const closes = res.indicators?.quote?.[0]?.close ?? [];
   const stamps = res.timestamp ?? [];
   let preco: number | null = null, em: number | null = null;
@@ -20,13 +29,25 @@ async function yahoo(symbol: string) {
     if (closes[i] != null) { preco = closes[i]; em = stamps[i]; break; }
   }
   if (preco == null) { preco = res.meta?.regularMarketPrice ?? null; em = res.meta?.regularMarketTime ?? null; }
+
+  let fech: number | null = null;
+  if (rDia.ok) {
+    const d = (await rDia.json())?.chart?.result?.[0];
+    const dc = d?.indicators?.quote?.[0]?.close ?? [];
+    const dt = d?.timestamp ?? [];
+    const hoje = hojeNY();
+    for (let i = dc.length - 1; i >= 0; i--) {
+      if (dc[i] == null) continue;
+      if (new Date(dt[i] * 1000).toLocaleDateString("en-CA", { timeZone: "America/New_York" }) < hoje) {
+        fech = dc[i]; break;
+      }
+    }
+  }
+  // so cai no meta se a serie diaria falhar; depois da abertura americana ele ja esta correto
+  if (fech == null) fech = res.meta?.chartPreviousClose ?? res.meta?.previousClose ?? null;
+
   const per = res.meta?.currentTradingPeriod?.regular;
   const agora = Math.floor(Date.now() / 1000);
-  // fechamento anterior do proprio ativo: e a base que o TradingView usa na coluna Chg%,
-  // e por isso e a base do vies. Nao confundir com o snapshot das 18:20 (macro_referencia),
-  // que continua servindo o implied open.
-  const fech = res.meta?.chartPreviousClose ?? res.meta?.previousClose
-            ?? res.meta?.regularMarketPreviousClose ?? null;
   return { preco, fech, em: em ? new Date(em * 1000).toISOString() : null, preMarket: !!(per && agora < per.start) };
 }
 
