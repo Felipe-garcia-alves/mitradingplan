@@ -27,6 +27,44 @@ function Spinner() {
   );
 }
 
+// Data de hoje em Brasília (a mesma regra do banco: assinatura_ativa usa America/Sao_Paulo)
+function hojeBRT() {
+  return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function diasAte(ate, hoje) {
+  if (!ate) return null;
+  return Math.round((new Date(ate + "T12:00:00") - new Date(hoje + "T12:00:00")) / 86400000);
+}
+
+// Faixa nos últimos dias antes do vencimento (teste ou assinatura)
+function AvisoVencimento({ perfil, hoje }) {
+  if (perfil.papel === "admin" || !["teste","ativa"].includes(perfil.status)) return null;
+  const dias = diasAte(perfil.ate, hoje);
+  if (dias === null || dias < 0 || dias > 5) return null;
+  const teste = perfil.status === "teste";
+  const quando = dias === 0 ? "hoje" : dias === 1 ? "amanhã" : "em " + dias + " dias";
+  const urgente = dias <= 1;
+  const cor = urgente ? "#ff7a90" : "#f5b941";
+  const fundo = urgente ? "rgba(255,84,112,0.08)" : "rgba(245,185,65,0.07)";
+  return (
+    <div style={{background:fundo,border:"1px solid "+cor+"44",borderRadius:"12px",padding:"12px 16px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"12px"}}>
+      <div style={{width:"32px",height:"32px",borderRadius:"9px",flexShrink:0,background:cor+"1f",border:"1px solid "+cor+"55",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+      </div>
+      <div style={{minWidth:0}}>
+        <p style={{margin:0,color:cor,fontSize:"13.5px",fontWeight:"700"}}>
+          {teste ? "Seu teste grátis termina " + quando : "Sua assinatura vence " + quando}
+          {perfil.ate && <span style={{color:"var(--text-3)",fontWeight:500,fontFamily:"var(--font-mono)",fontSize:"12px"}}> · {perfil.ate.split("-").reverse().join("/")}</span>}
+        </p>
+        <p style={{margin:"2px 0 0",color:"var(--text-2)",fontSize:"12.5px"}}>
+          Depois disso o acesso fica bloqueado até a {teste ? "assinatura" : "renovação"}. Seus dados continuam guardados.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // Tela de bloqueio quando a assinatura venceu ou foi suspensa
 function AssinaturaInativa({ perfil, onSair }) {
   const vencida = perfil.status!=="suspensa" && perfil.status!=="cancelada";
@@ -202,6 +240,7 @@ function AppInterno() {
   const [regras,      setRegras]      = useState([]);
   const [nomeUsuario, setNomeUsuario] = useState("");
   const [perfil,      setPerfil]      = useState({ papel:"trader", status:"ativa", ate:null });
+  const [hoje,        setHoje]        = useState(hojeBRT);
   const [loading,     setLoading]     = useState(true);
   const [onboarding,  setOnboarding]  = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -213,6 +252,22 @@ function AppInterno() {
     window.addEventListener("resize",fn);
     return ()=>window.removeEventListener("resize",fn);
   },[]);
+
+  // ── ASSINATURA: confere de novo com o app aberto ──
+  // Sem isso, quem estivesse com o app aberto na virada do vencimento só veria
+  // erros ao salvar (o banco já bloqueia); assim a tela de vencimento aparece.
+  useEffect(()=>{
+    if (!uid) return;
+    const conferir = async () => {
+      setHoje(hojeBRT());
+      const { data } = await supabase.from("usuarios").select("papel,status_assinatura,assinatura_ate").eq("id", uid).single();
+      if (data) setPerfil({ papel:data.papel||"trader", status:data.status_assinatura||"ativa", ate:data.assinatura_ate||null });
+    };
+    const aoVoltar = () => { if (document.visibilityState === "visible") conferir(); };
+    document.addEventListener("visibilitychange", aoVoltar);
+    const timer = setInterval(conferir, 30 * 60 * 1000);
+    return () => { document.removeEventListener("visibilitychange", aoVoltar); clearInterval(timer); };
+  },[uid]);
 
   // ── LOAD USER DATA FROM SUPABASE ──
   useEffect(()=>{
@@ -393,7 +448,6 @@ function AppInterno() {
   );
 
   // Assinatura: admin nunca é bloqueado; demais perdem acesso se suspensos ou vencidos
-  const hoje = new Date().toISOString().slice(0,10);
   const bloqueado = perfil.papel!=="admin" && (
     perfil.status==="suspensa" || perfil.status==="cancelada" || (perfil.ate && perfil.ate < hoje)
   );
@@ -425,6 +479,7 @@ function AppInterno() {
           <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
         </div>
         <div style={{flex:1,padding:isMobile?"16px 12px":"28px 24px",maxWidth:"1248px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+          <AvisoVencimento perfil={perfil} hoje={hoje}/>
           {/* Lembrete de disciplina — aparece se hoje ainda não foi salvo */}
           {(() => {
             const today = new Date().toISOString().slice(0,10);
