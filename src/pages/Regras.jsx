@@ -340,56 +340,90 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
         </div>
       </div>
 
-      {/* ── Checklist ── */}
-      <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px",marginBottom:"28px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"14px",flexWrap:"wrap",marginBottom:"16px"}}>
-          <div>
-            <p className="mtp-section-title">Checklist de hoje</p>
-            <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12px"}}>Marque o que você cumpriu e salve no fim do dia</p>
+      {/* ── Checklist + regras mais quebradas ── */}
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.7fr) minmax(0,1fr)",gap:"14px",alignItems:"start",marginBottom:"28px"}}>
+        {/* ── Checklist ── */}
+        <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"14px",flexWrap:"wrap",marginBottom:"16px"}}>
+            <div>
+              <p className="mtp-section-title">Checklist de hoje</p>
+              <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12px"}}>Marque o que você cumpriu e salve no fim do dia</p>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
+              {allChecked && <span className="mtp-pronto">✓ Pronto para operar</span>}
+              {msg && <span style={{color:"#3fe8a8",fontSize:"12.5px",fontWeight:"600"}}>{msg}</span>}
+              <button onClick={salvarProgresso} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"800",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+                {salvoHoje===null ? "Salvar disciplina de hoje" : "Atualizar disciplina de hoje"}
+              </button>
+            </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
-            {allChecked && <span className="mtp-pronto">✓ Pronto para operar</span>}
-            {msg && <span style={{color:"#3fe8a8",fontSize:"12.5px",fontWeight:"600"}}>{msg}</span>}
-            <button onClick={salvarProgresso} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"800",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><polyline points="20 6 9 17 4 12"/></svg>
-              {salvoHoje===null ? "Salvar disciplina de hoje" : "Atualizar disciplina de hoje"}
-            </button>
+          <div style={{height:"6px",borderRadius:"6px",background:"var(--line)",overflow:"hidden",marginBottom:"16px"}}>
+            <div style={{height:"100%",width:(pct||0)+"%",borderRadius:"6px",background:"linear-gradient(90deg,"+corPct(pct)+"77,"+corPct(pct)+")",boxShadow:"0 0 10px "+corPct(pct),transition:"width .4s var(--ease)"}}/>
           </div>
-        </div>
-        <div style={{height:"6px",borderRadius:"6px",background:"var(--line)",overflow:"hidden",marginBottom:"16px"}}>
-          <div style={{height:"100%",width:(pct||0)+"%",borderRadius:"6px",background:"linear-gradient(90deg,"+corPct(pct)+"77,"+corPct(pct)+")",boxShadow:"0 0 10px "+corPct(pct),transition:"width .4s var(--ease)"}}/>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:"10px"}}>
-          {regrasList.map((rule,idx) => {
-            const ok = !!checked[rule.id];
-            const cor = rule.personal ? "#f5b941" : "#3fe8a8";
-            return (
-              <div key={rule.id} className={"mtp-regra"+(ok?" ok":"")} style={{"--rc":cor}} onClick={()=>toggleCheck(rule.id)}>
-                <span className="mtp-regra-check">{ok && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#04110b" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}</span>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
-                    <RuleIcon id={rule.icon} color={ok?cor:"#93a39c"} size={15}/>
-                    <span style={{color:"var(--text)",fontWeight:"650",fontSize:"13.5px"}}>{rule.title}</span>
-                    {rule.personal && <span style={{background:"rgba(245,185,65,0.12)",color:"#f5b941",fontSize:"9.5px",fontWeight:"800",padding:"2px 7px",borderRadius:"20px",letterSpacing:".5px"}}>PESSOAL</span>}
+          <div className="mtp-regras-lista">
+            {regrasList.map((rule,idx) => {
+              const ok = !!checked[rule.id];
+              const cor = rule.personal ? "#f5b941" : "#3fe8a8";
+              return (
+                <div key={rule.id} className={"mtp-regra"+(ok?" ok":"")} style={{"--rc":cor}} title={rule.desc||undefined} onClick={()=>toggleCheck(rule.id)}>
+                  <span className="mtp-regra-check">{ok && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#04110b" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
+                      <RuleIcon id={rule.icon} color={ok?cor:"#93a39c"} size={15}/>
+                      <span style={{color:"var(--text)",fontWeight:"650",fontSize:"13.5px"}}>{rule.title}</span>
+                      {rule.personal && <span style={{background:"rgba(245,185,65,0.12)",color:"#f5b941",fontSize:"9.5px",fontWeight:"800",padding:"2px 7px",borderRadius:"20px",letterSpacing:".5px"}}>PESSOAL</span>}
+                    </div>
+                    {rule.desc && <p style={{margin:"4px 0 0",color:"var(--text-2)",fontSize:"12.5px",lineHeight:1.5}}>{rule.desc}</p>}
                   </div>
-                  {rule.desc && <p style={{margin:"4px 0 0",color:"var(--text-2)",fontSize:"12.5px",lineHeight:1.5}}>{rule.desc}</p>}
+                  <div className="mtp-regra-acoes" onClick={e=>e.stopPropagation()}>
+                    <button onClick={()=>mover(idx,-1)} disabled={idx===0} title="Subir">▲</button>
+                    <button onClick={()=>mover(idx,1)} disabled={idx===regrasList.length-1} title="Descer">▼</button>
+                    <button onClick={()=>abrirEditar(rule)} title="Editar">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button onClick={()=>excluir(rule.id)} title="Excluir" className="del">✕</button>
+                  </div>
                 </div>
-                <div className="mtp-regra-acoes" onClick={e=>e.stopPropagation()}>
-                  <button onClick={()=>mover(idx,-1)} disabled={idx===0} title="Subir">▲</button>
-                  <button onClick={()=>mover(idx,1)} disabled={idx===regrasList.length-1} title="Descer">▼</button>
-                  <button onClick={()=>abrirEditar(rule)} title="Editar">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button onClick={()=>excluir(rule.id)} title="Excluir" className="del">✕</button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px"}}>
+          <p className="mtp-section-title" style={{marginBottom:"4px"}}>Regras mais quebradas</p>
+          <p style={{margin:"0 0 14px",color:"var(--text-3)",fontSize:"12px"}}>{NOMES_MES[month]} · comparado a {NOMES_MES[(month+11)%12]}</p>
+          {topQuebradas.length === 0
+            ? <p style={{margin:0,color:"var(--text-3)",fontSize:"12.5px",lineHeight:1.6}}>{Object.keys(detalhes).some(k=>k.startsWith(mesAtual)) ? "Nenhuma regra quebrada neste mês. Excelente." : "Salve a disciplina do dia para ver quais regras você mais quebra."}</p>
+            : <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+                {topQuebradas.map((r,i)=>{
+                  const pctQ = Math.round(r.quebradas/r.total*100);
+                  const idRegra = regrasList.find(x=>x.title===r.title)?.id;
+                  const ant = quebrasAnt[idRegra];
+                  const pctAnt = ant && ant.t ? Math.round(ant.q/ant.t*100) : null;
+                  const tend = pctAnt===null ? null : pctQ - pctAnt;
+                  const cor = pctQ>=60?"#ff5470":pctQ>=30?"#f5b941":"#a3b2ab";
+                  return (
+                    <div key={i}>
+                      <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginBottom:"6px"}}>
+                        <span style={{color:"var(--text)",fontSize:"12.5px",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
+                        <span style={{color:cor,fontSize:"12px",fontWeight:800,fontFamily:"var(--font-mono)",flexShrink:0}}>{r.quebradas}×</span>
+                      </div>
+                      <div style={{height:"4px",borderRadius:"4px",background:"var(--line)",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:pctQ+"%",background:cor,borderRadius:"4px"}}/>
+                      </div>
+                      <p style={{margin:"5px 0 0",fontSize:"11px",fontFamily:"var(--font-mono)",color:"var(--text-3)"}}>
+                        {pctQ}% dos dias
+                        {tend!==null && <span style={{color:tend<0?"#3fe8a8":tend>0?"#ff7a90":"var(--text-3)"}}> · {tend<0?"↓ melhorando":tend>0?"↑ piorando":"= estável"} ({pctAnt}% antes)</span>}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>}
         </div>
       </div>
 
-      {/* ── Calendário (mapa de calor) + regras mais quebradas ── */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,2.2fr) minmax(0,1fr)",gap:"14px",alignItems:"start"}}>
+      {/* ── Calendário (mapa de calor) ── */}
         <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap",marginBottom:"8px"}}>
             <p className="mtp-section-title">Calendário</p>
@@ -473,38 +507,6 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
           </p>
         </div>
 
-        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px"}}>
-          <p className="mtp-section-title" style={{marginBottom:"4px"}}>Regras mais quebradas</p>
-          <p style={{margin:"0 0 14px",color:"var(--text-3)",fontSize:"12px"}}>{NOMES_MES[month]} · comparado a {NOMES_MES[(month+11)%12]}</p>
-          {topQuebradas.length === 0
-            ? <p style={{margin:0,color:"var(--text-3)",fontSize:"12.5px",lineHeight:1.6}}>{Object.keys(detalhes).some(k=>k.startsWith(mesAtual)) ? "Nenhuma regra quebrada neste mês. Excelente." : "Salve a disciplina do dia para ver quais regras você mais quebra."}</p>
-            : <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
-                {topQuebradas.map((r,i)=>{
-                  const pctQ = Math.round(r.quebradas/r.total*100);
-                  const idRegra = regrasList.find(x=>x.title===r.title)?.id;
-                  const ant = quebrasAnt[idRegra];
-                  const pctAnt = ant && ant.t ? Math.round(ant.q/ant.t*100) : null;
-                  const tend = pctAnt===null ? null : pctQ - pctAnt;
-                  const cor = pctQ>=60?"#ff5470":pctQ>=30?"#f5b941":"#a3b2ab";
-                  return (
-                    <div key={i}>
-                      <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginBottom:"6px"}}>
-                        <span style={{color:"var(--text)",fontSize:"12.5px",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.title}</span>
-                        <span style={{color:cor,fontSize:"12px",fontWeight:800,fontFamily:"var(--font-mono)",flexShrink:0}}>{r.quebradas}×</span>
-                      </div>
-                      <div style={{height:"4px",borderRadius:"4px",background:"var(--line)",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:pctQ+"%",background:cor,borderRadius:"4px"}}/>
-                      </div>
-                      <p style={{margin:"5px 0 0",fontSize:"11px",fontFamily:"var(--font-mono)",color:"var(--text-3)"}}>
-                        {pctQ}% dos dias
-                        {tend!==null && <span style={{color:tend<0?"#3fe8a8":tend>0?"#ff7a90":"var(--text-3)"}}> · {tend<0?"↓ melhorando":tend>0?"↑ piorando":"= estável"} ({pctAnt}% antes)</span>}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>}
-        </div>
-      </div>
       {confirmacao && (
         <Confirmar titulo={confirmacao.titulo} texto={confirmacao.texto} botao={confirmacao.botao}
           onCancelar={()=>setConfirmacao(null)}

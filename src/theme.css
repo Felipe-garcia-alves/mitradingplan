@@ -148,7 +148,10 @@ button:not(:disabled):active { transform: scale(0.97); }
 }
 
 .mtp-section-label {
-  margin: 0 0 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 14px 12px 14px;
   color: var(--text-3);
   font-size: 10px;
   font-weight: 700;
@@ -622,3 +625,21 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
   opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 10; text-align: left;
 }
 .mtp-cal-dia:hover .mtp-cal-tip { opacity: 1; }
+
+.mtp-section-label::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--line-strong), transparent);
+}
+
+/* Disciplina: checklist enxuto (linhas, sem cards) */
+.mtp-regras-lista { display: flex; flex-direction: column; }
+.mtp-regras-lista .mtp-regra {
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: transparent; box-shadow: none; padding: 11px 6px;
+}
+.mtp-regras-lista .mtp-regra:last-child { border-bottom: 0; }
+.mtp-regras-lista .mtp-regra:hover { background: rgba(255,255,255,0.025); border-radius: 8px; }
+.mtp-regras-lista .mtp-regra.ok { background: transparent; box-shadow: none; }
+.mtp-regras-lista .mtp-regra.ok:hover { background: rgba(255,255,255,0.025); }
+.mtp-regras-lista .mtp-regra p { display: none; }
+.mtp-regras-lista .mtp-regra-acoes { top: 50%; transform: translateY(-50%); }
