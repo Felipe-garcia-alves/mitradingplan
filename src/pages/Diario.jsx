@@ -22,6 +22,47 @@ function formatMonthLabel(s) { const p=s.split("-"); return MONTH_NAMES[parseInt
 const EMOCOES = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansioso","Impaciente","Frustrado","Eufórico","Medo","Cansado","Revanche"];
 const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
 
+// Execução em estrelas: 3 bom · 2 regular · 1 ruim. Registros antigos guardavam A+/A/B/C.
+const EXECUCAO = { 3:{ rot:"bom", cor:"#2ee6a0" }, 2:{ rot:"regular", cor:"#f5b941" }, 1:{ rot:"ruim", cor:"#ff5470" } };
+function estrelasDe(q) {
+  if (typeof q === "number") return q;
+  return ({ "A+":3, "A":3, "B":2, "C":1, "3":3, "2":2, "1":1 })[q] || 0;
+}
+function Estrela({ cheia, size }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={cheia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <polygon points="12 2.5 14.9 8.6 21.5 9.4 16.6 13.9 17.9 20.5 12 17.2 6.1 20.5 7.4 13.9 2.5 9.4 9.1 8.6"/>
+    </svg>
+  );
+}
+// Só leitura (listas)
+function EstrelasMini({ q }) {
+  const n = estrelasDe(q);
+  if (!n) return null;
+  return (
+    <span title={"Execução: "+EXECUCAO[n].rot} style={{display:"inline-flex",gap:"1px",color:"#f5b941",lineHeight:0}}>
+      {[1,2,3].map(i => <span key={i} style={{opacity:i<=n?1:0.25}}><Estrela cheia={i<=n} size={12}/></span>)}
+    </span>
+  );
+}
+function EstrelasInput({ value, onChange }) {
+  const [hover, setHover] = useState(0);
+  const atual = hover || value || 0;
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+      <div className="mtp-estrelas" onMouseLeave={()=>setHover(0)}>
+        {[1,2,3].map(i => (
+          <button key={i} type="button" className={"mtp-estrela"+(i<=atual?" on":"")} aria-label={i+" estrela"+(i>1?"s":"")+" — "+EXECUCAO[i].rot}
+            onMouseEnter={()=>setHover(i)} onClick={()=>onChange(value===i ? 0 : i)}>
+            <Estrela cheia={i<=atual} size={22}/>
+          </button>
+        ))}
+      </div>
+      <span className="mtp-estrelas-rotulo" style={{color: atual ? EXECUCAO[atual].cor : "var(--text-3)"}}>{atual ? EXECUCAO[atual].rot : "—"}</span>
+    </div>
+  );
+}
+
 export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid, config }) {
   const contas = listaContas(config);
   const today    = todayKey();
@@ -151,10 +192,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     const s = estWinRate[nomeEst];
     if (!s || s.total < 3) return "";
     const wr = Math.round((s.wins/s.total)*100);
-    if (wr >= 70) return "A+";
-    if (wr >= 55) return "A";
-    if (wr >= 40) return "B";
-    return "C";
+    if (wr >= 60) return 3;
+    if (wr >= 40) return 2;
+    return 1;
   }
 
   function toggleEmocao(em) {
@@ -339,32 +379,38 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         </div>
 
         {/* Emocoes */}
-        <div style={{marginBottom:"28px"}}>
-          <label style={{color:"#a3b2ab",fontSize:"13px",textTransform:"uppercase",letterSpacing:"1.5px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Emoções do dia</label>
-          <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+        <div style={{marginBottom:"32px"}}>
+          <label style={{color:"var(--text-3)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1.4px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Emoções do dia</label>
+          <div style={{display:"flex",flexWrap:"wrap",gap:"10px"}}>
             {EMOCOES.map(em => {
               const sel = emocoes.includes(em);
               const cor = EMOCAO_COLORS[em]||"#888";
-              return <button key={em} onClick={()=>toggleEmocao(em)} style={{padding:"7px 14px",borderRadius:"20px",border:"1px solid "+(sel?cor+"66":"#26352e"),background:sel?cor+"1a":"transparent",color:sel?cor:"#aaa",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"var(--font-sans)"}}>{em}</button>;
+              return <button key={em} onClick={()=>toggleEmocao(em)} style={{padding:"8px 16px",borderRadius:"20px",border:"1px solid "+(sel?cor+"66":"#26352e"),background:sel?cor+"1a":"transparent",color:sel?cor:"#aaa",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"var(--font-sans)"}}>{em}</button>;
             })}
           </div>
         </div>
 
         {/* Nova operação */}
         <div className="mtp-composer" onKeyDown={e=>{ if(e.key==="Enter" && e.target.tagName==="INPUT"){ e.preventDefault(); addTrade(); } }}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap",marginBottom:"18px"}}>
-            <p className="mtp-section-title" style={{fontSize:"14.5px"}}>Nova operação</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap",marginBottom:"24px"}}>
+            <p className="mtp-section-title" style={{fontSize:"15px"}}>Nova operação</p>
             <TimePicker value={novoTrade.horario} onChange={v=>setNovoTrade(p=>({...p,horario:v}))} style={{minHeight:"34px",padding:"6px 12px",borderRadius:"20px",fontSize:"13px"}}/>
           </div>
 
-          {/* WIN/LOSS + mercado */}
-          <div style={{display:"flex",gap:"12px",flexWrap:"wrap",alignItems:"center",marginBottom:"18px"}}>
+          {/* WIN/LOSS */}
+          <div className="mtp-bloco">
+            <span className="mtp-rotulo-linha">Tipo</span>
             <div className="mtp-seg">
               {[["WIN","#2ee6a0"],["LOSS","#ff5470"]].map(([t,c])=>(
                 <button key={t} type="button" onClick={()=>trocarTipo(t)} className={novoTrade.tipo===t?"on":""} style={{"--seg":c}}>{t}</button>
               ))}
             </div>
-            <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+          </div>
+
+          {/* Mercado */}
+          <div className="mtp-bloco">
+            <span className="mtp-rotulo-linha">Mercado</span>
+            <div className="mtp-bloco-conteudo">
               {[["B3","#2ee6a0"],["Forex","#f5b941"],["Cripto","#a78bfa"],["Americano","#60a5fa"]].map(([m,c])=>(
                 <button key={m} type="button" onClick={()=>setNovoTrade(p=>({...p,mercado:m,ativo:p.mercado===m?p.ativo:(ativosUsados(entries,m)[0]||ATIVOS_SUGERIDOS[m]?.[0]?.v||"")}))} className={"mtp-pill"+(novoTrade.mercado===m?" active":"")} style={{"--pill":c}}>{m}</button>
               ))}
@@ -372,9 +418,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           </div>
 
           {/* Ativo */}
-          <div style={{display:"flex",gap:"10px",alignItems:"flex-start",marginBottom:"18px",flexWrap:"wrap"}}>
+          <div className="mtp-bloco">
             <span className="mtp-rotulo-linha">Ativo</span>
-            <div style={{display:"flex",gap:"6px",flexWrap:"wrap",flex:1,minWidth:0}}>
+            <div className="mtp-bloco-conteudo">
               {opcoesDeAtivo(entries, novoTrade.mercado).slice(0,10).map(a=>(
                 <button key={a} type="button" onClick={()=>setNovoTrade(p=>({...p,ativo:a}))} title={rotuloAtivo(novoTrade.mercado,a)||a}
                   className={"mtp-pill"+(novoTrade.ativo===a?" active":"")} style={{fontFamily:"var(--font-mono)",fontSize:"12px"}}>
@@ -387,8 +433,10 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             </div>
           </div>
 
+          <hr className="mtp-divisor"/>
+
           {/* Números */}
-          <div style={{display:"grid",gridTemplateColumns:"minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.7fr)",gap:"10px",marginBottom:"18px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"minmax(0,1.4fr) minmax(0,1fr) minmax(0,0.7fr)",gap:"14px"}}>
             {[
               {k:"resultado", l:"Resultado "+(novoTrade.mercado==="B3"?"R$":"$"), ph:"0,00", grande:true},
               {k:"pontos",    l:"Pontos", ph:"0"},
@@ -408,10 +456,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             })}
           </div>
 
+          <hr className="mtp-divisor"/>
+
           {/* Estratégia */}
-          <div style={{display:"flex",gap:"10px",alignItems:"flex-start",marginBottom:"14px",flexWrap:"wrap"}}>
+          <div className="mtp-bloco">
             <span className="mtp-rotulo-linha">Estratégia</span>
-            <div style={{display:"flex",gap:"6px",flexWrap:"wrap",flex:1,minWidth:0}}>
+            <div className="mtp-bloco-conteudo">
               {estNomes.map(n=>{
                 const st = estWinRate[n];
                 const ativo = novoTrade.estrategia===n;
@@ -427,22 +477,20 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           </div>
 
           {/* Execução */}
-          <div style={{display:"flex",gap:"10px",alignItems:"center",marginBottom:"18px",flexWrap:"wrap"}}>
-            <span className="mtp-rotulo-linha">Execução</span>
-            <div style={{display:"flex",gap:"6px"}}>
-              {[["A+","#2ee6a0","excelente"],["A","#3fe8a8","boa"],["B","#f5b941","ok"],["C","#ff5470","ruim"]].map(([q,c,h])=>(
-                <button key={q} type="button" title={h} onClick={()=>setNovoTrade(p=>({...p,qualidade:p.qualidade===q?"":q}))} className={"mtp-pill"+(novoTrade.qualidade===q?" active":"")} style={{"--pill":c,minWidth:"44px",fontFamily:"var(--font-mono)"}}>{q}</button>
-              ))}
-            </div>
+          <div className="mtp-bloco" style={{alignItems:"center"}}>
+            <span className="mtp-rotulo-linha" style={{paddingTop:0}}>Execução</span>
+            <EstrelasInput value={estrelasDe(novoTrade.qualidade)} onChange={n=>setNovoTrade(p=>({...p,qualidade:n||""}))}/>
             {novoTrade.estrategia && estWinRate[novoTrade.estrategia]?.total >= 3 && (
               <span style={{color:"var(--text-3)",fontSize:"11.5px",fontFamily:"var(--font-mono)"}}>
-                sugestão <b style={{color:"var(--text-2)"}}>{sugerirExecucao(novoTrade.estrategia)}</b> · {Math.round(estWinRate[novoTrade.estrategia].wins/estWinRate[novoTrade.estrategia].total*100)}% acerto em {estWinRate[novoTrade.estrategia].total} ops
+                sugestão {EXECUCAO[sugerirExecucao(novoTrade.estrategia)].rot} · {Math.round(estWinRate[novoTrade.estrategia].wins/estWinRate[novoTrade.estrategia].total*100)}% acerto em {estWinRate[novoTrade.estrategia].total} ops
               </span>
             )}
           </div>
 
+          <hr className="mtp-divisor"/>
+
           {/* Observação + foto + adicionar */}
-          <div style={{display:"flex",gap:"8px",alignItems:"stretch",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:"10px",alignItems:"stretch",flexWrap:"wrap"}}>
             <input style={{...inp,flex:1,minWidth:"200px"}} type="text" placeholder="Observação desta operação (opcional)" value={novoTrade.observacao} onChange={e=>setNovoTrade(p=>({...p,observacao:e.target.value}))}/>
             <label title="Anexar print" className="mtp-btn-sec">
               <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{
@@ -493,10 +541,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   <b style={{color:tot>=0?"#2ee6a0":"#ff5470"}}>{tot>=0?"+":"-"}{Math.abs(tot).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b> · {Math.round(w/trades.length*100)}% acerto
                 </span>
               </div>
-              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                 {trades.map(t => {
                   const cor = t.tipo==="WIN" ? "#2ee6a0" : "#ff5470";
-                  const qc = ({"A+":"#2ee6a0","A":"#3fe8a8","B":"#f5b941","C":"#ff5470"})[t.qualidade];
                   return (
                     <div key={t.id} className="mtp-op-card" style={{"--op":cor}}>
                       <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
@@ -508,7 +555,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                         <span className="mtp-tag">{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
                         {t.estrategia && <span className="mtp-tag">{t.estrategia}</span>}
                         {t.contratos && <span className="mtp-tag" style={{fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
-                        {t.qualidade && <span className="mtp-tag" style={{color:qc,borderColor:qc+"44"}}>{t.qualidade}</span>}
+                        {t.qualidade && <EstrelasMini q={t.qualidade}/>}
                         {t.horario && <span style={{color:"var(--text-3)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.horario}</span>}
                         {contas.length > 1 && <span className="mtp-tag" style={{color:TIPOS_CONTA[contas.find(c=>c.id===t.conta)?.tipo]?.cor}}>{contas.find(c=>c.id===t.conta)?.nome}</span>}
                         <div style={{marginLeft:"auto",display:"flex",gap:"6px",alignItems:"center"}}>
@@ -541,8 +588,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         })()}
 
         {/* Observacao */}
-        <div style={{marginBottom:"20px"}}>
-          <label style={{color:"#a3b2ab",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"10px"}}>Observação geral do dia</label>
+        <div style={{marginBottom:"24px"}}>
+          <label style={{color:"var(--text-3)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1.4px",fontWeight:"700",display:"block",marginBottom:"12px"}}>Observação geral do dia</label>
           <textarea style={{...inp,width:"100%",resize:"vertical",lineHeight:"1.6",minHeight:"80px",boxSizing:"border-box",fontSize:"14px"}} placeholder="Como foi o dia? Setup, erros, aprendizados..." value={observacao} onChange={e=>setObservacao(e.target.value)} rows={3}/>
         </div>
 
@@ -634,7 +681,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
                               {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":"-"}{t.mercado==="B3"?"R$":"$"} {Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>}
                               {t.contratos&&<span style={{color:"#a3b2ab",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
-                              {t.qualidade&&<span style={{fontSize:"11px",fontWeight:"800",padding:"2px 7px",borderRadius:"4px",background:({"A+":"rgba(46,230,160,0.15)","A":"rgba(46,230,160,0.15)","B":"rgba(245,158,11,0.15)","C":"rgba(240,80,110,0.15)"})[t.qualidade]||"transparent",color:({"A+":"#2ee6a0","A":"#2ee6a0","B":"#f59e0b","C":"#f0506e"})[t.qualidade]||"#888"}}>{t.qualidade}</span>}
+                              {t.qualidade&&<EstrelasMini q={t.qualidade}/>}
                               {t.estrategia&&<span style={{color:"#86978f",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
                               {t.observacao&&<span style={{color:"#93a39c",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                               <div style={{marginLeft:"auto",display:"flex",gap:"6px",alignItems:"center",flexShrink:0}}>

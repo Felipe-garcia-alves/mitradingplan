@@ -5,9 +5,9 @@ const CORES = ["#2ee6a0","#f5b941","#a78bfa","#f472b6","#60a5fa","#34d399","#fb9
 
 const kpiLabel    = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
 const kpiSub      = {margin:0,color:"var(--text-3)",fontSize:"11.5px"};
-const resumoCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"16px 20px",minWidth:0,display:"flex",flexDirection:"column",gap:"8px"};
+const resumoCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px 22px",minWidth:0,display:"flex",flexDirection:"column",gap:"10px"};
 const resumoValor = {margin:0,fontSize:"22px",fontWeight:"700",fontFamily:"var(--font-mono)",whiteSpace:"nowrap"};
-const chip        = {padding:"2px 8px",borderRadius:"6px",background:"rgba(255,255,255,0.04)",border:"1px solid var(--line)",color:"var(--text-2)",fontSize:"10.5px",fontWeight:"600",fontFamily:"var(--font-mono)"};
+const chip        = {padding:"3px 9px",borderRadius:"6px",background:"rgba(255,255,255,0.04)",border:"1px solid var(--line)",color:"var(--text-2)",fontSize:"10.5px",fontWeight:"600",fontFamily:"var(--font-mono)"};
 
 function fmtBRL(v) {
   const a = Math.abs(v);
@@ -133,7 +133,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
       ) : (
         <>
           {/* Resumo */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"14px",marginBottom:"28px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"16px",marginBottom:"36px"}}>
             <div style={resumoCard}>
               <p style={kpiLabel}>Setups cadastrados</p>
               <p style={{...resumoValor,color:"var(--text)"}}><CountUp value={lista.length}/></p>
@@ -152,14 +152,14 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
           </div>
 
           {/* Grade de cards */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"14px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:"20px"}}>
             {lista.map(est => {
               const st = stats[est.id];
               const cor = corDe(est.id);
               const ass = st.total>0 ? Math.round(st.wins/st.total*100) : null;
               return (
                 <div key={est.id} className="mtp-est-card" onClick={()=>setAbertaId(est.id)}
-                  style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",gap:"14px",minHeight:"230px"}}>
+                  style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"18px",padding:"24px 24px 20px",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",gap:"20px",minHeight:"280px"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+cor+",transparent 70%)"}}/>
                   {st.curva.length>2 && (
                     <div style={{position:"absolute",left:0,right:0,bottom:0,height:"64px",opacity:0.35,pointerEvents:"none"}}>
@@ -167,13 +167,13 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                     </div>
                   )}
 
-                  <div style={{display:"flex",alignItems:"center",gap:"12px",position:"relative"}}>
-                    <div className="mtp-est-badge" style={{width:"42px",height:"42px",borderRadius:"12px",background:cor+"18",border:"1px solid "+cor+"44",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 0 20px -8px "+cor}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"14px",position:"relative"}}>
+                    <div className="mtp-est-badge" style={{width:"46px",height:"46px",borderRadius:"12px",background:cor+"18",border:"1px solid "+cor+"44",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 0 20px -8px "+cor}}>
                       <span style={{color:cor,fontSize:"12px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{sigla(est.nome)}</span>
                     </div>
                     <div style={{minWidth:0}}>
-                      <p style={{margin:0,color:"var(--text)",fontSize:"15.5px",fontWeight:"700",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{est.nome}</p>
-                      <div style={{display:"flex",gap:"6px",marginTop:"5px"}}>
+                      <p style={{margin:0,color:"var(--text)",fontSize:"16px",fontWeight:"700",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{est.nome}</p>
+                      <div style={{display:"flex",gap:"6px",marginTop:"8px"}}>
                         {[est.mercado, est.timeframe].filter(Boolean).map(t=>(
                           <span key={t} style={chip}>{t}</span>
                         ))}
@@ -181,23 +181,23 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                     </div>
                   </div>
 
-                  <p className="mtp-clamp-2" style={{margin:0,color:"var(--text-2)",fontSize:"13px",lineHeight:1.6,position:"relative",minHeight:"40px"}}>
+                  <p className="mtp-clamp-2" style={{margin:0,color:"var(--text-3)",fontSize:"13px",lineHeight:1.7,position:"relative",minHeight:"44px"}}>
                     {est.descricao || "Sem descrição. Clique para ver as regras."}
                   </p>
 
-                  <div style={{display:"flex",alignItems:"center",gap:"14px",position:"relative",marginTop:"auto"}}>
-                    <Ring pct={ass} color={ass===null?"var(--line)":ass>=60?"#2ee6a0":ass>=40?"#f59e0b":"#ff5470"} size={40} stroke={4}/>
+                  <div style={{display:"flex",alignItems:"center",gap:"16px",position:"relative",marginTop:"auto",paddingTop:"18px",borderTop:"1px solid var(--line)"}}>
+                    <Ring pct={ass} color={ass===null?"var(--line)":ass>=60?"#2ee6a0":ass>=40?"#f59e0b":"#ff5470"} size={46} stroke={4}/>
                     <div style={{flex:1,minWidth:0}}>
-                      <p style={{margin:0,color:st.total===0?"var(--text-3)":st.resultado>=0?"var(--pos)":"var(--neg)",fontSize:"17px",fontWeight:"700",fontFamily:"var(--font-mono)",whiteSpace:"nowrap"}}>
+                      <p style={{margin:0,color:st.total===0?"var(--text-3)":st.resultado>=0?"var(--pos)":"var(--neg)",fontSize:"18px",fontWeight:"700",fontFamily:"var(--font-mono)",whiteSpace:"nowrap"}}>
                         {st.total>0 ? fmtBRL(st.resultado) : "—"}
                       </p>
-                      <p style={{margin:"2px 0 0",color:"var(--text-3)",fontSize:"11.5px",fontFamily:"var(--font-mono)"}}>
+                      <p style={{margin:"5px 0 0",color:"var(--text-3)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>
                         {ass!==null ? ass+"% acerto · "+st.total+" ops" : "nenhuma operação"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mtp-est-cta" style={{display:"flex",alignItems:"center",gap:"6px",color:"var(--text-3)",fontSize:"11.5px",fontWeight:"600",position:"relative"}}>
+                  <div className="mtp-est-cta" style={{display:"flex",alignItems:"center",gap:"6px",color:"var(--text-3)",fontSize:"12px",fontWeight:"600",position:"relative",marginTop:"-6px"}}>
                     Ver características <span>→</span>
                   </div>
                 </div>

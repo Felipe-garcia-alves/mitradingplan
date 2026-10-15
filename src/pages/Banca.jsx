@@ -359,9 +359,9 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
               </div>
             </div>
 
-            <div className="mtp-segs" style={{ display:"inline-flex" }}>
-              <button onClick={() => { setSaque(p => ({ ...p, tipo:"deposito" })); setErroSaque(""); }} className={"mtp-seg"+(dep?" ativo":"")} style={dep?{color:"#7fd8ff"}:undefined}>Depósito</button>
-              <button onClick={() => { setSaque(p => ({ ...p, tipo:"saque" })); setErroSaque(""); }} className={"mtp-seg"+(!dep?" ativo":"")} style={!dep?{color:"#f5b941"}:undefined}>Saque</button>
+            <div className="mtp-opcoes" style={{ display:"inline-flex" }}>
+              <button onClick={() => { setSaque(p => ({ ...p, tipo:"deposito" })); setErroSaque(""); }} className={"mtp-opcao"+(dep?" ativo":"")} style={dep?{color:"#7fd8ff"}:undefined}>Depósito</button>
+              <button onClick={() => { setSaque(p => ({ ...p, tipo:"saque" })); setErroSaque(""); }} className={"mtp-opcao"+(!dep?" ativo":"")} style={!dep?{color:"#f5b941"}:undefined}>Saque</button>
             </div>
 
             <p style={{ ...kpiLabel, margin:"20px 0 8px" }}>{dep ? "Entra em" : "Sai de"}</p>

@@ -15,7 +15,21 @@ function fmtBRL(v) {
   const opts = a>=10000 ? {maximumFractionDigits:0} : {minimumFractionDigits:2,maximumFractionDigits:2};
   return (v<0?"-":"+")+"R$ "+a.toLocaleString("pt-BR",opts);
 }
-function fmtPts(v) { return (v>=0?"+":"")+v.toFixed(1)+" pts"; }
+
+// Grade que fecha as linhas: 4 cards = 4 colunas, 6 = 3+3, 8 = 4+4; sobra fica centralizada
+function colunasPara(n, max = 4) {
+  if (n <= max) return n;
+  for (let c = max; c >= 3; c--) if (n % c === 0) return c;
+  return max;
+}
+function GradeEquilibrada({ n, gap = 14, mobile, children }) {
+  const cols = mobile ? Math.min(2, n) : colunasPara(n);
+  return (
+    <div className="mtp-grade-eq" style={{ "--cols": cols, "--gap": gap+"px" }}>
+      {children}
+    </div>
+  );
+}
 // data local (toISOString é UTC e vira o dia às 21h em Brasília)
 function dayKey(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function parseDate(s) { const [y,m,d]=s.split("-"); return new Date(+y,+m-1,+d); }
@@ -132,7 +146,7 @@ function PainelOps({ painel, onClose, onEstrategia }) {
   });
   const cor = painel.cor || "var(--accent)";
   const seg = (valor, atual, set, rot, corTxt) => (
-    <button key={valor} onClick={()=>set(valor)} className={"mtp-seg"+(atual===valor?" ativo":"")} style={corTxt&&atual===valor?{color:corTxt}:undefined}>{rot}</button>
+    <button key={valor} onClick={()=>set(valor)} className={"mtp-opcao"+(atual===valor?" ativo":"")} style={corTxt&&atual===valor?{color:corTxt}:undefined}>{rot}</button>
   );
   let idx = 0;
 
@@ -165,12 +179,12 @@ function PainelOps({ painel, onClose, onEstrategia }) {
           </div>
         </div>
         <div style={{padding:"10px 20px",borderBottom:"1px solid var(--line)",display:"flex",justifyContent:"space-between",gap:"8px",flexWrap:"wrap",flexShrink:0}}>
-          <div className="mtp-segs">
+          <div className="mtp-opcoes">
             {seg("todos", filtro, setFiltro, "Todos "+ops.length)}
             {seg("win",   filtro, setFiltro, "WIN "+nWin, "var(--pos)")}
             {seg("loss",  filtro, setFiltro, "LOSS "+(ops.length-nWin), "var(--neg)")}
           </div>
-          <div className="mtp-segs">
+          <div className="mtp-opcoes">
             {seg("data",  ordem, setOrdem, "Recentes")}
             {seg("maior", ordem, setOrdem, "Maiores")}
             {seg("menor", ordem, setOrdem, "Piores")}
@@ -652,7 +666,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
             <p className="mtp-section-title">Métricas por Estratégia</p>
             <span className="mtp-section-hint">clique para ver operações</span>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
+          <GradeEquilibrada n={Object.keys(estratStats).length} mobile={isMobile}>
             {Object.entries(estratStats).map(([n,s],i)=>{
               const ass = s.total>0 ? Math.round((s.wins/s.total)*100) : 0;
               const cor = colors[i%colors.length];
@@ -670,7 +684,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                     <span style={{color:"#aaa",fontSize:"13px",fontWeight:"500",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{nomeAtual[n]||n}</span>
                     {isSelected && <span style={{color:cor,fontSize:"11px"}}>▸</span>}
                   </div>
-                  <p style={{margin:"0 0 3px",color:"#2ee6a0",fontSize:"22px",fontWeight:"800",fontFamily:"var(--font-mono)",letterSpacing:"-0.5px"}}>
+                  <p style={{margin:"0 0 3px",color:s.pontos>=0?"#2ee6a0":"#ff5470",fontSize:"22px",fontWeight:"800",fontFamily:"var(--font-mono)",letterSpacing:"-0.5px"}}>
                     {s.pontos>=0?"+":""}{s.pontos.toFixed(1)} pts
                   </p>
                   <p style={{margin:"0 0 14px",color:s.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>
@@ -686,7 +700,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 </div>
               );
             })}
-          </div>
+          </GradeEquilibrada>
         </div>
       )}
 
@@ -933,7 +947,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               <p className="mtp-section-title">Sequências WIN/LOSS por Estratégia</p>
               <span className="mtp-section-hint">detecta fases de cada setup</span>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"12px"}}>
+            <GradeEquilibrada n={entries2.length} mobile={isMobile}>
               {entries2.map(([n,s],i)=>{
                 const cor = colors2[i%colors2.length];
                 const streakColor = s.curType==="WIN"?"#2ee6a0":"#ff5470";
@@ -966,7 +980,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                   </div>
                 );
               })}
-            </div>
+            </GradeEquilibrada>
           </div>
         );
       })()}
