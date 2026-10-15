@@ -49,7 +49,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
       <div className="mtp-sidebar" style={{width:"240px",height:"100vh",display:"flex",flexDirection:"column",position:"fixed",left:0,top:0,zIndex:200,fontFamily:"var(--font-sans)"}}>
 
         {/* Logo */}
-        <div className="mtp-brand" style={{padding:"28px 20px 24px",cursor:"default"}}>
+        <div className="mtp-brand" style={{padding:"44px 20px 30px 38px",cursor:"default"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             <div className="mtp-logo" style={{width:"40px",height:"40px",borderRadius:"11px",background:"linear-gradient(135deg,var(--accent),var(--accent-2))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 6px 24px -6px rgba(46,230,160,0.45)"}}>
               <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#04110b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -61,7 +61,7 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
           </div>
         </div>
 
-        <div style={{height:"1px",margin:"0 20px",background:"linear-gradient(90deg,transparent,var(--line-strong),transparent)"}}/>
+        <div style={{height:"1px",margin:"0 20px 0 38px",background:"linear-gradient(90deg,transparent,var(--line-strong),transparent)"}}/>
 
         {/* Menu */}
         {/* Menu centralizado na altura disponível (margin:auto num flex em coluna
