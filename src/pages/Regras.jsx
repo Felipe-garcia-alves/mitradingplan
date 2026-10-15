@@ -50,12 +50,26 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const regrasList  = regras && regras.length > 0 ? regras : REGRAS_PADRAO;
   const today       = todayKey();
   const [confirmacao, setConfirmacao] = useState(null);
+  const navBtn = {background:"rgba(255,255,255,0.05)",border:"1px solid var(--line-strong)",borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"var(--text-2)",padding:0};
   const now         = new Date();
   const year        = now.getFullYear();
   const month       = now.getMonth();
-  const firstDay    = new Date(year,month,1).getDay();
-  const daysInMon   = new Date(year,month+1,0).getDate();
-  const calKey      = (d) => year+"-"+String(month+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+  const [calMes, setCalMes] = useState({ ano: year, mes: month });
+  const noMesAtual  = calMes.ano === year && calMes.mes === month;
+  const firstDay    = new Date(calMes.ano,calMes.mes,1).getDay();
+  const daysInMon   = new Date(calMes.ano,calMes.mes+1,0).getDate();
+  const calKey      = (d) => calMes.ano+"-"+String(calMes.mes+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+  const mudarMes    = delta => setCalMes(c => {
+    const d = new Date(c.ano, c.mes + delta, 1);
+    if (d.getFullYear() > year || (d.getFullYear() === year && d.getMonth() > month)) return c; // sem meses futuros
+    return { ano: d.getFullYear(), mes: d.getMonth() };
+  });
+  // meses que têm registro de disciplina (atalhos)
+  const mesesComRegistro = [...new Set(Object.keys(compliance||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).map(k=>k.slice(0,7)))].sort();
+  const chaveCal = calMes.ano+"-"+String(calMes.mes+1).padStart(2,"0");
+  const valsCal = Object.entries(compliance||{}).filter(([k])=>k.startsWith(chaveCal+"-")).map(([,v])=>typeof v==="number"?v:v===true?100:null).filter(v=>v!==null);
+  const mediaCal = valsCal.length ? Math.round(valsCal.reduce((a,b)=>a+b,0)/valsCal.length) : null;
+  const NOMES_MES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
   const [checked,   setChecked]   = useState({});
   const [editando,  setEditando]  = useState(false);
@@ -382,7 +396,51 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
 
       <div style={{borderTop:"1px solid #18241f",paddingTop:"24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
-          <div><h3 style={{margin:0,fontSize:"15px",color:"#aaa",fontWeight:"600",letterSpacing:"0.5px"}}>Calendário</h3></div>
+          <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+              <h3 className="mtp-section-title" style={{fontSize:"15px"}}>Calendário</h3>
+              <div style={{display:"flex",alignItems:"center",gap:"6px",marginLeft:"6px"}}>
+                <button onClick={()=>mudarMes(-1)} aria-label="Mês anterior" style={navBtn}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span style={{minWidth:"130px",textAlign:"center",color:"var(--text)",fontSize:"14px",fontWeight:"700"}}>{NOMES_MES[calMes.mes]} {calMes.ano}</span>
+                <button onClick={()=>mudarMes(1)} disabled={noMesAtual} aria-label="Próximo mês" style={{...navBtn,opacity:noMesAtual?0.35:1,cursor:noMesAtual?"default":"pointer"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                {!noMesAtual && <button onClick={()=>setCalMes({ano:year,mes:month})} className="mtp-ctx-ghost" style={{padding:"6px 10px"}}>Mês atual</button>}
+              </div>
+            </div>
+            <p style={{margin:0,color:"var(--text-3)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>
+              {valsCal.length ? valsCal.length+" dia"+(valsCal.length===1?"":"s")+" registrado"+(valsCal.length===1?"":"s")+" · média " : "Nenhum registro neste mês"}
+              {mediaCal!==null && <b style={{color:mediaCal>=80?"#3fe8a8":mediaCal>=50?"#f5b941":"#ff5470"}}>{mediaCal}%</b>}
+              {valsCal.length > 0 && (
+                <button onClick={()=>setConfirmacao({
+                    titulo:"Apagar os registros de "+NOMES_MES[calMes.mes]+" "+calMes.ano+"?",
+                    texto:"Os "+valsCal.length+" dia"+(valsCal.length===1?"":"s")+" registrados neste mês serão apagados. A Streak de Disciplina e as médias são recalculadas. Não dá para desfazer.",
+                    botao:"Apagar mês",
+                    acao:async()=>{
+                      const updated={...compliance};
+                      const det={...(updated._detalhes||{})};
+                      Object.keys(updated).filter(k=>k.startsWith(chaveCal+"-")).forEach(k=>{ delete updated[k]; delete det[k]; });
+                      updated._detalhes=det;
+                      await saveCompliance(updated);
+                    }})}
+                  className="mtp-ctx-ghost" style={{marginLeft:"10px",padding:"2px 8px",color:"#ff7a90",fontFamily:"var(--font-sans)",fontSize:"11.5px"}}>
+                  apagar registros deste mês
+                </button>
+              )}
+            </p>
+            {mesesComRegistro.length > 1 && (
+              <div style={{display:"flex",gap:"6px",flexWrap:"wrap",alignItems:"center"}}>
+                <span style={{color:"var(--text-3)",fontSize:"11px"}}>Meses com registro:</span>
+                {mesesComRegistro.map(m=>{
+                  const [a,mm] = m.split("-").map(Number);
+                  const ativo = a===calMes.ano && mm-1===calMes.mes;
+                  return <button key={m} onClick={()=>setCalMes({ano:a,mes:mm-1})} className={"mtp-pill"+(ativo?" active":"")} style={{padding:"3px 10px",fontSize:"11.5px"}}>{MONTH_NAMES[mm-1]} {String(a).slice(2)}</button>;
+                })}
+              </div>
+            )}
+          </div>
           {pct !== null && (
             <div style={{textAlign:"right"}}>
               <p style={{margin:"0 0 2px",color:"#93a39c",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Hoje — progresso</p>
