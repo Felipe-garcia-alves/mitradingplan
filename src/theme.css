@@ -165,7 +165,7 @@ button:not(:disabled):active { transform: scale(0.97); }
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px 11px 26px;
+  padding: 11px 14px 11px 40px;
   margin-bottom: 2px;
   border: 1px solid transparent;
   border-radius: 12px;

@@ -61,7 +61,6 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
           </div>
         </div>
 
-        <div style={{height:"1px",margin:"0 20px 0 38px",background:"linear-gradient(90deg,transparent,var(--line-strong),transparent)"}}/>
 
         {/* Menu */}
         {/* Menu centralizado na altura disponível (margin:auto num flex em coluna
