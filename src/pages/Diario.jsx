@@ -19,8 +19,8 @@ function formatDateLong(s) {
 function formatDateFull(s) { const p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
 function formatMonthLabel(s) { const p=s.split("-"); return MONTH_NAMES[parseInt(p[1])-1]+" "+p[0]; }
 
-const EMOCOES = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansioso","Impaciente","Frustrado","Eufórico","Medo","Cansado","Revanche"];
-const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+const EMOCOES = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansioso","Impaciente","Frustrado","Eufórico","Medo","Cansado","Revanche","Compulsivo"];
+const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
 
 // Execução em estrelas: 3 bom · 2 regular · 1 ruim. Registros antigos guardavam A+/A/B/C.
 const EXECUCAO = { 3:{ rot:"bom", cor:"#2ee6a0" }, 2:{ rot:"regular", cor:"#f5b941" }, 1:{ rot:"ruim", cor:"#ff5470" } };
@@ -381,11 +381,11 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         {/* Emocoes */}
         <div style={{marginBottom:"32px"}}>
           <label style={{color:"var(--text-3)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1.4px",display:"block",marginBottom:"14px",fontWeight:"700"}}>Emoções do dia</label>
-          <div style={{display:"flex",flexWrap:"wrap",gap:"10px"}}>
+          <div className="mtp-linha-unica">
             {EMOCOES.map(em => {
               const sel = emocoes.includes(em);
               const cor = EMOCAO_COLORS[em]||"#888";
-              return <button key={em} onClick={()=>toggleEmocao(em)} style={{padding:"8px 16px",borderRadius:"20px",border:"1px solid "+(sel?cor+"66":"#26352e"),background:sel?cor+"1a":"transparent",color:sel?cor:"#aaa",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"var(--font-sans)"}}>{em}</button>;
+              return <button key={em} onClick={()=>toggleEmocao(em)} style={{flex:"1 0 auto",padding:"8px 10px",whiteSpace:"nowrap",borderRadius:"20px",border:"1px solid "+(sel?cor+"66":"#26352e"),background:sel?cor+"1a":"transparent",color:sel?cor:"#aaa",fontSize:"12.5px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"var(--font-sans)"}}>{em}</button>;
             })}
           </div>
         </div>
@@ -411,8 +411,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           <div className="mtp-bloco">
             <span className="mtp-rotulo-linha">Mercado</span>
             <div className="mtp-bloco-conteudo">
-              {[["B3","#2ee6a0"],["Forex","#f5b941"],["Cripto","#a78bfa"],["Americano","#60a5fa"]].map(([m,c])=>(
-                <button key={m} type="button" onClick={()=>setNovoTrade(p=>({...p,mercado:m,ativo:p.mercado===m?p.ativo:(ativosUsados(entries,m)[0]||ATIVOS_SUGERIDOS[m]?.[0]?.v||"")}))} className={"mtp-pill"+(novoTrade.mercado===m?" active":"")} style={{"--pill":c}}>{m}</button>
+              {["B3","Forex","Cripto","Americano"].map(m=>(
+                <button key={m} type="button" onClick={()=>setNovoTrade(p=>({...p,mercado:m,ativo:p.mercado===m?p.ativo:(ativosUsados(entries,m)[0]||ATIVOS_SUGERIDOS[m]?.[0]?.v||"")}))} className={"mtp-pill"+(novoTrade.mercado===m?" active":"")} style={{"--pill":"#d2bc8f"}}>{m}</button>
               ))}
             </div>
           </div>
@@ -423,7 +423,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             <div className="mtp-bloco-conteudo">
               {opcoesDeAtivo(entries, novoTrade.mercado).slice(0,10).map(a=>(
                 <button key={a} type="button" onClick={()=>setNovoTrade(p=>({...p,ativo:a}))} title={rotuloAtivo(novoTrade.mercado,a)||a}
-                  className={"mtp-pill"+(novoTrade.ativo===a?" active":"")} style={{fontFamily:"var(--font-mono)",fontSize:"12px"}}>
+                  className={"mtp-pill"+(novoTrade.ativo===a?" active":"")} style={{"--pill":"#8fb8cf",fontFamily:"var(--font-mono)",fontSize:"12px"}}>
                   {a}{rotuloAtivo(novoTrade.mercado,a) && <span style={{opacity:.55,fontFamily:"var(--font-sans)",marginLeft:"6px",fontWeight:500}}>{rotuloAtivo(novoTrade.mercado,a)}</span>}
                 </button>
               ))}
@@ -466,7 +466,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 const st = estWinRate[n];
                 const ativo = novoTrade.estrategia===n;
                 return (
-                  <button key={n} type="button" onClick={()=>escolherEstrategia(ativo?"":n)} className={"mtp-pill"+(ativo?" active":"")} title={st?.total ? st.total+" ops · "+Math.round(st.wins/st.total*100)+"% acerto" : "sem histórico"}>
+                  <button key={n} type="button" onClick={()=>escolherEstrategia(ativo?"":n)} className={"mtp-pill"+(ativo?" active":"")} style={{"--pill":"#b7a4ec"}} title={st?.total ? st.total+" ops · "+Math.round(st.wins/st.total*100)+"% acerto" : "sem histórico"}>
                     {n}
                   </button>
                 );

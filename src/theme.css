@@ -760,3 +760,8 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
   .mtp-linha-proj { grid-template-columns: 22px minmax(0,1fr) auto auto; gap: 10px; }
   .mtp-linha-proj > :nth-child(3) { display: none; }
 }
+
+/* Linha única de botões: estica para preencher; no estreito rola para o lado */
+.mtp-linha-unica { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+.mtp-linha-unica::-webkit-scrollbar { height: 4px; }
+.mtp-linha-unica::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }

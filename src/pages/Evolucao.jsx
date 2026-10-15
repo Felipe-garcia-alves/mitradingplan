@@ -739,7 +739,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
 
       {/* ── EMOÇÃO × RESULTADO + PERFORMANCE POR HORÁRIO (lado a lado) ── */}
       {(() => {
-        const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626"};
+        const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
         const emocaoStats = {};
         if (allTrades.length >= 3) filtered.forEach(([d,e]) => {
           const tot = (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0)+(e.totalAmericano||0);
@@ -1051,7 +1051,7 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
   }
 
   // ── 6. EMOÇÃO DE RISCO no último dia
-  const emocaoRisco = ["Ansioso","Frustrado","Revanche","Impaciente","Eufórico"];
+  const emocaoRisco = ["Ansioso","Frustrado","Revanche","Impaciente","Eufórico","Compulsivo"];
   const ultimoDia = [...entries].sort(([a],[b])=>b.localeCompare(a))[0];
   if (ultimoDia) {
     const ruins = (ultimoDia[1].emocoes||[]).filter(e=>emocaoRisco.includes(e));
