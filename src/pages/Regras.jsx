@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Confirmar, CountUp, Ring, Sparkline } from "../components/ui";
-import { semanasUteis, DIAS_UTEIS } from "../lib/datas";
+import { semanasUteis, temFimDeSemana, DIAS_UTEIS, DIAS_SEMANA_SEG } from "../lib/datas";
 
 const kCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px",minWidth:0,minHeight:"124px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"8px"};
 const kLabel = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
@@ -71,6 +71,8 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   // meses que têm registro de disciplina (atalhos)
   const mesesComRegistro = [...new Set(Object.keys(compliance||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).map(k=>k.slice(0,7)))].sort();
   const chaveCal = calMes.ano+"-"+String(calMes.mes+1).padStart(2,"0");
+  // sábado/domingo no calendário só se o mês tiver registro de disciplina neles
+  const fdsCal = temFimDeSemana(Object.keys(compliance||{}), calMes.ano, calMes.mes);
   const valsCal = Object.entries(compliance||{}).filter(([k])=>k.startsWith(chaveCal+"-")).map(([,v])=>typeof v==="number"?v:v===true?100:null).filter(v=>v!==null);
   const mediaCal = valsCal.length ? Math.round(valsCal.reduce((a,b)=>a+b,0)/valsCal.length) : null;
   const NOMES_MES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -490,13 +492,13 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               return <button key={m} onClick={()=>setCalMes({ano:a,mes:mm-1})} className={"mtp-pill"+(ativo?" active":"")} style={{padding:"2px 9px",fontSize:"11px"}}>{MONTH_NAMES[mm-1]} {String(a).slice(2)}</button>;
             })}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"6px",marginBottom:"6px"}}>
-            {DIAS_UTEIS.map(d=>(
+          <div style={{display:"grid",gridTemplateColumns:"repeat("+(fdsCal?7:5)+",1fr)",gap:"6px",marginBottom:"6px"}}>
+            {(fdsCal?DIAS_SEMANA_SEG:DIAS_UTEIS).map(d=>(
               <div key={d} style={{textAlign:"center",color:"var(--text-3)",fontSize:"10px",fontWeight:"700",letterSpacing:".5px"}}>{d}</div>
             ))}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"6px"}}>
-            {semanasUteis(calMes.ano,calMes.mes).flat().map((d,i)=>{
+          <div style={{display:"grid",gridTemplateColumns:"repeat("+(fdsCal?7:5)+",1fr)",gap:"6px"}}>
+            {semanasUteis(calMes.ano,calMes.mes,fdsCal).flat().map((d,i)=>{
               if (d===null) return <div key={"e"+i}/>;
               const k=calKey(d), isToday=k===today, future=k>today;
               const v = valorDia(k);

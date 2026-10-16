@@ -24,11 +24,19 @@ function siglaDe(nome = "") {
   return p.length === 1 ? p[0].slice(0, 2).toUpperCase() : (p[0][0] + p[1][0]).toUpperCase();
 }
 
+// Banca de um mercado da Conta Principal está ativa? B3 e Forex vêm ligadas por padrão;
+// qualquer uma pode ser excluída (fica em config.bancasExcluidas até ser recriada).
+export function mercadoAtivo(config, mk) {
+  const m = MERCADOS[mk];
+  if (!m || (config?.bancasExcluidas || []).includes(mk)) return false;
+  return m.core || config?.[m.key] !== undefined;
+}
+
 // Todas as carteiras ativas, na ordem de exibição
 export function listaCarteiras(config) {
   const lim = limitesDaConta(config, ID_PRINCIPAL);
   const principais = Object.entries(MERCADOS)
-    .filter(([, m]) => m.core || config?.[m.key] !== undefined)
+    .filter(([mk]) => mercadoAtivo(config, mk))
     .map(([mk, m]) => ({
       key: mk, contaId: ID_PRINCIPAL, mercado: mk, extra: false,
       label: m.label, curto: m.curto, moeda: m.moeda, cor: m.cor, sigla: m.sigla,

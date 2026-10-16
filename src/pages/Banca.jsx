@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CountUp, Sparkline, Modal } from "../components/ui";
-import { listaCarteiras, carteira, bancaCarteira, totalSaques, listaSaques, totalDepositos, listaDepositos, curvaCarteira, carteiraDoSaque } from "../lib/banca";
+import { listaCarteiras, mercadoAtivo, carteira, bancaCarteira, totalSaques, listaSaques, totalDepositos, listaDepositos, curvaCarteira, carteiraDoSaque } from "../lib/banca";
 import { TIPOS_CONTA } from "../lib/contas";
 
 function hojeISO() {
@@ -52,8 +52,8 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
   const [erroSaque,  setErroSaque]  = useState("");
   const hasData = Object.keys(entries).length > 0;
 
-  const activeBancos    = Object.entries(BANCOS_META).filter(([, m]) => m.core || config?.[m.key] !== undefined);
-  const availableBancos = Object.entries(BANCOS_META).filter(([, m]) => !m.core && config?.[m.key] === undefined);
+  const activeBancos    = Object.entries(BANCOS_META).filter(([tipo]) => mercadoAtivo(config, tipo));
+  const availableBancos = Object.entries(BANCOS_META).filter(([tipo]) => !mercadoAtivo(config, tipo));
   const carteiras = listaCarteiras(config);
 
   function getBancaInicial(meta) {
@@ -105,14 +105,16 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
 
   async function criarBanca() {
     if (!novoTipo || !novoValor) return;
-    await saveConfig({ ...config, [BANCOS_META[novoTipo].key]: parseFloat(novoValor) });
+    await saveConfig({ ...config, [BANCOS_META[novoTipo].key]: parseFloat(novoValor), bancasExcluidas: (config?.bancasExcluidas || []).filter(x => x !== novoTipo) });
     setShowCriar(false); setNovoTipo(""); setNovoValor("");
     setMsg("✓ Banca criada!"); setTimeout(() => setMsg(""), 2500);
   }
 
   async function deletarBanca(tipo) {
+    if (!window.confirm("Excluir a banca "+BANCOS_META[tipo].label+"? Os saques e depósitos dela são apagados. As operações continuam no Diário, e dá para recriar a banca depois em Adicionar banca.")) return;
     const nc = { ...config };
     delete nc[BANCOS_META[tipo].key];
+    if (BANCOS_META[tipo].core) nc.bancasExcluidas = [...new Set([...(nc.bancasExcluidas || []), tipo])];
     nc.saques = (nc.saques || []).filter(x => carteiraDoSaque(x) !== tipo);
     nc.depositos = (nc.depositos || []).filter(x => carteiraDoSaque(x) !== tipo);
     await saveConfig(nc);
@@ -267,8 +269,8 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                     editar conta
                   </button>
                 )}
-                {!meta.extra && !BANCOS_META[tipo]?.core && (
-                  <button onClick={() => deletarBanca(tipo)}
+                {!meta.extra && carteiras.length > 1 && (
+                  <button onClick={() => deletarBanca(tipo)} title="Excluir esta banca"
                     style={{ background:"rgba(255,84,112,0.05)", border:"1px solid #ff547022", borderRadius:"8px", padding:"5px 12px", color:"#ff7a90", cursor:"pointer", fontSize:"11.5px", fontWeight:"600", fontFamily:"var(--font-sans)" }}>
                     remover
                   </button>

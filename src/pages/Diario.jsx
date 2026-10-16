@@ -409,12 +409,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   }
 
 
-  // Semana atual, só dias úteis (seg a sex). O passado fica no Histórico.
+  // Semana atual, só dias úteis (seg a sex); sábado/domingo só se tiverem registro. O passado fica no Histórico.
   const segunda = inicioDaSemana(today);
-  const diasDaSemana = Array.from({length:5}, (_, i) => {
+  const diasDaSemana = Array.from({length:7}, (_, i) => {
     const [a,m,d] = segunda.split("-").map(Number);
     return chaveDe(new Date(a, m-1, d+i));
-  });
+  }).filter((ds, i) => i < 5 || entries[ds]);
   const semanaAtual = { chave: segunda, dias: diasDaSemana.filter(ds => entries[ds]).reverse().map(ds => [ds, entries[ds]]) };
   {
     const trs = semanaAtual.dias.flatMap(([,e]) => e.trades || []);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Select, Valores } from "../components/ui";
 import { somaPorMoeda, corDasPartes } from "../lib/moedas";
-import { semanasUteis, DIAS_UTEIS } from "../lib/datas";
+import { semanasUteis, temFimDeSemana, DIAS_UTEIS, DIAS_SEMANA_SEG } from "../lib/datas";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
@@ -27,8 +27,9 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
   const selEntry  = sel ? entries[sel] : null;
 
   // Build weeks
-  // Só dias úteis (seg a sex)
-  const weeks = semanasUteis(year, month).map(sem => ({
+  // Só dias úteis (seg a sex); sábado e domingo aparecem se o mês tiver registro neles
+  const fimDeSemana = temFimDeSemana(Object.keys(entries), year, month);
+  const weeks = semanasUteis(year, month, fimDeSemana).map(sem => ({
     days: sem.map(d => d === null ? null : { d, k: dayKey(year,month,d), e: entries[dayKey(year,month,d)] }),
   }));
 
@@ -40,7 +41,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
     return { dias, trades: trs.length, partes: somaPorMoeda(trs), wr: trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length/trs.length*100) : null };
   };
   const resumoMes = resumo(weeks.flatMap(w => w.days));
-  const COLUNAS = "repeat(5,minmax(0,1fr)) minmax(0,1.1fr)";
+  const COLUNAS = "repeat("+(fimDeSemana?7:5)+",minmax(0,1fr)) minmax(0,1.1fr)";
 
   // Edit functions
   function startEdit() {
@@ -139,7 +140,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
       <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px",marginBottom:"24px"}}>
         {/* Header dias */}
         <div style={{display:"grid",gridTemplateColumns:COLUNAS,gap:"8px",marginBottom:"12px"}}>
-          {[...DIAS_UTEIS,"Semana"].map(d=>(
+          {[...(fimDeSemana?DIAS_SEMANA_SEG:DIAS_UTEIS),"Semana"].map(d=>(
             <div key={d} style={{textAlign:"center",color:d==="Semana"?"#a3b2ab":"#7a8c84",fontSize:"12px",fontWeight:"700",padding:"4px 0",letterSpacing:"0.5px"}}>{d}</div>
           ))}
         </div>

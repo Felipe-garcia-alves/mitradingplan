@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { CountUp, Ring, Sparkline, CapitalChart, DailyBars } from "../components/ui";
 import { listaCarteiras, bancaCarteira } from "../lib/banca";
 import { contaDoTrade, entradaFiltrada } from "../lib/contas";
-import { semanasUteis } from "../lib/datas";
+import { semanasUteis, temFimDeSemana } from "../lib/datas";
 import FiltrosBarra from "../components/FiltrosBarra";
 import { ativoDoTrade, SEM_ATIVO } from "../lib/ativos";
 
@@ -462,7 +462,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           const mes = hoje.getMonth();
           const mesKey = ano+"-"+String(mes+1).padStart(2,"0");
           const diasOperadosSet = new Set(Object.keys(entries).filter(d=>d.startsWith(mesKey)&&(entries[d].numTrades||0)>0));
-          const semanas = semanasUteis(ano, mes);
+          const fds = temFimDeSemana([...diasOperadosSet], ano, mes);
+          const semanas = semanasUteis(ano, mes, fds);
           return (
             <div onClick={()=>alternar("dias","Dias operados",allTrades,{sub:diasOp+" dias · "+sub(allTrades.length)})} style={{...kpiCard,cursor:"pointer"}}>
               <p style={kpiLabel}>Dias Operados</p>
@@ -471,7 +472,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
                   {semanas.map((sem,si)=>(
                     <div key={si} style={{display:"flex",gap:"3px"}}>
-                      {Array.from({length:5}).map((_,di)=>{
+                      {Array.from({length:fds?7:5}).map((_,di)=>{
                         const cel = sem[di];
                         if(cel===undefined||cel===null) return <div key={di} style={{width:"6px",height:"6px"}}/>;
                         const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
