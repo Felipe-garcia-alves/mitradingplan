@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Select } from "../components/ui";
+import { Select, Valores } from "../components/ui";
+import { somaPorMoeda, corDasPartes } from "../lib/moedas";
 import { semanasUteis, DIAS_UTEIS } from "../lib/datas";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -36,10 +37,9 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
   const resumo = cells => {
     const trs = cells.filter(Boolean).flatMap(c => filtrados(c.e));
     const dias = cells.filter(c => c && filtrados(c.e).length).length;
-    return { dias, trades: trs.length, total: trs.reduce((s,t)=>s+(t.resultado||0),0), wr: trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length/trs.length*100) : null };
+    return { dias, trades: trs.length, partes: somaPorMoeda(trs), wr: trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length/trs.length*100) : null };
   };
   const resumoMes = resumo(weeks.flatMap(w => w.days));
-  const brl = v => (v>=0?"+":"-")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   const COLUNAS = "repeat(5,minmax(0,1fr)) minmax(0,1.1fr)";
 
   // Edit functions
@@ -115,7 +115,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
             <p style={{margin:"5px 0 0",color:"#86978f",fontSize:"12.5px"}}>
               {resumoMes.dias} dia{resumoMes.dias!==1?"s":""} · {resumoMes.trades} trade{resumoMes.trades!==1?"s":""}
               {resumoMes.wr!==null && <> · <span style={{color:resumoMes.wr>=60?"#2ee6a0":resumoMes.wr>=40?"#f59e0b":"#ff5470",fontWeight:"700"}}>{resumoMes.wr}% acerto</span></>} ·{" "}
-              <b style={{fontFamily:"var(--font-mono)",color:resumoMes.total>=0?"#2ee6a0":"#ff5470"}}>{brl(resumoMes.total)}</b>
+              <Valores partes={resumoMes.partes}/>
             </p>
           )}
         </div>
@@ -151,20 +151,20 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
               const {d,k,e} = cell;
               const isToday = d===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
               const tradesDodia = (e?.trades||[]).filter(t=>(filtroMercado==="todos"||t.mercado===filtroMercado)&&(filtroEst==="todas"||t.estrategia===filtroEst));
-              const tot = e && tradesDodia.length > 0 ? tradesDodia.reduce((s,t)=>s+(t.resultado||0),0) : null;
+              const partesDia = somaPorMoeda(tradesDodia), cor = corDasPartes(partesDia);
               const hasTrades = tradesDodia.length > 0;
               const numTrades = tradesDodia.length;
               const winsDodia = tradesDodia.filter(t=>t.tipo==="WIN").length;
               const wrDodia = numTrades > 0 ? Math.round((winsDodia/numTrades)*100) : null;
               const isSel = sel===k;
-              const bg = isSel ? (tot>=0?"rgba(46,230,160,0.2)":"rgba(255,84,112,0.2)") : hasTrades ? (tot>=0?"rgba(46,230,160,0.08)":"rgba(255,84,112,0.08)") : "rgba(255,255,255,0.01)";
-              const border = isSel ? (tot>=0?"2px solid #2ee6a0":"2px solid #ff5470") : isToday?"2px solid #2ee6a044":hasTrades?(tot>=0?"1px solid #2ee6a022":"1px solid #ff547022"):"1px solid #18241f";
+              const bg = isSel ? cor+"33" : hasTrades ? cor+"14" : "rgba(255,255,255,0.01)";
+              const border = isSel ? "2px solid "+cor : isToday?"2px solid #2ee6a044":hasTrades?"1px solid "+cor+"33":"1px solid #18241f";
               return (
                 <div key={ci} className={"mtp-cal-dia"+(hasTrades?" tem":"")+(isToday?" hoje":"")} onClick={()=>{ if (!hasTrades) return; setSel(isSel?null:k); setEditMode(false); }}
                   style={{background:bg,border,minHeight:"96px"}}>
                   <span className="mtp-cal-num">{d}</span>
                   {hasTrades && <>
-                    <span className="mtp-cal-valor" style={{color:tot>=0?"#2ee6a0":"#ff5470",fontSize:"15px"}}>{tot>=0?"+":"-"}R${Math.abs(tot)<1000?Math.abs(tot).toFixed(0):(Math.abs(tot)/1000).toFixed(1)+"k"}</span>
+                    <Valores partes={partesDia} compacto empilhar style={{fontSize:"15px"}}/>
                     <span className="mtp-cal-sub">{numTrades} trade{numTrades!==1?"s":""}{wrDodia!==null && <> · <b style={{color:wrDodia>=60?"#2ee6a0":wrDodia>=40?"#f59e0b":"#ff5470"}}>{wrDodia}%</b></>}</span>
                     {e.emocoes?.length>0 && <span className="mtp-cal-sub" style={{color:EMOCAO_COLORS[e.emocoes[0]]||"#777"}}>{e.emocoes[0]}</span>}
                   </>}
@@ -173,11 +173,11 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
             })}
             {(() => {
               const r = resumo(w.days);
-              const cor = r.total>=0?"#2ee6a0":"#ff5470";
+              const cor = corDasPartes(r.partes);
               return (
                 <div className="mtp-cal-dia" style={{border:"1px solid "+(r.trades?cor+"44":"#18241f"),background:r.trades?"rgba(255,255,255,0.03)":"transparent",minHeight:"96px"}}>
                   {r.trades ? <>
-                    <span className="mtp-cal-valor" style={{color:cor,fontSize:"15px"}}>{r.total>=0?"+":"-"}R${Math.abs(r.total)<1000?Math.abs(r.total).toFixed(0):(Math.abs(r.total)/1000).toFixed(1)+"k"}</span>
+                    <Valores partes={r.partes} compacto empilhar style={{fontSize:"15px"}}/>
                     <span className="mtp-cal-sub">{r.trades} trade{r.trades!==1?"s":""}{r.wr!==null && <> · <b style={{color:r.wr>=60?"#2ee6a0":r.wr>=40?"#f59e0b":"#ff5470"}}>{r.wr}%</b></>}</span>
                   </> : <span className="mtp-cal-sub" style={{color:"#3d4a44"}}>—</span>}
                 </div>
@@ -196,7 +196,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
               <p style={{margin:"0 0 6px",color:"#86978f",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>{formatDateLong(sel)}</p>
               <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
                 {selEntry.totalPts!==undefined&&<div style={{background:"rgba(46,230,160,0.08)",border:"1px solid #2ee6a022",borderRadius:"10px",padding:"8px 14px",textAlign:"center"}}><p style={{margin:"0 0 2px",color:"#86978f",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos</p><p style={{margin:0,color:"#2ee6a0",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{selEntry.totalPts>=0?"+":""}{selEntry.totalPts}</p></div>}
-                {((selEntry.totalB3||0)+(selEntry.totalForex||0))!==0&&<div style={{background:"rgba(255,255,255,0.03)",border:"1px solid #1b2823",borderRadius:"10px",padding:"8px 14px",textAlign:"center"}}><p style={{margin:"0 0 2px",color:"#86978f",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado</p><p style={{margin:0,color:((selEntry.totalB3||0)+(selEntry.totalForex||0))>=0?"#2ee6a0":"#ff5470",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{((selEntry.totalB3||0)+(selEntry.totalForex||0))>=0?"+":""}R$ {Math.abs((selEntry.totalB3||0)+(selEntry.totalForex||0)).toFixed(2)}</p></div>}
+                {(selEntry.trades||[]).length>0&&<div style={{background:"rgba(255,255,255,0.03)",border:"1px solid #1b2823",borderRadius:"10px",padding:"8px 14px",textAlign:"center"}}><p style={{margin:"0 0 2px",color:"#86978f",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado</p><Valores partes={somaPorMoeda(selEntry.trades)} style={{fontSize:"18px"}}/></div>}
                 {selEntry.numTrades&&<div style={{background:"rgba(255,255,255,0.03)",border:"1px solid #1b2823",borderRadius:"10px",padding:"8px 14px",textAlign:"center"}}><p style={{margin:"0 0 2px",color:"#86978f",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Trades</p><p style={{margin:0,color:"#f0f0f0",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{selEntry.numTrades}</p></div>}
                 {selEntry.winRate!==undefined&&<div style={{background:"rgba(255,255,255,0.03)",border:"1px solid #1b2823",borderRadius:"10px",padding:"8px 14px",textAlign:"center"}}><p style={{margin:"0 0 2px",color:"#86978f",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Win Rate</p><p style={{margin:0,color:selEntry.winRate>=60?"#2ee6a0":"#f59e0b",fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{selEntry.winRate}%</p></div>}
               </div>

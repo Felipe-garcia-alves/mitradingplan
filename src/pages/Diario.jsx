@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Select, TimePicker, Confirmar, Modal } from "../components/ui";
+import { Select, TimePicker, Confirmar, Modal, Valores } from "../components/ui";
+import { somaPorMoeda, corDasPartes } from "../lib/moedas";
 import { listaContas, contaPadrao, contaDoTrade, TIPOS_CONTA } from "../lib/contas";
 import { ATIVOS_SUGERIDOS, opcoesDeAtivo, ativosUsados, normalizarAtivo, rotuloAtivo } from "../lib/ativos";
 import { supabase } from "../supabase";
@@ -407,7 +408,6 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     setTrades([]); setEmocoes([]); setObservacao("");
   }
 
-  const totalDia = e => (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0);
 
   // Semana atual, só dias úteis (seg a sex). O passado fica no Histórico.
   const segunda = inicioDaSemana(today);
@@ -418,7 +418,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const semanaAtual = { chave: segunda, dias: diasDaSemana.filter(ds => entries[ds]).reverse().map(ds => [ds, entries[ds]]) };
   {
     const trs = semanaAtual.dias.flatMap(([,e]) => e.trades || []);
-    semanaAtual.total = semanaAtual.dias.reduce((t,[,e]) => t + totalDia(e), 0);
+    semanaAtual.partes = somaPorMoeda(trs);
     semanaAtual.numTrades = trs.length;
     semanaAtual.winRate = trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length / trs.length * 100) : null;
   }
@@ -621,14 +621,14 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
         {/* Operações adicionadas (ainda não salvas) */}
         {trades.length > 0 && (() => {
-          const tot = trades.reduce((s,t)=>s+(t.resultado||0),0);
+          const partesPend = somaPorMoeda(trades);
           const w = trades.filter(t=>t.tipo==="WIN").length;
           return (
             <div style={{marginBottom:"20px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px",gap:"12px",flexWrap:"wrap"}}>
                 <span className="mtp-section-hint" style={{color:"#f5b941"}}>● {trades.length} {trades.length===1?"operação":"operações"} ainda não {trades.length===1?"salva":"salvas"} — clique em Salvar dia</span>
                 <span style={{fontFamily:"var(--font-mono)",fontSize:"12.5px",color:"var(--text-3)"}}>
-                  <b style={{color:tot>=0?"#2ee6a0":"#ff5470"}}>{tot>=0?"+":"-"}{Math.abs(tot).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b> · {Math.round(w/trades.length*100)}% acerto
+                  <Valores partes={partesPend}/> · {Math.round(w/trades.length*100)}% acerto
                 </span>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
@@ -697,7 +697,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             <p style={{margin:"6px 0 0",fontSize:"13px",color:"var(--text-3)"}}>
               {semanaAtual.numTrades} trade{semanaAtual.numTrades!==1?"s":""}
               {semanaAtual.winRate!==null && <> · <span style={{color:"#2ee6a0",fontWeight:"600"}}>{semanaAtual.winRate}% acerto</span></>} ·{" "}
-              <b style={{fontFamily:"var(--font-mono)",color:semanaAtual.total>=0?"#2ee6a0":"#ff5470"}}>{semanaAtual.total>=0?"+":"-"}R$ {Math.abs(semanaAtual.total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b>
+              <Valores partes={semanaAtual.partes}/>
             </p>
           )}
         </div>
@@ -726,7 +726,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               </button>
             );
           }
-          const v = totalDia(e), cor = v>0?"#2ee6a0":v<0?"#ff5470":"#86978f";
+          const partes = somaPorMoeda(e.trades), cor = corDasPartes(partes);
           const trs = e.trades || [];
           const wr = trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length / trs.length * 100) : null;
           return (
@@ -734,7 +734,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               style={{border:"1px solid "+cor+(hoje?"66":"33"),background:"linear-gradient(180deg,"+cor+"14,"+cor+"05)",minHeight:"118px",overflow:"hidden"}}>
               <span className="mtp-cal-rot">{nome}</span>
               <span className="mtp-cal-num">{+ds.slice(8)}</span>
-              <span className="mtp-cal-valor" style={{color:cor,fontSize:"17px"}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+              <Valores partes={partes} empilhar style={{fontSize:"16px"}}/>
               <span className="mtp-cal-sub">{trs.length} trade{trs.length!==1?"s":""}{wr!==null && <> · <b style={{color:wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470"}}>{wr}%</b></>}</span>
               {e.emocoes?.length > 0 && <span className="mtp-cal-sub" style={{color:EMOCAO_COLORS[e.emocoes[0]]||"#888",fontWeight:"600"}}>{e.emocoes[0]}{e.emocoes.length>1 ? " +"+(e.emocoes.length-1) : ""}</span>}
             </button>
@@ -753,7 +753,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 <p style={{margin:"6px 0 0",color:"var(--text-3)",fontSize:"13px"}}>
                   {semanaAberta.dias.length} {semanaAberta.dias.length===1?"dia":"dias"} · {semanaAberta.numTrades} trade{semanaAberta.numTrades!==1?"s":""}
                   {semanaAberta.winRate!==null && <> · <span style={{color:"#2ee6a0",fontWeight:"600"}}>{semanaAberta.winRate}% acerto</span></>} ·{" "}
-                  <b style={{fontFamily:"var(--font-mono)",color:semanaAberta.total>=0?"#2ee6a0":"#ff5470"}}>{semanaAberta.total>=0?"+":"-"}R$ {Math.abs(semanaAberta.total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b>
+                  <Valores partes={semanaAberta.partes}/>
                 </p>
               </div>
               <button onClick={()=>setDiaModal(null)} className="mtp-drawer-close" aria-label="Fechar">×</button>
@@ -762,14 +762,14 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             {/* Abas dos dias, em ordem cronológica */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(112px,1fr))",gap:"8px"}}>
               {[...semanaAberta.dias].reverse().map(([ds,e])=>{
-                const v = totalDia(e), on = ds === diaAberto[0];
-                const cor = v>0?"#2ee6a0":v<0?"#ff5470":"#86978f";
+                const partes = somaPorMoeda(e.trades), on = ds === diaAberto[0];
+                const cor = corDasPartes(partes);
                 return (
                   <button key={ds} type="button" onClick={()=>setDiaModal(ds)} aria-pressed={on} className={"mtp-cal-dia tem"+(ds===today?" hoje":"")}
                     style={{border:"1px solid "+(on?cor+"88":"var(--line)"),background:on?cor+"18":"rgba(255,255,255,0.02)",minHeight:"78px"}}>
                     <span className="mtp-cal-rot">{ds===today?"Hoje":DIAS_SEMANA[new Date(ds+"T12:00").getDay()]}</span>
                     <span className="mtp-cal-num">{+ds.slice(8)}</span>
-                    <span className="mtp-cal-valor" style={{color:cor}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                    <Valores partes={partes} compacto empilhar style={{fontSize:"13.5px"}}/>
                     <span className="mtp-cal-sub">{(e.trades||[]).length} trade{(e.trades||[]).length!==1?"s":""}</span>
                   </button>
                 );
@@ -778,7 +778,6 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
         {[diaAberto].map(([ds, entry]) => {
           const isToday = ds === today;
-          const total   = (entry.totalB3||0)+(entry.totalForex||0)+(entry.totalCripto||0);
           return (
             <div key={ds} style={{borderRadius:"14px",overflow:"hidden",border:"1px solid "+(isToday?"#2ee6a022":"#18241f"),background:"var(--card)"}}>
               <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px"}}>
@@ -792,7 +791,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:"12px",flexShrink:0}}>
                   {entry.totalPts !== undefined && <span style={{color:entry.totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{entry.totalPts>=0?"+":""}{Number((+entry.totalPts).toFixed(1))} pts</span>}
-                  <span style={{color:total>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{total>=0?"+":"-"}R$ {Math.abs(total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+                  <Valores partes={somaPorMoeda(entry.trades)} style={{fontSize:"14px",fontWeight:700}}/>
                   <button title="Apagar o dia inteiro" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar o dia "+formatDateFull(ds)+"?",texto:"Isso apaga "+((entries[ds]?.trades||[]).length)+" operação(ões), as emoções e a observação desse dia. Não dá para desfazer.",botao:"Apagar dia",acao:()=>deleteEntry(ds)});}} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
                 </div>
               </div>
@@ -870,7 +869,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                   Editar
                                 </button>
-                                <button title="Apagar esta operação" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar esta operação?",texto:(t.tipo||"")+" "+(t.mercado||"")+(t.ativo?" "+t.ativo:"")+(t.resultado!=null?" · "+(t.resultado>=0?"+":"-")+"R$ "+Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2}):"")+" — os totais do dia são recalculados. Não dá para desfazer.",botao:"Apagar",acao:()=>apagarOperacaoSalva(ds,i)});}}
+                                <button title="Apagar esta operação" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar esta operação?",texto:(t.tipo||"")+" "+(t.mercado||"")+(t.ativo?" "+t.ativo:"")+(t.resultado!=null?" · "+(t.resultado>=0?"+":"-")+(t.mercado==="B3"?"R$ ":"$ ")+Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2}):"")+" — os totais do dia são recalculados. Não dá para desfazer.",botao:"Apagar",acao:()=>apagarOperacaoSalva(ds,i)});}}
                                   style={{background:"none",border:"1px solid #ff547033",borderRadius:"5px",color:"#ff7a90",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px"}}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                                   Apagar

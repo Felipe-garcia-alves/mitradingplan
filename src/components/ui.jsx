@@ -1,6 +1,7 @@
 // Mi Trading Plan - componentes visuais reutilizáveis (números, anéis, gráficos)
 import { useState, useEffect, useRef, useId } from "react";
 import { createPortal } from "react-dom";
+import { fmtMoeda, corValor } from "../lib/moedas";
 
 const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 
@@ -546,5 +547,21 @@ export function Confirmar({ titulo, texto, botao = "Apagar", perigo = true, onCo
         </div>
       </div>
     </Modal>
+  );
+}
+
+// ── Resultado por moeda: "+R$ 120,00 · +$ 15,00", cada parte com a sua cor ──
+// empilhar: uma moeda por linha (células estreitas de calendário)
+export function Valores({ partes, compacto = false, empilhar = false, vazio = "—", style }) {
+  if (!partes?.length) return <span style={{ color:"var(--text-3)", ...style }}>{vazio}</span>;
+  return (
+    <span style={{ fontFamily:"var(--font-mono)", fontWeight:800, whiteSpace:"nowrap", ...(empilhar ? { display:"inline-flex", flexDirection:"column", alignItems:"center", lineHeight:1.25 } : {}), ...style }}>
+      {partes.map((p, i) => (
+        <span key={p.moeda}>
+          {i > 0 && !empilhar && <span style={{ color:"var(--text-3)", fontWeight:400 }}>{compacto ? " " : " · "}</span>}
+          <span style={{ color:corValor(p.valor) }}>{fmtMoeda(p.valor, p.moeda, { compacto })}</span>
+        </span>
+      ))}
+    </span>
   );
 }
