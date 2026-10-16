@@ -3,7 +3,7 @@ import { Select, TimePicker, Confirmar, Modal } from "../components/ui";
 import { listaContas, contaPadrao, contaDoTrade, TIPOS_CONTA } from "../lib/contas";
 import { ATIVOS_SUGERIDOS, opcoesDeAtivo, ativosUsados, normalizarAtivo, rotuloAtivo } from "../lib/ativos";
 import { supabase } from "../supabase";
-import { decodificarArquivo, lerOperacoes, jaRegistrada } from "../lib/importar";
+import { decodificarArquivo, lerArquivo, jaRegistrada } from "../lib/importar";
 import ImageEditor, { uploadTradeImage, deleteTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
 
 function todayKey() {
@@ -304,9 +304,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
   async function abrirArquivoImportacao(file) {
     if (!file) return;
-    const { conta, operacoes, erro } = lerOperacoes(decodificarArquivo(await file.arrayBuffer()));
+    const { conta, operacoes, erro, plataforma, moeda } = lerArquivo(decodificarArquivo(await file.arrayBuffer()));
     if (erro) { avisarImport(erro); return; }
-    setImportacao({ nome: file.name, conta, operacoes });
+    setImportacao({ nome: file.name, conta, operacoes, plataforma, moeda });
   }
 
   // diasInfo: { "2026-10-16": { emocoes:[], observacao:"" } } — o que foi marcado para cada dia na prévia
@@ -319,10 +319,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       const info = diasInfo[dia] || {};
       const novos = [];
       for (const op of ops.sort((a,b)=>a.abertura.localeCompare(b.abertura))) {
-        const t = { mercado:"B3", tipo:op.tipo, estrategia:op.estrategia||"", observacao:(op.observacao||"").trim(), horario:op.horario, abertura:op.abertura,
+        const t = { mercado:op.mercado||"B3", tipo:op.tipo, estrategia:op.estrategia||"", observacao:(op.observacao||"").trim(), horario:op.horario, abertura:op.abertura,
           contratos:op.contratos, qualidade:op.qualidade||null, conta:contaId, ativo:op.ativo, resultado:op.resultado, origem:"importado" };
         if (op.pontos !== null) t.pontos = op.pontos;
         if (op.lado) t.lado = op.lado;
+        // MT5: ticket da posição (evita duplicar), fechamento e custos
+        for (const k of ["posicao","fechamento","bruto","comissao","swap","stop","alvo"]) if (op[k] !== undefined && op[k] !== null && op[k] !== "") t[k] = op[k];
         const imagens = [];
         if (uid) for (const [i, f] of (op.fotos||[]).entries()) {
           try { imagens.push(await uploadTradeImage(f.file, uid, dia, "imp-" + op.abertura.replace(/:/g,"") + "-" + i)); }
@@ -446,12 +448,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-            <button type="button" className="mtp-btn-sec" onClick={()=>importInputRef.current?.click()} title="Importar o relatório de operações (.csv) da plataforma"
+            <button type="button" className="mtp-btn-sec" onClick={()=>importInputRef.current?.click()} title="Importar operações: relatório .csv da B3 (Profit) ou relatório .html do MetaTrader 5"
               style={{minHeight:"32px",borderRadius:"20px"}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Importar operações
             </button>
-            <input ref={importInputRef} type="file" accept=".csv,text/csv" style={{display:"none"}}
+            <input ref={importInputRef} type="file" accept=".csv,.html,.htm,text/csv,text/html" style={{display:"none"}}
               onChange={e=>{ abrirArquivoImportacao(e.target.files?.[0]); e.target.value=""; }}/>
             {contas.length > 1 && (
               <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
@@ -982,7 +984,8 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
 
   const selecionadas = ops.filter(o => o.incluir);
   const duplicadas = ops.filter(o => o.dup).length;
-  const brl = v => (v >= 0 ? "+" : "-") + "R$ " + Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits:2, maximumFractionDigits:2 });
+  const mt5 = importacao.plataforma === "MT5";
+  const brl = v => (v >= 0 ? "+" : "-") + (importacao.moeda || "R$") + " " + Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits:2, maximumFractionDigits:2 });
   const optsEst = [{ value:"", label:"Sem estratégia" }, ...estNomes.map(n => ({ value:n, label:n }))];
   const preenchido = ops.some(o => o.estrategia || o.qualidade || o.observacao || o.fotos.length) || Object.values(diasInfo).some(d => d.emocoes.length || d.observacao);
 
@@ -1071,10 +1074,10 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
                           <span style={{ color:"var(--text-3)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.horario}</span>
                           <span style={{ padding:"3px 9px", borderRadius:"6px", fontSize:"11.5px", fontWeight:"800", background:cor + "1f", color:cor }}>{o.tipo}</span>
                           <span style={{ color:cor, fontSize:"14.5px", fontWeight:"700", fontFamily:"var(--font-mono)", minWidth:"96px" }}>{brl(o.resultado)}</span>
-                          {o.pontos !== null && <span style={{ color:"var(--text-2)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.pontos >= 0 ? "+" : ""}{o.pontos} pts</span>}
+                          {o.pontos !== null && <span style={{ color:"var(--text-2)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.pontos >= 0 ? "+" : ""}{o.pontos} {mt5 ? "pips" : "pts"}</span>}
                           <span className="mtp-tag"><b style={{ fontFamily:"var(--font-mono)", color:"var(--text)" }}>{o.ativo}</b></span>
                           {o.lado && <span className="mtp-tag">{o.lado}</span>}
-                          {o.contratos && <span className="mtp-tag" style={{ fontFamily:"var(--font-mono)" }}>{o.contratos}×</span>}
+                          {o.contratos && <span className="mtp-tag" style={{ fontFamily:"var(--font-mono)" }}>{o.contratos}{mt5 ? (o.contratos <= 1 ? " lote" : " lotes") : "×"}</span>}
                           {o.dup && <span className="mtp-tag" style={{ color:"#f5b941" }}>já registrada</span>}
                           <div style={{ display:"flex", alignItems:"center", gap:"10px", marginLeft:"auto", flexWrap:"wrap" }}>
                             {estNomes.length > 0 && (
@@ -1124,7 +1127,10 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
         })}
 
         <p style={{ margin:0, color:"var(--text-3)", fontSize:"12px", lineHeight:1.6 }}>
-          Resultado bruto, como vem da plataforma (sem corretagem e emolumentos). Cada operação entra no Diário no próprio dia e pode ser editada depois.
+          {mt5
+            ? "Resultado líquido (lucro + comissão + swap), igual ao que entra no saldo. Horários convertidos do servidor da corretora (GMT+2/+3) para o seu horário."
+            : "Resultado bruto, como vem da plataforma (sem corretagem e emolumentos)."}{" "}
+          Cada operação entra no Diário no próprio dia e pode ser editada depois.
         </p>
 
         <div style={{ display:"flex", gap:"10px", justifyContent:"flex-end", flexWrap:"wrap" }}>
