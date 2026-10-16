@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Select, TimePicker, Confirmar } from "../components/ui";
+import { Select, TimePicker, Confirmar, Modal } from "../components/ui";
 import { listaContas, contaPadrao, contaDoTrade, TIPOS_CONTA } from "../lib/contas";
 import { ATIVOS_SUGERIDOS, opcoesDeAtivo, ativosUsados, normalizarAtivo, rotuloAtivo } from "../lib/ativos";
 import { supabase } from "../supabase";
+import { decodificarArquivo, lerOperacoes, jaRegistrada } from "../lib/importar";
 import ImageEditor, { uploadTradeImage, deleteTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
 
 function todayKey() {
@@ -82,6 +83,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const [uploadingIdx, setUploadingIdx] = useState(null);
   const fileInputRef = useRef(null);
   const [confirmacao, setConfirmacao] = useState(null); // { titulo, texto, botao, acao }
+  const [importacao, setImportacao] = useState(null);   // { nome, conta, operacoes } — prévia do .csv
+  const [avisoImport, setAvisoImport] = useState("");
+  const importInputRef = useRef(null);
 
   // Operações adicionadas e ainda não salvas: avisa antes de fechar/recarregar a aba
   useEffect(() => {
@@ -283,6 +287,38 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     await saveEntry(dateKey, {...entry, trades:updatedTrades});
   }
 
+  // ── Importar operações de um .csv (cada linha = uma operação)
+  function avisarImport(t) { setAvisoImport(t); setTimeout(()=>setAvisoImport(""), 6000); }
+
+  async function abrirArquivoImportacao(file) {
+    if (!file) return;
+    const { conta, operacoes, erro } = lerOperacoes(decodificarArquivo(await file.arrayBuffer()));
+    if (erro) { avisarImport(erro); return; }
+    setImportacao({ nome: file.name, conta, operacoes });
+  }
+
+  async function salvarImportacao(selecionadas, contaId) {
+    const porDia = {};
+    for (const op of selecionadas) (porDia[op.data] ||= []).push(op);
+    let total = 0, falhou = false;
+    for (const [dia, ops] of Object.entries(porDia)) {
+      const entry = entries[dia] || { emocoes: [], observacao: "" };
+      const novos = ops.sort((a,b)=>a.abertura.localeCompare(b.abertura)).map(op => {
+        const t = { mercado:"B3", tipo:op.tipo, estrategia:op.estrategia||"", observacao:"", horario:op.horario, abertura:op.abertura,
+          contratos:op.contratos, qualidade:op.qualidade||null, conta:contaId, ativo:op.ativo, resultado:op.resultado, origem:"importado" };
+        if (op.pontos !== null) t.pontos = op.pontos;
+        if (op.lado) t.lado = op.lado;
+        return t;
+      });
+      const ok = await saveEntry(dia, { ...montarDia(entry, [...(entry.trades||[]), ...novos]), ts: new Date().toISOString() });
+      if (ok === false) falhou = true; else total += novos.length;
+    }
+    avisarImport(falhou
+      ? "Parte das operações não foi salva. Importe o arquivo de novo — as que já entraram são ignoradas."
+      : "✓ "+total+(total===1?" operação importada.":" operações importadas."));
+    if (!falhou) setImportacao(null);
+  }
+
   function removeTrade(id) { setTrades(prev => prev.filter(t => t.id !== id)); }
 
   async function handleSave() {
@@ -366,6 +402,13 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+            <button type="button" className="mtp-btn-sec" onClick={()=>importInputRef.current?.click()} title="Importar o relatório de operações (.csv) da plataforma"
+              style={{minHeight:"32px",borderRadius:"20px"}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Importar operações
+            </button>
+            <input ref={importInputRef} type="file" accept=".csv,text/csv" style={{display:"none"}}
+              onChange={e=>{ abrirArquivoImportacao(e.target.files?.[0]); e.target.value=""; }}/>
             {contas.length > 1 && (
               <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                 <span style={{color:"var(--text-3)",fontSize:"12px"}}>Registrando em</span>
@@ -377,6 +420,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             {todayEntry && <span style={{background:"rgba(46,230,160,0.1)",color:"#2ee6a0",padding:"5px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ {selectedDate===today?"Registrado hoje":"Já registrado"}</span>}
           </div>
         </div>
+        {avisoImport && <p style={{margin:"-14px 0 22px",color:avisoImport.startsWith("✓")?"#2ee6a0":"#ff7a90",fontSize:"13px",fontWeight:"600"}}>{avisoImport}</p>}
 
         {/* Emocoes */}
         <div style={{marginBottom:"32px"}}>
@@ -778,11 +822,130 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
       {/* Image Viewer fullscreen */}
       {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)}/>}
+      {importacao && (
+        <ImportarOperacoes importacao={importacao} entries={entries} contas={contas} contaInicial={novoTrade.conta}
+          estNomes={estNomes} sugerirExecucao={sugerirExecucao}
+          onCancelar={()=>setImportacao(null)} onSalvar={salvarImportacao}/>
+      )}
       {confirmacao && (
         <Confirmar titulo={confirmacao.titulo} texto={confirmacao.texto} botao={confirmacao.botao}
           onCancelar={()=>setConfirmacao(null)}
           onConfirmar={async()=>{ await confirmacao.acao(); setConfirmacao(null); }}/>
       )}
     </div>
+  );
+}
+
+// ── Prévia da importação: cada linha do arquivo vira uma operação; o trader só marca estratégia e execução
+function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes, sugerirExecucao, onCancelar, onSalvar }) {
+  const chaveConta = "mtp-import-conta-" + importacao.conta;
+  const [conta, setConta] = useState(() => {
+    let lembrada = null;
+    try { lembrada = importacao.conta ? localStorage.getItem(chaveConta) : null; } catch { /* sem storage */ }
+    return contas.some(c => c.id === lembrada) ? lembrada : contaInicial;
+  });
+  const [ops, setOps] = useState(() => importacao.operacoes.map((op, i) => {
+    const dup = jaRegistrada(op, entries[op.data]?.trades);
+    return { ...op, id:i, dup, incluir:!dup, estrategia:"", qualidade:"" };
+  }));
+  const [salvando, setSalvando] = useState(false);
+
+  const comEstrategia = (o, n) => ({ ...o, estrategia:n, qualidade: o.qualidade || (n ? sugerirExecucao(n) : "") || "" });
+  const mudar = (id, f) => setOps(p => p.map(o => o.id === id ? f(o) : o));
+  const selecionadas = ops.filter(o => o.incluir);
+  const duplicadas = ops.filter(o => o.dup).length;
+  const dias = [...new Set(ops.map(o => o.data))].sort();
+  const brl = v => (v >= 0 ? "+" : "-") + "R$ " + Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits:2, maximumFractionDigits:2 });
+  const optsEst = [{ value:"", label:"Sem estratégia" }, ...estNomes.map(n => ({ value:n, label:n }))];
+
+  async function salvar() {
+    setSalvando(true);
+    try { if (importacao.conta) localStorage.setItem(chaveConta, conta); } catch { /* sem storage */ }
+    try { await onSalvar(selecionadas, conta); } finally { setSalvando(false); }
+  }
+
+  return (
+    <Modal onClose={salvando ? () => {} : onCancelar} width={880}>
+      <div style={{ padding:"24px 26px", display:"flex", flexDirection:"column", gap:"18px" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:"14px", flexWrap:"wrap" }}>
+          <div style={{ minWidth:0 }}>
+            <p style={{ margin:0, color:"var(--text)", fontSize:"17px", fontWeight:"800" }}>Importar operações</p>
+            <p style={{ margin:"6px 0 0", color:"var(--text-3)", fontSize:"12.5px", lineHeight:1.6, wordBreak:"break-word" }}>
+              {importacao.nome}{importacao.conta && <> · conta {importacao.conta}</>} · {ops.length} {ops.length === 1 ? "operação" : "operações"}
+              {duplicadas > 0 && <> · <span style={{ color:"#f5b941" }}>{duplicadas} já {duplicadas === 1 ? "registrada" : "registradas"}</span></>}
+            </p>
+          </div>
+          {contas.length > 1 && (
+            <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+              <span style={{ color:"var(--text-3)", fontSize:"12px" }}>Lançar em</span>
+              <Select value={conta} onChange={setConta} popWidth={240} align="right"
+                style={{ minHeight:"32px", padding:"5px 12px", borderRadius:"20px", fontSize:"12.5px" }}
+                options={contas.map(c => ({ value:c.id, label:c.nome, cor:TIPOS_CONTA[c.tipo]?.cor }))}/>
+            </div>
+          )}
+        </div>
+
+        {estNomes.length > 0 && selecionadas.length > 1 && (
+          <div style={{ display:"flex", alignItems:"center", gap:"10px", flexWrap:"wrap" }}>
+            <span style={{ color:"var(--text-3)", fontSize:"12px" }}>Mesma estratégia para todas:</span>
+            <Select value="" onChange={n => setOps(p => p.map(o => o.incluir ? comEstrategia(o, n) : o))} placeholder="Escolher..." popWidth={220}
+              style={{ minHeight:"32px", padding:"5px 12px", borderRadius:"20px", fontSize:"12.5px", minWidth:"160px" }} options={optsEst}/>
+          </div>
+        )}
+
+        <div style={{ display:"flex", flexDirection:"column", gap:"18px" }}>
+          {dias.map(dia => {
+            const doDia = ops.filter(o => o.data === dia);
+            const tot = doDia.filter(o => o.incluir).reduce((s, o) => s + o.resultado, 0);
+            return (
+              <div key={dia}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"10px", marginBottom:"8px" }}>
+                  <span style={{ color:"var(--text-2)", fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>{formatDateLong(dia)}</span>
+                  <span style={{ fontFamily:"var(--font-mono)", fontSize:"12.5px", color:tot >= 0 ? "#2ee6a0" : "#ff5470", fontWeight:"700" }}>{brl(tot)}</span>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                  {doDia.map(o => {
+                    const cor = o.tipo === "WIN" ? "#2ee6a0" : "#ff5470";
+                    return (
+                      <div key={o.id} className="mtp-op-card" style={{ "--op":cor, opacity:o.incluir ? 1 : 0.45, display:"flex", alignItems:"center", gap:"12px", flexWrap:"wrap" }}>
+                        <input type="checkbox" checked={o.incluir} onChange={e => mudar(o.id, x => ({ ...x, incluir:e.target.checked }))}
+                          aria-label="Importar esta operação" style={{ width:"16px", height:"16px", accentColor:"#2ee6a0", cursor:"pointer" }}/>
+                        <span style={{ color:"var(--text-3)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.horario}</span>
+                        <span style={{ padding:"3px 9px", borderRadius:"6px", fontSize:"11.5px", fontWeight:"800", background:cor+"1f", color:cor }}>{o.tipo}</span>
+                        <span style={{ color:cor, fontSize:"14.5px", fontWeight:"700", fontFamily:"var(--font-mono)", minWidth:"96px" }}>{brl(o.resultado)}</span>
+                        {o.pontos !== null && <span style={{ color:"var(--text-2)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.pontos >= 0 ? "+" : ""}{o.pontos} pts</span>}
+                        <span className="mtp-tag"><b style={{ fontFamily:"var(--font-mono)", color:"var(--text)" }}>{o.ativo}</b></span>
+                        {o.lado && <span className="mtp-tag">{o.lado}</span>}
+                        {o.contratos && <span className="mtp-tag" style={{ fontFamily:"var(--font-mono)" }}>{o.contratos}×</span>}
+                        {o.dup && <span className="mtp-tag" style={{ color:"#f5b941" }}>já registrada</span>}
+                        <div style={{ display:"flex", alignItems:"center", gap:"10px", marginLeft:"auto", flexWrap:"wrap" }}>
+                          {estNomes.length > 0 && (
+                            <Select value={o.estrategia} onChange={n => mudar(o.id, x => comEstrategia(x, n))} placeholder="Estratégia" popWidth={220} align="right"
+                              style={{ minHeight:"32px", padding:"5px 12px", borderRadius:"10px", fontSize:"12.5px", width:"150px" }} options={optsEst}/>
+                          )}
+                          <EstrelasInput value={estrelasDe(o.qualidade)} onChange={n => mudar(o.id, x => ({ ...x, qualidade:n || "" }))}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p style={{ margin:0, color:"var(--text-3)", fontSize:"12px", lineHeight:1.6 }}>
+          Resultado bruto, como vem da plataforma (sem corretagem e emolumentos). Cada operação entra no Diário no próprio dia e pode ser editada depois.
+        </p>
+
+        <div style={{ display:"flex", gap:"10px", justifyContent:"flex-end", flexWrap:"wrap" }}>
+          <button onClick={onCancelar} disabled={salvando} style={{ background:"transparent", color:"var(--text-2)", border:"1px solid var(--line)", borderRadius:"10px", padding:"10px 16px", fontSize:"13px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Cancelar</button>
+          <button onClick={salvar} disabled={salvando || !selecionadas.length}
+            style={{ background:selecionadas.length ? "linear-gradient(135deg,#2ee6a0,#1fc98a)" : "rgba(255,255,255,0.05)", color:selecionadas.length ? "#000" : "var(--text-3)", border:"none", borderRadius:"10px", padding:"10px 18px", fontSize:"13px", fontWeight:"800", cursor:salvando ? "wait" : selecionadas.length ? "pointer" : "not-allowed", fontFamily:"var(--font-sans)" }}>
+            {salvando ? "Importando..." : "Importar " + selecionadas.length + (selecionadas.length === 1 ? " operação" : " operações")}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
