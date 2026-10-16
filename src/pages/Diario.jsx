@@ -297,25 +297,42 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     setImportacao({ nome: file.name, conta, operacoes });
   }
 
-  async function salvarImportacao(selecionadas, contaId) {
+  // diasInfo: { "2026-10-16": { emocoes:[], observacao:"" } } — o que foi marcado para cada dia na prévia
+  async function salvarImportacao(selecionadas, contaId, diasInfo) {
     const porDia = {};
     for (const op of selecionadas) (porDia[op.data] ||= []).push(op);
-    let total = 0, falhou = false;
+    let total = 0, falhou = false, fotosFalharam = 0;
     for (const [dia, ops] of Object.entries(porDia)) {
       const entry = entries[dia] || { emocoes: [], observacao: "" };
-      const novos = ops.sort((a,b)=>a.abertura.localeCompare(b.abertura)).map(op => {
-        const t = { mercado:"B3", tipo:op.tipo, estrategia:op.estrategia||"", observacao:"", horario:op.horario, abertura:op.abertura,
+      const info = diasInfo[dia] || {};
+      const novos = [];
+      for (const op of ops.sort((a,b)=>a.abertura.localeCompare(b.abertura))) {
+        const t = { mercado:"B3", tipo:op.tipo, estrategia:op.estrategia||"", observacao:(op.observacao||"").trim(), horario:op.horario, abertura:op.abertura,
           contratos:op.contratos, qualidade:op.qualidade||null, conta:contaId, ativo:op.ativo, resultado:op.resultado, origem:"importado" };
         if (op.pontos !== null) t.pontos = op.pontos;
         if (op.lado) t.lado = op.lado;
-        return t;
-      });
-      const ok = await saveEntry(dia, { ...montarDia(entry, [...(entry.trades||[]), ...novos]), ts: new Date().toISOString() });
+        const imagens = [];
+        if (uid) for (const [i, f] of (op.fotos||[]).entries()) {
+          try { imagens.push(await uploadTradeImage(f.file, uid, dia, "imp-" + op.abertura.replace(/:/g,"") + "-" + i)); }
+          catch (e) { console.error("upload da foto:", e); fotosFalharam++; }
+        }
+        if (imagens.length) t.imagens = imagens;
+        novos.push(t);
+      }
+      const obsNova = (info.observacao||"").trim();
+      const obsAntiga = (entry.observacao||"").trim();
+      const dia_ = {
+        ...montarDia(entry, [...(entry.trades||[]), ...novos]),
+        emocoes: [...new Set([...(entry.emocoes||[]), ...(info.emocoes||[])])],
+        observacao: obsAntiga && obsNova ? obsAntiga + "\n\n" + obsNova : obsNova || obsAntiga,
+        ts: new Date().toISOString(),
+      };
+      const ok = await saveEntry(dia, dia_);
       if (ok === false) falhou = true; else total += novos.length;
     }
     avisarImport(falhou
       ? "Parte das operações não foi salva. Importe o arquivo de novo — as que já entraram são ignoradas."
-      : "✓ "+total+(total===1?" operação importada.":" operações importadas."));
+      : "✓ "+total+(total===1?" operação importada":" operações importadas")+(fotosFalharam ? " — "+fotosFalharam+(fotosFalharam===1?" foto não subiu; adicione pela operação.":" fotos não subiram; adicione pela operação.") : "."));
     if (!falhou) setImportacao(null);
   }
 
@@ -836,7 +853,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   );
 }
 
-// ── Prévia da importação: cada linha do arquivo vira uma operação; o trader só marca estratégia e execução
+// ── Prévia da importação: cada linha do arquivo vira uma operação; o trader completa
+// estratégia, execução, comentário e fotos de cada uma, e as emoções/observação de cada dia
 function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes, sugerirExecucao, onCancelar, onSalvar }) {
   const chaveConta = "mtp-import-conta-" + importacao.conta;
   const [conta, setConta] = useState(() => {
@@ -846,26 +864,45 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
   });
   const [ops, setOps] = useState(() => importacao.operacoes.map((op, i) => {
     const dup = jaRegistrada(op, entries[op.data]?.trades);
-    return { ...op, id:i, dup, incluir:!dup, estrategia:"", qualidade:"" };
+    return { ...op, id:i, dup, incluir:!dup, estrategia:"", qualidade:"", observacao:"", fotos:[] };
   }));
+  const dias = [...new Set(importacao.operacoes.map(o => o.data))].sort();
+  const [diasInfo, setDiasInfo] = useState(() => Object.fromEntries(dias.map(d => [d, { emocoes:[], observacao:"" }])));
   const [salvando, setSalvando] = useState(false);
 
   const comEstrategia = (o, n) => ({ ...o, estrategia:n, qualidade: o.qualidade || (n ? sugerirExecucao(n) : "") || "" });
   const mudar = (id, f) => setOps(p => p.map(o => o.id === id ? f(o) : o));
+  const mudarDia = (d, campo) => setDiasInfo(p => ({ ...p, [d]: { ...p[d], ...campo } }));
+  const addFotos = (id, files) => {
+    const imgs = Array.from(files || []).filter(f => f.type.startsWith("image/"));
+    if (imgs.length) mudar(id, o => ({ ...o, fotos:[...o.fotos, ...imgs.map(file => ({ file, preview:URL.createObjectURL(file) }))] }));
+  };
+  const tirarFoto = (id, j) => mudar(id, o => { URL.revokeObjectURL(o.fotos[j].preview); return { ...o, fotos:o.fotos.filter((_, k) => k !== j) }; });
+
   const selecionadas = ops.filter(o => o.incluir);
   const duplicadas = ops.filter(o => o.dup).length;
-  const dias = [...new Set(ops.map(o => o.data))].sort();
   const brl = v => (v >= 0 ? "+" : "-") + "R$ " + Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits:2, maximumFractionDigits:2 });
   const optsEst = [{ value:"", label:"Sem estratégia" }, ...estNomes.map(n => ({ value:n, label:n }))];
+  const preenchido = ops.some(o => o.estrategia || o.qualidade || o.observacao || o.fotos.length) || Object.values(diasInfo).some(d => d.emocoes.length || d.observacao);
+
+  function fechar() {
+    if (salvando) return;
+    if (preenchido && !window.confirm("Descartar o que você preencheu nesta importação?")) return;
+    ops.forEach(o => o.fotos.forEach(f => URL.revokeObjectURL(f.preview)));
+    onCancelar();
+  }
 
   async function salvar() {
     setSalvando(true);
     try { if (importacao.conta) localStorage.setItem(chaveConta, conta); } catch { /* sem storage */ }
-    try { await onSalvar(selecionadas, conta); } finally { setSalvando(false); }
+    try { await onSalvar(selecionadas, conta, diasInfo); } finally { setSalvando(false); }
   }
 
+  const rotulo = { color:"var(--text-3)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1.2px", fontWeight:"700", display:"block", marginBottom:"10px" };
+  const campo = { background:"#18241f", border:"1px solid #26352e", borderRadius:"8px", padding:"8px 12px", color:"#f0f0f0", fontSize:"13px", outline:"none", fontFamily:"var(--font-sans)", boxSizing:"border-box" };
+
   return (
-    <Modal onClose={salvando ? () => {} : onCancelar} width={880}>
+    <Modal onClose={fechar} width={920}>
       <div style={{ padding:"24px 26px", display:"flex", flexDirection:"column", gap:"18px" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:"14px", flexWrap:"wrap" }}>
           <div style={{ minWidth:0 }}>
@@ -885,61 +922,112 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
           )}
         </div>
 
-        {estNomes.length > 0 && selecionadas.length > 1 && (
-          <div style={{ display:"flex", alignItems:"center", gap:"10px", flexWrap:"wrap" }}>
-            <span style={{ color:"var(--text-3)", fontSize:"12px" }}>Mesma estratégia para todas:</span>
-            <Select value="" onChange={n => setOps(p => p.map(o => o.incluir ? comEstrategia(o, n) : o))} placeholder="Escolher..." popWidth={220}
-              style={{ minHeight:"32px", padding:"5px 12px", borderRadius:"20px", fontSize:"12.5px", minWidth:"160px" }} options={optsEst}/>
-          </div>
-        )}
+        {dias.map(dia => {
+          const doDia = ops.filter(o => o.data === dia);
+          const tot = doDia.filter(o => o.incluir).reduce((s, o) => s + o.resultado, 0);
+          const info = diasInfo[dia];
+          return (
+            <div key={dia} style={{ display:"flex", flexDirection:"column", gap:"16px", paddingTop:dias.length > 1 ? "6px" : 0 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"10px" }}>
+                <span style={{ color:"var(--text)", fontSize:"14px", fontWeight:"800" }}>{formatDateLong(dia)}</span>
+                <span style={{ fontFamily:"var(--font-mono)", fontSize:"13px", color:tot >= 0 ? "#2ee6a0" : "#ff5470", fontWeight:"700" }}>{brl(tot)}</span>
+              </div>
 
-        <div style={{ display:"flex", flexDirection:"column", gap:"18px" }}>
-          {dias.map(dia => {
-            const doDia = ops.filter(o => o.data === dia);
-            const tot = doDia.filter(o => o.incluir).reduce((s, o) => s + o.resultado, 0);
-            return (
-              <div key={dia}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"10px", marginBottom:"8px" }}>
-                  <span style={{ color:"var(--text-2)", fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>{formatDateLong(dia)}</span>
-                  <span style={{ fontFamily:"var(--font-mono)", fontSize:"12.5px", color:tot >= 0 ? "#2ee6a0" : "#ff5470", fontWeight:"700" }}>{brl(tot)}</span>
+              {/* Emoções do dia */}
+              <div>
+                <span style={rotulo}>Emoções do dia</span>
+                <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                  {EMOCOES.map(em => {
+                    const on = info.emocoes.includes(em);
+                    const cor = EMOCAO_COLORS[em] || "#888";
+                    return <button key={em} type="button" onClick={() => mudarDia(dia, { emocoes: on ? info.emocoes.filter(e => e !== em) : [...info.emocoes, em] })}
+                      style={{ padding:"6px 11px", borderRadius:"20px", border:"1px solid " + (on ? cor + "66" : "#26352e"), background:on ? cor + "1a" : "transparent", color:on ? cor : "#aaa", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>{em}</button>;
+                  })}
                 </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+              </div>
+
+              {/* Operações */}
+              <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"10px", flexWrap:"wrap", marginBottom:"10px" }}>
+                  <span style={{ ...rotulo, marginBottom:0 }}>Operações</span>
+                  {estNomes.length > 0 && doDia.filter(o => o.incluir).length > 1 && (
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                      <span style={{ color:"var(--text-3)", fontSize:"12px" }}>Mesma estratégia para todas:</span>
+                      <Select value="" onChange={n => setOps(p => p.map(o => o.incluir && o.data === dia ? comEstrategia(o, n) : o))} placeholder="Escolher..." popWidth={220} align="right"
+                        style={{ minHeight:"30px", padding:"4px 12px", borderRadius:"20px", fontSize:"12px", minWidth:"140px" }} options={optsEst}/>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                   {doDia.map(o => {
                     const cor = o.tipo === "WIN" ? "#2ee6a0" : "#ff5470";
                     return (
-                      <div key={o.id} className="mtp-op-card" style={{ "--op":cor, opacity:o.incluir ? 1 : 0.45, display:"flex", alignItems:"center", gap:"12px", flexWrap:"wrap" }}>
-                        <input type="checkbox" checked={o.incluir} onChange={e => mudar(o.id, x => ({ ...x, incluir:e.target.checked }))}
-                          aria-label="Importar esta operação" style={{ width:"16px", height:"16px", accentColor:"#2ee6a0", cursor:"pointer" }}/>
-                        <span style={{ color:"var(--text-3)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.horario}</span>
-                        <span style={{ padding:"3px 9px", borderRadius:"6px", fontSize:"11.5px", fontWeight:"800", background:cor+"1f", color:cor }}>{o.tipo}</span>
-                        <span style={{ color:cor, fontSize:"14.5px", fontWeight:"700", fontFamily:"var(--font-mono)", minWidth:"96px" }}>{brl(o.resultado)}</span>
-                        {o.pontos !== null && <span style={{ color:"var(--text-2)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.pontos >= 0 ? "+" : ""}{o.pontos} pts</span>}
-                        <span className="mtp-tag"><b style={{ fontFamily:"var(--font-mono)", color:"var(--text)" }}>{o.ativo}</b></span>
-                        {o.lado && <span className="mtp-tag">{o.lado}</span>}
-                        {o.contratos && <span className="mtp-tag" style={{ fontFamily:"var(--font-mono)" }}>{o.contratos}×</span>}
-                        {o.dup && <span className="mtp-tag" style={{ color:"#f5b941" }}>já registrada</span>}
-                        <div style={{ display:"flex", alignItems:"center", gap:"10px", marginLeft:"auto", flexWrap:"wrap" }}>
-                          {estNomes.length > 0 && (
-                            <Select value={o.estrategia} onChange={n => mudar(o.id, x => comEstrategia(x, n))} placeholder="Estratégia" popWidth={220} align="right"
-                              style={{ minHeight:"32px", padding:"5px 12px", borderRadius:"10px", fontSize:"12.5px", width:"150px" }} options={optsEst}/>
-                          )}
-                          <EstrelasInput value={estrelasDe(o.qualidade)} onChange={n => mudar(o.id, x => ({ ...x, qualidade:n || "" }))}/>
+                      <div key={o.id} className="mtp-op-card" style={{ "--op":cor, opacity:o.incluir ? 1 : 0.45, display:"flex", flexDirection:"column", gap:"12px" }}
+                        onPaste={e => { if (o.incluir && e.clipboardData?.files?.length) { e.preventDefault(); addFotos(o.id, e.clipboardData.files); } }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"12px", flexWrap:"wrap" }}>
+                          <input type="checkbox" checked={o.incluir} onChange={e => mudar(o.id, x => ({ ...x, incluir:e.target.checked }))}
+                            aria-label="Importar esta operação" style={{ width:"16px", height:"16px", accentColor:"#2ee6a0", cursor:"pointer" }}/>
+                          <span style={{ color:"var(--text-3)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.horario}</span>
+                          <span style={{ padding:"3px 9px", borderRadius:"6px", fontSize:"11.5px", fontWeight:"800", background:cor + "1f", color:cor }}>{o.tipo}</span>
+                          <span style={{ color:cor, fontSize:"14.5px", fontWeight:"700", fontFamily:"var(--font-mono)", minWidth:"96px" }}>{brl(o.resultado)}</span>
+                          {o.pontos !== null && <span style={{ color:"var(--text-2)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.pontos >= 0 ? "+" : ""}{o.pontos} pts</span>}
+                          <span className="mtp-tag"><b style={{ fontFamily:"var(--font-mono)", color:"var(--text)" }}>{o.ativo}</b></span>
+                          {o.lado && <span className="mtp-tag">{o.lado}</span>}
+                          {o.contratos && <span className="mtp-tag" style={{ fontFamily:"var(--font-mono)" }}>{o.contratos}×</span>}
+                          {o.dup && <span className="mtp-tag" style={{ color:"#f5b941" }}>já registrada</span>}
+                          <div style={{ display:"flex", alignItems:"center", gap:"10px", marginLeft:"auto", flexWrap:"wrap" }}>
+                            {estNomes.length > 0 && (
+                              <Select value={o.estrategia} onChange={n => mudar(o.id, x => comEstrategia(x, n))} placeholder="Estratégia" popWidth={220} align="right"
+                                style={{ minHeight:"32px", padding:"5px 12px", borderRadius:"10px", fontSize:"12.5px", width:"150px" }} options={optsEst}/>
+                            )}
+                            <EstrelasInput value={estrelasDe(o.qualidade)} onChange={n => mudar(o.id, x => ({ ...x, qualidade:n || "" }))}/>
+                          </div>
                         </div>
+                        {o.incluir && (
+                          <div style={{ display:"flex", alignItems:"center", gap:"10px", flexWrap:"wrap" }}>
+                            <input value={o.observacao} onChange={e => mudar(o.id, x => ({ ...x, observacao:e.target.value }))}
+                              placeholder="Comentário da operação (cole o print aqui com Ctrl+V)" style={{ ...campo, flex:"1 1 260px", minWidth:0 }}/>
+                            <label className="mtp-btn-sec" style={{ minHeight:"36px", cursor:"pointer" }} title="Adicionar fotos desta operação">
+                              <input type="file" accept="image/*" multiple style={{ display:"none" }} onChange={e => { addFotos(o.id, e.target.files); e.target.value = ""; }}/>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                              Foto{o.fotos.length > 0 && <span className="mtp-ctx-badge">{o.fotos.length}</span>}
+                            </label>
+                            {o.fotos.length > 0 && (
+                              <div style={{ display:"flex", gap:"8px", flexWrap:"wrap", flexBasis:"100%" }}>
+                                {o.fotos.map((f, j) => (
+                                  <div key={f.preview} style={{ position:"relative", width:"84px", height:"58px", borderRadius:"8px", overflow:"hidden", border:"1px solid var(--line-strong)" }}>
+                                    <img src={f.preview} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}/>
+                                    <button type="button" onClick={() => tirarFoto(o.id, j)} aria-label="Remover foto"
+                                      style={{ position:"absolute", top:"4px", right:"4px", width:"20px", height:"20px", borderRadius:"50%", border:"none", background:"rgba(0,0,0,0.7)", color:"#fff", fontSize:"12px", cursor:"pointer", padding:0 }}>×</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Observação geral do dia */}
+              <div>
+                <span style={rotulo}>Observação geral do dia</span>
+                <textarea value={info.observacao} onChange={e => mudarDia(dia, { observacao:e.target.value })} rows={3}
+                  placeholder={entries[dia]?.observacao ? "Será adicionada à observação que o dia já tem" : "Como foi o dia? Setup, erros, aprendizados..."}
+                  style={{ ...campo, width:"100%", resize:"vertical", lineHeight:1.6, minHeight:"72px", fontSize:"13.5px", padding:"10px 13px" }}/>
+              </div>
+            </div>
+          );
+        })}
 
         <p style={{ margin:0, color:"var(--text-3)", fontSize:"12px", lineHeight:1.6 }}>
           Resultado bruto, como vem da plataforma (sem corretagem e emolumentos). Cada operação entra no Diário no próprio dia e pode ser editada depois.
         </p>
 
         <div style={{ display:"flex", gap:"10px", justifyContent:"flex-end", flexWrap:"wrap" }}>
-          <button onClick={onCancelar} disabled={salvando} style={{ background:"transparent", color:"var(--text-2)", border:"1px solid var(--line)", borderRadius:"10px", padding:"10px 16px", fontSize:"13px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Cancelar</button>
+          <button onClick={fechar} disabled={salvando} style={{ background:"transparent", color:"var(--text-2)", border:"1px solid var(--line)", borderRadius:"10px", padding:"10px 16px", fontSize:"13px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Cancelar</button>
           <button onClick={salvar} disabled={salvando || !selecionadas.length}
             style={{ background:selecionadas.length ? "linear-gradient(135deg,#2ee6a0,#1fc98a)" : "rgba(255,255,255,0.05)", color:selecionadas.length ? "#000" : "var(--text-3)", border:"none", borderRadius:"10px", padding:"10px 18px", fontSize:"13px", fontWeight:"800", cursor:salvando ? "wait" : selecionadas.length ? "pointer" : "not-allowed", fontFamily:"var(--font-sans)" }}>
             {salvando ? "Importando..." : "Importar " + selecionadas.length + (selecionadas.length === 1 ? " operação" : " operações")}
