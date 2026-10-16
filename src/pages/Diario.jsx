@@ -10,7 +10,6 @@ function todayKey() {
   const d = new Date();
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
-function monthKey(s) { return s.slice(0,7); }
 const MONTH_NAMES_LONG = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 function formatDateLong(s) {
@@ -18,7 +17,22 @@ function formatDateLong(s) {
   return p[2]+" de "+MONTH_NAMES_LONG[parseInt(p[1])-1]+" de "+p[0];
 }
 function formatDateFull(s) { const p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
-function formatMonthLabel(s) { const p=s.split("-"); return MONTH_NAMES[parseInt(p[1])-1]+" "+p[0]; }
+const DIAS_SEMANA = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+function chaveDe(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+// Segunda-feira da semana do dia (data local)
+function inicioDaSemana(s) {
+  const [a,m,d] = s.split("-").map(Number);
+  const dt = new Date(a, m-1, d);
+  dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+  return chaveDe(dt);
+}
+// "13 – 19 out"
+function rotuloSemana(seg) {
+  const [a,m,d] = seg.split("-").map(Number);
+  const fim = new Date(a, m-1, d+6);
+  const mes = i => MONTH_NAMES[i].slice(0,3).toLowerCase();
+  return fim.getMonth() === m-1 ? d+" – "+fim.getDate()+" "+mes(m-1) : d+" "+mes(m-1)+" – "+fim.getDate()+" "+mes(fim.getMonth());
+}
 
 const EMOCOES = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansioso","Impaciente","Frustrado","Eufórico","Medo","Cansado","Revanche","Compulsivo"];
 const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
@@ -64,13 +78,11 @@ function EstrelasInput({ value, onChange }) {
   );
 }
 
-export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid, config }) {
+export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid, config, setPagina }) {
   const contas = listaContas(config);
   const today    = todayKey();
-  const curMonth = monthKey(today);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [selMonth,   setSelMonth]   = useState(curMonth);
-  const [expanded,   setExpanded]   = useState(null);
+  const [diaModal,    setDiaModal]    = useState(null); // dia escolhido dentro dela
   const [msg,        setMsg]        = useState("");
   const [emocoes,    setEmocoes]    = useState([]);
   const [observacao, setObservacao] = useState("");
@@ -393,9 +405,24 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     setTrades([]); setEmocoes([]); setObservacao("");
   }
 
-  const allMonths = [...new Set(Object.keys(entries).map(monthKey))].sort().reverse();
-  if (!allMonths.includes(curMonth)) allMonths.unshift(curMonth);
-  const monthDays = Object.entries(entries).filter(([d])=>monthKey(d)===selMonth).sort(([a],[b])=>b.localeCompare(a));
+  const totalDia = e => (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0);
+
+  // Semana atual (segunda a domingo). O passado fica no Histórico.
+  const segunda = inicioDaSemana(today);
+  const diasDaSemana = Array.from({length:7}, (_, i) => {
+    const [a,m,d] = segunda.split("-").map(Number);
+    return chaveDe(new Date(a, m-1, d+i));
+  }).filter((ds, i) => i < 5 || entries[ds]); // sábado e domingo só se tiverem registro
+  const semanaAtual = { chave: segunda, dias: diasDaSemana.filter(ds => entries[ds]).reverse().map(ds => [ds, entries[ds]]) };
+  {
+    const trs = semanaAtual.dias.flatMap(([,e]) => e.trades || []);
+    semanaAtual.total = semanaAtual.dias.reduce((t,[,e]) => t + totalDia(e), 0);
+    semanaAtual.numTrades = trs.length;
+    semanaAtual.winRate = trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length / trs.length * 100) : null;
+  }
+  // Janela do dia: aberta pelo cartão; as abas trocam entre os dias da semana
+  const semanaAberta = diaModal ? semanaAtual : null;
+  const diaAberto = semanaAberta && semanaAberta.dias.find(([d]) => d === diaModal);
 
   const inp = {background:"#18241f",border:"1px solid #26352e",borderRadius:"8px",padding:"10px 13px",color:"#f0f0f0",fontSize:"14px",outline:"none",fontFamily:"var(--font-sans)"};
 
@@ -660,22 +687,99 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         </div>
       </div>
 
-      {/* Filtro mes */}
-      <div style={{display:"flex",gap:"8px",marginBottom:"18px",flexWrap:"wrap"}}>
-        {allMonths.map(m => (
-          <button key={m} onClick={()=>setSelMonth(m)} style={{padding:"6px 16px",borderRadius:"20px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",background:selMonth===m?"#2ee6a0":"rgba(255,255,255,0.05)",color:selMonth===m?"#000":"#888",fontFamily:"var(--font-sans)"}}>{formatMonthLabel(m)}</button>
-        ))}
+      {/* Esta semana: um cartão por dia; dias anteriores ficam no Histórico */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",marginBottom:"14px",flexWrap:"wrap"}}>
+        <div>
+          <p className="mtp-section-title" style={{fontSize:"15px"}}>Esta semana <span style={{color:"var(--text-3)",fontWeight:"600"}}>· {rotuloSemana(segunda)}</span></p>
+          {semanaAtual.numTrades > 0 && (
+            <p style={{margin:"6px 0 0",fontSize:"13px",color:"var(--text-3)"}}>
+              {semanaAtual.numTrades} trade{semanaAtual.numTrades!==1?"s":""}
+              {semanaAtual.winRate!==null && <> · <span style={{color:"#2ee6a0",fontWeight:"600"}}>{semanaAtual.winRate}% acerto</span></>} ·{" "}
+              <b style={{fontFamily:"var(--font-mono)",color:semanaAtual.total>=0?"#2ee6a0":"#ff5470"}}>{semanaAtual.total>=0?"+":"-"}R$ {Math.abs(semanaAtual.total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b>
+            </p>
+          )}
+        </div>
+        {setPagina && (
+          <button type="button" onClick={()=>setPagina("historico")} className="mtp-btn-sec" style={{minHeight:"34px",borderRadius:"20px"}}>
+            Ver semanas anteriores no Histórico
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        )}
       </div>
 
-      {/* Lista dias */}
-      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-        {monthDays.map(([ds, entry]) => {
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:"12px"}}>
+        {diasDaSemana.map(ds => {
+          const e = entries[ds];
+          const futuro = ds > today, hoje = ds === today;
+          const nome = DIAS_SEMANA[new Date(ds+"T12:00").getDay()];
+          if (!e) {
+            // Dia sem registro: clicar leva o formulário para esse dia
+            return (
+              <button key={ds} type="button" disabled={futuro} onClick={()=>{ setSelectedDate(ds); window.scrollTo({top:0,behavior:"smooth"}); }}
+                title={futuro ? "" : "Registrar este dia"}
+                style={{borderRadius:"16px",border:"1px dashed "+(hoje?"#2ee6a055":"var(--line)"),background:"transparent",padding:"16px",minHeight:"128px",display:"flex",flexDirection:"column",gap:"6px",textAlign:"left",cursor:futuro?"default":"pointer",opacity:futuro?0.4:0.75,fontFamily:"var(--font-sans)",color:"inherit"}}>
+                <span style={{color:hoje?"#2ee6a0":"var(--text-2)",fontSize:"13px",fontWeight:"700"}}>{hoje ? "Hoje" : nome} <span style={{color:"var(--text-3)",fontWeight:"600"}}>{ds.slice(8)}</span></span>
+                <span style={{color:"var(--text-3)",fontSize:"12px",marginTop:"auto"}}>{futuro ? "—" : "Sem registro · registrar"}</span>
+              </button>
+            );
+          }
+          const v = totalDia(e), cor = v>0?"#2ee6a0":v<0?"#ff5470":"#86978f";
+          const trs = e.trades || [];
+          const wr = trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length / trs.length * 100) : null;
+          return (
+            <button key={ds} type="button" className="mtp-est-card" onClick={()=>setDiaModal(ds)} title="Ver o dia"
+              style={{borderRadius:"16px",border:"1px solid "+(hoje?cor+"55":"var(--line)"),background:"linear-gradient(180deg,"+cor+"10,transparent 70%), var(--card)",padding:"16px",minHeight:"128px",display:"flex",flexDirection:"column",gap:"6px",textAlign:"left",cursor:"pointer",position:"relative",overflow:"hidden",fontFamily:"var(--font-sans)",color:"inherit"}}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+cor+",transparent 75%)"}}/>
+              <span style={{color:hoje?"#2ee6a0":"var(--text)",fontSize:"13px",fontWeight:"700"}}>{hoje ? "Hoje" : nome} <span style={{color:"var(--text-3)",fontWeight:"600"}}>{ds.slice(8)}</span></span>
+              <span style={{color:cor,fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)",marginTop:"auto",whiteSpace:"nowrap"}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+              <span style={{color:"var(--text-3)",fontSize:"12px"}}>
+                {trs.length} trade{trs.length!==1?"s":""}{wr!==null && <> · <span style={{color:wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470",fontWeight:"600"}}>{wr}%</span></>}
+              </span>
+              {e.emocoes?.length > 0 && <span style={{color:EMOCAO_COLORS[e.emocoes[0]]||"#888",fontSize:"11.5px",fontWeight:"600"}}>{e.emocoes[0]}{e.emocoes.length>1 ? " +"+(e.emocoes.length-1) : ""}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Semana aberta: dias em abas, o dia escolhido mostra emoções, operações e observação */}
+      {semanaAberta && diaAberto && (
+        <Modal onClose={()=>setDiaModal(null)} width={880}>
+          <div style={{padding:"22px 24px 24px",display:"flex",flexDirection:"column",gap:"18px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"14px"}}>
+              <div style={{minWidth:0}}>
+                <p style={{margin:0,color:"var(--text-3)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1.4px",fontWeight:"700"}}>Esta semana</p>
+                <p style={{margin:"4px 0 0",color:"var(--text)",fontSize:"19px",fontWeight:"800"}}>{rotuloSemana(semanaAberta.chave)}</p>
+                <p style={{margin:"6px 0 0",color:"var(--text-3)",fontSize:"13px"}}>
+                  {semanaAberta.dias.length} {semanaAberta.dias.length===1?"dia":"dias"} · {semanaAberta.numTrades} trade{semanaAberta.numTrades!==1?"s":""}
+                  {semanaAberta.winRate!==null && <> · <span style={{color:"#2ee6a0",fontWeight:"600"}}>{semanaAberta.winRate}% acerto</span></>} ·{" "}
+                  <b style={{fontFamily:"var(--font-mono)",color:semanaAberta.total>=0?"#2ee6a0":"#ff5470"}}>{semanaAberta.total>=0?"+":"-"}R$ {Math.abs(semanaAberta.total).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b>
+                </p>
+              </div>
+              <button onClick={()=>setDiaModal(null)} className="mtp-drawer-close" aria-label="Fechar">×</button>
+            </div>
+
+            {/* Abas dos dias, em ordem cronológica */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(112px,1fr))",gap:"8px"}}>
+              {[...semanaAberta.dias].reverse().map(([ds,e])=>{
+                const v = totalDia(e), on = ds === diaAberto[0];
+                const cor = v>0?"#2ee6a0":v<0?"#ff5470":"#86978f";
+                return (
+                  <button key={ds} type="button" onClick={()=>setDiaModal(ds)} aria-pressed={on}
+                    style={{padding:"10px 12px",borderRadius:"12px",border:"1px solid "+(on?cor+"77":"var(--line)"),background:on?cor+"14":"rgba(255,255,255,0.02)",cursor:"pointer",textAlign:"left",fontFamily:"var(--font-sans)",display:"flex",flexDirection:"column",gap:"4px"}}>
+                    <span style={{color:on?"var(--text)":"var(--text-2)",fontSize:"12.5px",fontWeight:"700"}}>{ds===today?"Hoje":DIAS_SEMANA[new Date(ds+"T12:00").getDay()]+" "+ds.slice(8)}</span>
+                    <span style={{color:cor,fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                    <span style={{color:"var(--text-3)",fontSize:"11.5px"}}>{(e.trades||[]).length} trade{(e.trades||[]).length!==1?"s":""}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+        {[diaAberto].map(([ds, entry]) => {
           const isToday = ds === today;
-          const isOpen  = expanded === ds;
           const total   = (entry.totalB3||0)+(entry.totalForex||0)+(entry.totalCripto||0);
           return (
             <div key={ds} style={{borderRadius:"14px",overflow:"hidden",border:"1px solid "+(isToday?"#2ee6a022":"#18241f"),background:"var(--card)"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px",cursor:"pointer"}} onClick={()=>setExpanded(isOpen?null:ds)}>
+              <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px"}}>
                 <div style={{minWidth:"100px"}}>
                   <p style={{margin:0,color:isToday?"#2ee6a0":"#ccc",fontSize:"13px",fontWeight:"600"}}>{isToday?"Hoje":formatDateFull(ds)}</p>
                 </div>
@@ -690,7 +794,6 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   <button title="Apagar o dia inteiro" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar o dia "+formatDateFull(ds)+"?",texto:"Isso apaga "+((entries[ds]?.trades||[]).length)+" operação(ões), as emoções e a observação desse dia. Não dá para desfazer.",botao:"Apagar dia",acao:()=>deleteEntry(ds)});}} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
                 </div>
               </div>
-              {isOpen && (
                 <div style={{borderTop:"1px solid #18241f",padding:"16px 18px"}}>
                   {entry.emocoes?.length>0 && (
                     <div style={{marginBottom:"14px"}}>
@@ -808,14 +911,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                     </div>
                   )}
                 </div>
-              )}
             </div>
           );
         })}
-        {monthDays.length===0&&(
-          <div style={{textAlign:"center",padding:"48px 20px",color:"#6f8179",fontSize:"14px"}}>Nenhum registro em {formatMonthLabel(selMonth)}.</div>
-        )}
-      </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Image Editor Modal */}
       {editorImg && (

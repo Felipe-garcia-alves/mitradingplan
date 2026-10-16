@@ -42,6 +42,17 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
   }
   if(week.days.length>0){ while(week.days.length<7) week.days.push(null); weeks.push(week); }
 
+  // Totais da semana e do mês, respeitando os filtros de mercado e estratégia
+  const filtrados = e => (e?.trades||[]).filter(t=>(filtroMercado==="todos"||t.mercado===filtroMercado)&&(filtroEst==="todas"||t.estrategia===filtroEst));
+  const resumo = cells => {
+    const trs = cells.filter(Boolean).flatMap(c => filtrados(c.e));
+    const dias = cells.filter(c => c && filtrados(c.e).length).length;
+    return { dias, trades: trs.length, total: trs.reduce((s,t)=>s+(t.resultado||0),0), wr: trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length/trs.length*100) : null };
+  };
+  const resumoMes = resumo(weeks.flatMap(w => w.days));
+  const brl = v => (v>=0?"+":"-")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const COLUNAS = "repeat(7,minmax(0,1fr)) minmax(0,1.1fr)";
+
   // Edit functions
   function startEdit() {
     if (!selEntry) return;
@@ -109,7 +120,16 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
         <button onClick={prevMonth} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",width:"40px",height:"40px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#a3b2ab"}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <h2 style={{margin:0,color:"#f0f0f0",fontSize:"18px",fontWeight:"700"}}>{MONTH_NAMES[month]} {year}</h2>
+        <div style={{textAlign:"center"}}>
+          <h2 style={{margin:0,color:"#f0f0f0",fontSize:"18px",fontWeight:"700"}}>{MONTH_NAMES[month]} {year}</h2>
+          {resumoMes.trades > 0 && (
+            <p style={{margin:"5px 0 0",color:"#86978f",fontSize:"12.5px"}}>
+              {resumoMes.dias} dia{resumoMes.dias!==1?"s":""} · {resumoMes.trades} trade{resumoMes.trades!==1?"s":""}
+              {resumoMes.wr!==null && <> · <span style={{color:resumoMes.wr>=60?"#2ee6a0":resumoMes.wr>=40?"#f59e0b":"#ff5470",fontWeight:"700"}}>{resumoMes.wr}% acerto</span></>} ·{" "}
+              <b style={{fontFamily:"var(--font-mono)",color:resumoMes.total>=0?"#2ee6a0":"#ff5470"}}>{brl(resumoMes.total)}</b>
+            </p>
+          )}
+        </div>
         <button onClick={nextMonth} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",width:"40px",height:"40px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#a3b2ab"}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -129,14 +149,14 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
       {/* Calendar */}
       <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px",marginBottom:"24px"}}>
         {/* Header dias */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"8px",marginBottom:"12px"}}>
-          {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
-            <div key={d} style={{textAlign:"center",color:"#7a8c84",fontSize:"12px",fontWeight:"700",padding:"4px 0",letterSpacing:"0.5px"}}>{d}</div>
+        <div style={{display:"grid",gridTemplateColumns:COLUNAS,gap:"8px",marginBottom:"12px"}}>
+          {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb","Semana"].map(d=>(
+            <div key={d} style={{textAlign:"center",color:d==="Semana"?"#a3b2ab":"#7a8c84",fontSize:"12px",fontWeight:"700",padding:"4px 0",letterSpacing:"0.5px"}}>{d}</div>
           ))}
         </div>
         {/* Weeks */}
         {weeks.map((w,wi)=>(
-          <div key={wi} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"8px",marginBottom:"8px"}}>
+          <div key={wi} style={{display:"grid",gridTemplateColumns:COLUNAS,gap:"8px",marginBottom:"8px"}}>
             {w.days.map((cell,ci)=>{
               if (!cell) return <div key={ci} style={{minHeight:"110px"}}/>;
               const {d,k,e} = cell;
@@ -164,6 +184,19 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
                 </div>
               );
             })}
+            {(() => {
+              const r = resumo(w.days);
+              const cor = r.total>=0?"#2ee6a0":"#ff5470";
+              return (
+                <div style={{borderRadius:"12px",border:"1px solid "+(r.trades?cor+"33":"#18241f"),background:r.trades?"rgba(255,255,255,0.025)":"transparent",padding:"10px 8px",minHeight:"90px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"5px",textAlign:"center"}}>
+                  {r.trades ? <>
+                    <p style={{margin:0,color:cor,fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{r.total>=0?"+":"-"}R${Math.abs(r.total)<1000?Math.abs(r.total).toFixed(0):(Math.abs(r.total)/1000).toFixed(1)+"k"}</p>
+                    <p style={{margin:0,color:"#a3b2ab",fontSize:"11px"}}>{r.trades} trade{r.trades!==1?"s":""}</p>
+                    {r.wr!==null && <p style={{margin:0,color:r.wr>=60?"#2ee6a0":r.wr>=40?"#f59e0b":"#ff5470",fontSize:"11px",fontWeight:"700"}}>{r.wr}%</p>}
+                  </> : <p style={{margin:0,color:"#3d4a44",fontSize:"12px"}}>—</p>}
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>
