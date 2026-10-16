@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Select } from "../components/ui";
+import { semanasUteis, DIAS_UTEIS } from "../lib/datas";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
@@ -22,25 +23,13 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
   function prevMonth() { if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }
   function nextMonth() { if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }
 
-  const firstDay  = new Date(year,month,1).getDay();
-  const daysInMon = new Date(year,month+1,0).getDate();
   const selEntry  = sel ? entries[sel] : null;
 
   // Build weeks
-  const weeks = [];
-  let week = { days:[], wins:0, losses:0 };
-  for (let i=0;i<firstDay;i++) week.days.push(null);
-  for (let d=1;d<=daysInMon;d++) {
-    const k = dayKey(year,month,d);
-    const e = entries[k];
-    if (e) {
-      const tot=(e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0)+(e.totalAmericano||0);
-      if(tot>0) week.wins++; else if(tot<0) week.losses++;
-    }
-    week.days.push({d,k,e});
-    if(week.days.length===7){ weeks.push(week); week={days:[],wins:0,losses:0}; }
-  }
-  if(week.days.length>0){ while(week.days.length<7) week.days.push(null); weeks.push(week); }
+  // Só dias úteis (seg a sex)
+  const weeks = semanasUteis(year, month).map(sem => ({
+    days: sem.map(d => d === null ? null : { d, k: dayKey(year,month,d), e: entries[dayKey(year,month,d)] }),
+  }));
 
   // Totais da semana e do mês, respeitando os filtros de mercado e estratégia
   const filtrados = e => (e?.trades||[]).filter(t=>(filtroMercado==="todos"||t.mercado===filtroMercado)&&(filtroEst==="todas"||t.estrategia===filtroEst));
@@ -51,7 +40,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
   };
   const resumoMes = resumo(weeks.flatMap(w => w.days));
   const brl = v => (v>=0?"+":"-")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  const COLUNAS = "repeat(7,minmax(0,1fr)) minmax(0,1.1fr)";
+  const COLUNAS = "repeat(5,minmax(0,1fr)) minmax(0,1.1fr)";
 
   // Edit functions
   function startEdit() {
@@ -150,7 +139,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
       <div style={{background:"var(--card)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px",marginBottom:"24px"}}>
         {/* Header dias */}
         <div style={{display:"grid",gridTemplateColumns:COLUNAS,gap:"8px",marginBottom:"12px"}}>
-          {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb","Semana"].map(d=>(
+          {[...DIAS_UTEIS,"Semana"].map(d=>(
             <div key={d} style={{textAlign:"center",color:d==="Semana"?"#a3b2ab":"#7a8c84",fontSize:"12px",fontWeight:"700",padding:"4px 0",letterSpacing:"0.5px"}}>{d}</div>
           ))}
         </div>
@@ -158,7 +147,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
         {weeks.map((w,wi)=>(
           <div key={wi} style={{display:"grid",gridTemplateColumns:COLUNAS,gap:"8px",marginBottom:"8px"}}>
             {w.days.map((cell,ci)=>{
-              if (!cell) return <div key={ci} style={{minHeight:"110px"}}/>;
+              if (!cell) return <div key={ci} style={{minHeight:"96px"}}/>;
               const {d,k,e} = cell;
               const isToday = d===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
               const tradesDodia = (e?.trades||[]).filter(t=>(filtroMercado==="todos"||t.mercado===filtroMercado)&&(filtroEst==="todas"||t.estrategia===filtroEst));
@@ -171,16 +160,14 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
               const bg = isSel ? (tot>=0?"rgba(46,230,160,0.2)":"rgba(255,84,112,0.2)") : hasTrades ? (tot>=0?"rgba(46,230,160,0.08)":"rgba(255,84,112,0.08)") : "rgba(255,255,255,0.01)";
               const border = isSel ? (tot>=0?"2px solid #2ee6a0":"2px solid #ff5470") : isToday?"2px solid #2ee6a044":hasTrades?(tot>=0?"1px solid #2ee6a022":"1px solid #ff547022"):"1px solid #18241f";
               return (
-                <div key={ci} onClick={()=>{ setSel(isSel?null:k); setEditMode(false); }} style={{borderRadius:"12px",background:bg,border,padding:"10px 8px",cursor:hasTrades?"pointer":"default",transition:"all 0.15s",minHeight:"90px",display:"flex",flexDirection:"column",alignItems:"center",gap:"6px"}}>
-                  <p style={{margin:0,color:isToday?"#2ee6a0":hasTrades?"#f0f0f0":"#555",fontSize:"15px",fontWeight:isToday?"800":"700",textAlign:"center"}}>{d}</p>
-                  {hasTrades && (
-                    <div style={{textAlign:"center",width:"100%",display:"flex",flexDirection:"column",gap:"6px"}}>
-                      <p style={{margin:0,color:"#a3b2ab",fontSize:"11px",fontWeight:"500"}}>{numTrades} trade{numTrades!==1?"s":""}</p>
-                      {wrDodia!==null&&<p style={{margin:0,color:wrDodia>=60?"#2ee6a0":wrDodia>=40?"#f59e0b":"#ff5470",fontSize:"11px",fontWeight:"700"}}>{wrDodia}% acerto</p>}
-                      {tot!==null&&<p style={{margin:0,color:tot>=0?"#2ee6a0":"#ff5470",fontSize:"12px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{tot>=0?"+":""}R${Math.abs(tot)<1000?tot.toFixed(0):(tot/1000).toFixed(1)+"k"}</p>}
-                      {e.emocoes?.length>0&&<p style={{margin:0,color:EMOCAO_COLORS[e.emocoes[0]]||"#777",fontSize:"11px"}}>{e.emocoes[0]}</p>}
-                    </div>
-                  )}
+                <div key={ci} className={"mtp-cal-dia"+(hasTrades?" tem":"")+(isToday?" hoje":"")} onClick={()=>{ if (!hasTrades) return; setSel(isSel?null:k); setEditMode(false); }}
+                  style={{background:bg,border,minHeight:"96px"}}>
+                  <span className="mtp-cal-num">{d}</span>
+                  {hasTrades && <>
+                    <span className="mtp-cal-valor" style={{color:tot>=0?"#2ee6a0":"#ff5470",fontSize:"15px"}}>{tot>=0?"+":"-"}R${Math.abs(tot)<1000?Math.abs(tot).toFixed(0):(Math.abs(tot)/1000).toFixed(1)+"k"}</span>
+                    <span className="mtp-cal-sub">{numTrades} trade{numTrades!==1?"s":""}{wrDodia!==null && <> · <b style={{color:wrDodia>=60?"#2ee6a0":wrDodia>=40?"#f59e0b":"#ff5470"}}>{wrDodia}%</b></>}</span>
+                    {e.emocoes?.length>0 && <span className="mtp-cal-sub" style={{color:EMOCAO_COLORS[e.emocoes[0]]||"#777"}}>{e.emocoes[0]}</span>}
+                  </>}
                 </div>
               );
             })}
@@ -188,12 +175,11 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
               const r = resumo(w.days);
               const cor = r.total>=0?"#2ee6a0":"#ff5470";
               return (
-                <div style={{borderRadius:"12px",border:"1px solid "+(r.trades?cor+"33":"#18241f"),background:r.trades?"rgba(255,255,255,0.025)":"transparent",padding:"10px 8px",minHeight:"90px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"5px",textAlign:"center"}}>
+                <div className="mtp-cal-dia" style={{border:"1px solid "+(r.trades?cor+"44":"#18241f"),background:r.trades?"rgba(255,255,255,0.03)":"transparent",minHeight:"96px"}}>
                   {r.trades ? <>
-                    <p style={{margin:0,color:cor,fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{r.total>=0?"+":"-"}R${Math.abs(r.total)<1000?Math.abs(r.total).toFixed(0):(Math.abs(r.total)/1000).toFixed(1)+"k"}</p>
-                    <p style={{margin:0,color:"#a3b2ab",fontSize:"11px"}}>{r.trades} trade{r.trades!==1?"s":""}</p>
-                    {r.wr!==null && <p style={{margin:0,color:r.wr>=60?"#2ee6a0":r.wr>=40?"#f59e0b":"#ff5470",fontSize:"11px",fontWeight:"700"}}>{r.wr}%</p>}
-                  </> : <p style={{margin:0,color:"#3d4a44",fontSize:"12px"}}>—</p>}
+                    <span className="mtp-cal-valor" style={{color:cor,fontSize:"15px"}}>{r.total>=0?"+":"-"}R${Math.abs(r.total)<1000?Math.abs(r.total).toFixed(0):(Math.abs(r.total)/1000).toFixed(1)+"k"}</span>
+                    <span className="mtp-cal-sub">{r.trades} trade{r.trades!==1?"s":""}{r.wr!==null && <> · <b style={{color:r.wr>=60?"#2ee6a0":r.wr>=40?"#f59e0b":"#ff5470"}}>{r.wr}%</b></>}</span>
+                  </> : <span className="mtp-cal-sub" style={{color:"#3d4a44"}}>—</span>}
                 </div>
               );
             })()}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Confirmar, CountUp, Ring, Sparkline } from "../components/ui";
+import { semanasUteis, DIAS_UTEIS } from "../lib/datas";
 
 const kCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px",minWidth:0,minHeight:"124px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"8px"};
 const kLabel = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
@@ -61,8 +62,6 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const month       = now.getMonth();
   const [calMes, setCalMes] = useState({ ano: year, mes: month });
   const noMesAtual  = calMes.ano === year && calMes.mes === month;
-  const firstDay    = new Date(calMes.ano,calMes.mes,1).getDay();
-  const daysInMon   = new Date(calMes.ano,calMes.mes+1,0).getDate();
   const calKey      = (d) => calMes.ano+"-"+String(calMes.mes+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
   const mudarMes    = delta => setCalMes(c => {
     const d = new Date(c.ano, c.mes + delta, 1);
@@ -422,14 +421,14 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
                   })}
                 </div>}
           </div>
-          {/* Últimos 14 dias: preenche a coluna e mostra o ritmo recente */}
+          {/* Últimos 10 dias úteis (duas semanas de pregão): preenche a coluna e mostra o ritmo recente */}
           <div style={{flex:1,background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px",display:"flex",flexDirection:"column",minHeight:"200px"}}>
-            <p className="mtp-section-title" style={{marginBottom:"4px"}}>Últimos 14 dias</p>
+            <p className="mtp-section-title" style={{marginBottom:"4px"}}>Últimos 10 dias úteis</p>
             <p style={{margin:"0 0 14px",color:"var(--text-3)",fontSize:"12px"}}>disciplina registrada por dia</p>
             {(() => {
               const dias = [];
               let k = today;
-              for (let i = 0; i < 14; i++) { dias.unshift(k); k = menosUmDia(k); }
+              for (let n = 0; n < 14 && dias.length < 10; n++) { const dw = new Date(k+"T12:00:00").getDay(); if (dw !== 0 && dw !== 6) dias.unshift(k); k = menosUmDia(k); }
               const algum = dias.some(d => valorDia(d) !== null);
               if (!algum) return <p style={{margin:"auto 0",color:"var(--text-3)",fontSize:"12.5px",textAlign:"center"}}>Nenhum dia registrado nas últimas duas semanas.</p>;
               return (
@@ -437,10 +436,9 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
                   {dias.map(d => {
                     const v = valorDia(d);
                     const dt = new Date(d+"T12:00:00");
-                    const fds = dt.getDay()===0 || dt.getDay()===6;
                     return (
                       <div key={d} title={formatDateFull(d)+(v!==null?" · "+v+"%":" · sem registro")} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",height:"100%",justifyContent:"flex-end"}}>
-                        <div style={{width:"100%",maxWidth:"18px",height:v!==null?Math.max(6,v)+"%":"4px",borderRadius:"4px",background:v!==null?"linear-gradient(180deg,"+corPct(v)+","+corPct(v)+"66)":"var(--line)",boxShadow:v!==null?"0 0 8px "+corPct(v)+"55":"none",opacity:fds&&v===null?0.4:1}}/>
+                        <div style={{width:"100%",maxWidth:"18px",height:v!==null?Math.max(6,v)+"%":"4px",borderRadius:"4px",background:v!==null?"linear-gradient(180deg,"+corPct(v)+","+corPct(v)+"66)":"var(--line)",boxShadow:v!==null?"0 0 8px "+corPct(v)+"55":"none"}}/>
                         <span style={{fontSize:"9.5px",fontFamily:"var(--font-mono)",color:d===today?"var(--text)":"var(--text-3)"}}>{dt.getDate()}</span>
                       </div>
                     );
@@ -492,15 +490,15 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               return <button key={m} onClick={()=>setCalMes({ano:a,mes:mm-1})} className={"mtp-pill"+(ativo?" active":"")} style={{padding:"2px 9px",fontSize:"11px"}}>{MONTH_NAMES[mm-1]} {String(a).slice(2)}</button>;
             })}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px",marginBottom:"6px"}}>
-            {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"6px",marginBottom:"6px"}}>
+            {DIAS_UTEIS.map(d=>(
               <div key={d} style={{textAlign:"center",color:"var(--text-3)",fontSize:"10px",fontWeight:"700",letterSpacing:".5px"}}>{d}</div>
             ))}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"6px"}}>
-            {Array.from({length:firstDay}).map((_,i)=><div key={"e"+i}/>)}
-            {Array.from({length:daysInMon}).map((_,i)=>{
-              const d=i+1, k=calKey(d), isToday=k===today, future=k>today;
+          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"6px"}}>
+            {semanasUteis(calMes.ano,calMes.mes).flat().map((d,i)=>{
+              if (d===null) return <div key={"e"+i}/>;
+              const k=calKey(d), isToday=k===today, future=k>today;
               const v = valorDia(k);
               const cor = v===null ? null : corPct(v);
               const alpha = v===null ? 0 : 0.10 + (v/100)*0.22;
@@ -508,12 +506,12 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               const res = resultadoDoDia(k);
               const quebradas = v!==null && detalhes[k] ? regrasList.filter(r=>!detalhes[k][r.id]).map(r=>r.title) : [];
               return (
-                <div key={d} className={"mtp-cal-dia"+(v!==null?" tem":"")}
+                <div key={d} className={"mtp-cal-dia"+(v!==null?" tem":"")+(isToday?" hoje":"")}
                   style={{background:bg,border:isToday?"1.5px solid #2ee6a088":"1px solid "+(v!==null?cor+"33":"var(--line)"),opacity:future?0.35:1}}
                   onClick={()=>pedirApagarDia(k)}>
-                  <span style={{fontSize:"13px",fontWeight:isToday?800:600,color:isToday?"#fff":"var(--text-2)"}}>{d}</span>
-                  {v!==null && <span style={{fontSize:"12px",fontWeight:800,fontFamily:"var(--font-mono)",color:cor}}>{v}%</span>}
-                  {res!==null && res!==0 && <span style={{fontSize:"10px",fontFamily:"var(--font-mono)",color:res>=0?"#3fe8a8":"#ff7a90",opacity:.85}}>{res>=0?"+":"-"}{Math.abs(res)>=1000?(Math.abs(res)/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+"k":Math.round(Math.abs(res))}</span>}
+                  <span className="mtp-cal-num">{d}</span>
+                  {v!==null && <span className="mtp-cal-valor" style={{color:cor}}>{v}%</span>}
+                  {res!==null && res!==0 && <span className="mtp-cal-sub" style={{fontFamily:"var(--font-mono)",color:res>=0?"#3fe8a8":"#ff7a90"}}>{res>=0?"+":"-"}{Math.abs(res)>=1000?(Math.abs(res)/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+"k":Math.round(Math.abs(res))}</span>}
                   {v!==null && (
                     <div className="mtp-cal-tip">
                       <b style={{color:"var(--text)"}}>{formatDateFull(k)}</b> · <span style={{color:cor}}>{v}% disciplina</span>

@@ -26,10 +26,10 @@ function inicioDaSemana(s) {
   dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
   return chaveDe(dt);
 }
-// "13 – 19 out"
+// "12 – 16 out" (segunda a sexta)
 function rotuloSemana(seg) {
   const [a,m,d] = seg.split("-").map(Number);
-  const fim = new Date(a, m-1, d+6);
+  const fim = new Date(a, m-1, d+4);
   const mes = i => MONTH_NAMES[i].slice(0,3).toLowerCase();
   return fim.getMonth() === m-1 ? d+" – "+fim.getDate()+" "+mes(m-1) : d+" "+mes(m-1)+" – "+fim.getDate()+" "+mes(fim.getMonth());
 }
@@ -407,12 +407,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
   const totalDia = e => (e.totalB3||0)+(e.totalForex||0)+(e.totalCripto||0);
 
-  // Semana atual (segunda a domingo). O passado fica no Histórico.
+  // Semana atual, só dias úteis (seg a sex). O passado fica no Histórico.
   const segunda = inicioDaSemana(today);
-  const diasDaSemana = Array.from({length:7}, (_, i) => {
+  const diasDaSemana = Array.from({length:5}, (_, i) => {
     const [a,m,d] = segunda.split("-").map(Number);
     return chaveDe(new Date(a, m-1, d+i));
-  }).filter((ds, i) => i < 5 || entries[ds]); // sábado e domingo só se tiverem registro
+  });
   const semanaAtual = { chave: segunda, dias: diasDaSemana.filter(ds => entries[ds]).reverse().map(ds => [ds, entries[ds]]) };
   {
     const trs = semanaAtual.dias.flatMap(([,e]) => e.trades || []);
@@ -707,19 +707,20 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         )}
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:"12px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:"12px"}}>
         {diasDaSemana.map(ds => {
           const e = entries[ds];
           const futuro = ds > today, hoje = ds === today;
-          const nome = DIAS_SEMANA[new Date(ds+"T12:00").getDay()];
+          const nome = hoje ? "Hoje" : DIAS_SEMANA[new Date(ds+"T12:00").getDay()];
           if (!e) {
             // Dia sem registro: clicar leva o formulário para esse dia
             return (
               <button key={ds} type="button" disabled={futuro} onClick={()=>{ setSelectedDate(ds); window.scrollTo({top:0,behavior:"smooth"}); }}
-                title={futuro ? "" : "Registrar este dia"}
-                style={{borderRadius:"16px",border:"1px dashed "+(hoje?"#2ee6a055":"var(--line)"),background:"transparent",padding:"16px",minHeight:"128px",display:"flex",flexDirection:"column",gap:"6px",textAlign:"left",cursor:futuro?"default":"pointer",opacity:futuro?0.4:0.75,fontFamily:"var(--font-sans)",color:"inherit"}}>
-                <span style={{color:hoje?"#2ee6a0":"var(--text-2)",fontSize:"13px",fontWeight:"700"}}>{hoje ? "Hoje" : nome} <span style={{color:"var(--text-3)",fontWeight:"600"}}>{ds.slice(8)}</span></span>
-                <span style={{color:"var(--text-3)",fontSize:"12px",marginTop:"auto"}}>{futuro ? "—" : "Sem registro · registrar"}</span>
+                title={futuro ? "" : "Registrar este dia"} className={"mtp-cal-dia"+(futuro?"":" tem")+(hoje?" hoje":"")}
+                style={{border:"1px dashed "+(hoje?"#2ee6a055":"var(--line)"),background:"transparent",minHeight:"118px",opacity:futuro?0.4:0.8}}>
+                <span className="mtp-cal-rot">{nome}</span>
+                <span className="mtp-cal-num">{+ds.slice(8)}</span>
+                <span className="mtp-cal-sub">{futuro ? "—" : "+ registrar"}</span>
               </button>
             );
           }
@@ -727,15 +728,13 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           const trs = e.trades || [];
           const wr = trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length / trs.length * 100) : null;
           return (
-            <button key={ds} type="button" className="mtp-est-card" onClick={()=>setDiaModal(ds)} title="Ver o dia"
-              style={{borderRadius:"16px",border:"1px solid "+(hoje?cor+"55":"var(--line)"),background:"linear-gradient(180deg,"+cor+"10,transparent 70%), var(--card)",padding:"16px",minHeight:"128px",display:"flex",flexDirection:"column",gap:"6px",textAlign:"left",cursor:"pointer",position:"relative",overflow:"hidden",fontFamily:"var(--font-sans)",color:"inherit"}}>
-              <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+cor+",transparent 75%)"}}/>
-              <span style={{color:hoje?"#2ee6a0":"var(--text)",fontSize:"13px",fontWeight:"700"}}>{hoje ? "Hoje" : nome} <span style={{color:"var(--text-3)",fontWeight:"600"}}>{ds.slice(8)}</span></span>
-              <span style={{color:cor,fontSize:"18px",fontWeight:"800",fontFamily:"var(--font-mono)",marginTop:"auto",whiteSpace:"nowrap"}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-              <span style={{color:"var(--text-3)",fontSize:"12px"}}>
-                {trs.length} trade{trs.length!==1?"s":""}{wr!==null && <> · <span style={{color:wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470",fontWeight:"600"}}>{wr}%</span></>}
-              </span>
-              {e.emocoes?.length > 0 && <span style={{color:EMOCAO_COLORS[e.emocoes[0]]||"#888",fontSize:"11.5px",fontWeight:"600"}}>{e.emocoes[0]}{e.emocoes.length>1 ? " +"+(e.emocoes.length-1) : ""}</span>}
+            <button key={ds} type="button" onClick={()=>setDiaModal(ds)} title="Ver o dia" className={"mtp-cal-dia tem"+(hoje?" hoje":"")}
+              style={{border:"1px solid "+cor+(hoje?"66":"33"),background:"linear-gradient(180deg,"+cor+"14,"+cor+"05)",minHeight:"118px",overflow:"hidden"}}>
+              <span className="mtp-cal-rot">{nome}</span>
+              <span className="mtp-cal-num">{+ds.slice(8)}</span>
+              <span className="mtp-cal-valor" style={{color:cor,fontSize:"17px"}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+              <span className="mtp-cal-sub">{trs.length} trade{trs.length!==1?"s":""}{wr!==null && <> · <b style={{color:wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470"}}>{wr}%</b></>}</span>
+              {e.emocoes?.length > 0 && <span className="mtp-cal-sub" style={{color:EMOCAO_COLORS[e.emocoes[0]]||"#888",fontWeight:"600"}}>{e.emocoes[0]}{e.emocoes.length>1 ? " +"+(e.emocoes.length-1) : ""}</span>}
             </button>
           );
         })}
@@ -764,11 +763,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 const v = totalDia(e), on = ds === diaAberto[0];
                 const cor = v>0?"#2ee6a0":v<0?"#ff5470":"#86978f";
                 return (
-                  <button key={ds} type="button" onClick={()=>setDiaModal(ds)} aria-pressed={on}
-                    style={{padding:"10px 12px",borderRadius:"12px",border:"1px solid "+(on?cor+"77":"var(--line)"),background:on?cor+"14":"rgba(255,255,255,0.02)",cursor:"pointer",textAlign:"left",fontFamily:"var(--font-sans)",display:"flex",flexDirection:"column",gap:"4px"}}>
-                    <span style={{color:on?"var(--text)":"var(--text-2)",fontSize:"12.5px",fontWeight:"700"}}>{ds===today?"Hoje":DIAS_SEMANA[new Date(ds+"T12:00").getDay()]+" "+ds.slice(8)}</span>
-                    <span style={{color:cor,fontSize:"13px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
-                    <span style={{color:"var(--text-3)",fontSize:"11.5px"}}>{(e.trades||[]).length} trade{(e.trades||[]).length!==1?"s":""}</span>
+                  <button key={ds} type="button" onClick={()=>setDiaModal(ds)} aria-pressed={on} className={"mtp-cal-dia tem"+(ds===today?" hoje":"")}
+                    style={{border:"1px solid "+(on?cor+"88":"var(--line)"),background:on?cor+"18":"rgba(255,255,255,0.02)",minHeight:"78px"}}>
+                    <span className="mtp-cal-rot">{ds===today?"Hoje":DIAS_SEMANA[new Date(ds+"T12:00").getDay()]}</span>
+                    <span className="mtp-cal-num">{+ds.slice(8)}</span>
+                    <span className="mtp-cal-valor" style={{color:cor}}>{v>=0?"+":"-"}R$ {Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                    <span className="mtp-cal-sub">{(e.trades||[]).length} trade{(e.trades||[]).length!==1?"s":""}</span>
                   </button>
                 );
               })}

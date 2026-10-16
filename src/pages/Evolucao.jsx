@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { CountUp, Ring, Sparkline, CapitalChart, DailyBars } from "../components/ui";
 import { listaCarteiras, bancaCarteira } from "../lib/banca";
 import { contaDoTrade, entradaFiltrada } from "../lib/contas";
+import { semanasUteis } from "../lib/datas";
 import FiltrosBarra from "../components/FiltrosBarra";
 import { ativoDoTrade, SEM_ATIVO } from "../lib/ativos";
 
@@ -461,13 +462,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           const mes = hoje.getMonth();
           const mesKey = ano+"-"+String(mes+1).padStart(2,"0");
           const diasOperadosSet = new Set(Object.keys(entries).filter(d=>d.startsWith(mesKey)&&(entries[d].numTrades||0)>0));
-          const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
-          const totalDias = new Date(ano, mes+1, 0).getDate();
-          const celulas = [];
-          for(let i=0;i<primeiroDiaSemana;i++) celulas.push(null);
-          for(let d=1;d<=totalDias;d++) celulas.push(d);
-          const semanas = [];
-          for(let i=0;i<celulas.length;i+=7) semanas.push(celulas.slice(i,i+7));
+          const semanas = semanasUteis(ano, mes);
           return (
             <div onClick={()=>alternar("dias","Dias operados",allTrades,{sub:diasOp+" dias · "+sub(allTrades.length)})} style={{...kpiCard,cursor:"pointer"}}>
               <p style={kpiLabel}>Dias Operados</p>
@@ -476,7 +471,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
                   {semanas.map((sem,si)=>(
                     <div key={si} style={{display:"flex",gap:"3px"}}>
-                      {Array.from({length:7}).map((_,di)=>{
+                      {Array.from({length:5}).map((_,di)=>{
                         const cel = sem[di];
                         if(cel===undefined||cel===null) return <div key={di} style={{width:"6px",height:"6px"}}/>;
                         const dKey = ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(cel).padStart(2,"0");
