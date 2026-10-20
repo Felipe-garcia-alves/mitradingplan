@@ -5,6 +5,17 @@ import { listaContas, contaPadrao, contaDoTrade, TIPOS_CONTA } from "../lib/cont
 import { ATIVOS_SUGERIDOS, opcoesDeAtivo, ativosUsados, normalizarAtivo, rotuloAtivo } from "../lib/ativos";
 import { supabase } from "../supabase";
 import { decodificarArquivo, lerArquivo, jaRegistrada } from "../lib/importar";
+import { custosDaConta, custoPorContrato, comDesconto, semDesconto, recalcularCustos, carteirasB3DoDia, resumoCustos, valorZeragem, semTaxa, r2 } from "../lib/custos";
+import { Check } from "../components/ContaModal";
+import { tradeNaCarteira } from "../lib/banca";
+
+const fmtR = v => Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+// Etiqueta "custos" de uma operação com desconto (bruto no title)
+function TagCustos({ t }) {
+  if (!t.descontaCustos) return null;
+  const m = t.mercado==="B3" ? "R$ " : "$ ";
+  return <span className="mtp-tag" title={"Bruto "+(t.bruto>=0?"+":"-")+m+fmtR(t.bruto)+" · custos "+m+fmtR(t.custos||0)} style={{fontFamily:"var(--font-mono)",color:"#f5b941"}}>custos −{m}{fmtR(t.custos||0)}</span>;
+}
 import ImageEditor, { uploadTradeImage, deleteTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
 
 function todayKey() {
@@ -88,7 +99,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const [emocoes,    setEmocoes]    = useState([]);
   const [observacao, setObservacao] = useState("");
   const [trades,     setTrades]     = useState([]);
-  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:"",conta:contaPadrao(config).id,ativo:ativosUsados(entries,"B3")[0]||"WIN"});
+  const [novoTrade,  setNovoTrade]  = useState({mercado:"B3",resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:"",conta:contaPadrao(config).id,ativo:ativosUsados(entries,"B3")[0]||"WIN",descontar:custosDaConta(config,contaPadrao(config).id).automatico});
   const [pendingImages, setPendingImages] = useState([]);
   const [editingTrade, setEditingTrade] = useState(null); // { dateKey, index, data }
   const [editorImg, setEditorImg]   = useState(null);  // { src, tradeIdx } — editor aberto
@@ -109,7 +120,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   }, [trades.length]);
 
   // Recalcula os totais do dia a partir dos trades (mesma regra do salvar)
+  // e recalcula os custos (taxas, IRRF, zeragem, nota) das operações com desconto
   function montarDia(entry, lista) {
+    lista = recalcularCustos(lista, entry, config);
     const soma = m => lista.filter(t=>t.mercado===m).reduce((s,t)=>s+(t.resultado||0),0);
     const wins = lista.filter(t=>t.tipo==="WIN").length;
     const dia = { ...entry, trades: lista, numTrades: lista.length, totalPts: lista.reduce((s,t)=>s+(t.pontos||0),0) };
@@ -135,6 +148,20 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     }
   }
 
+  // Custos do dia de uma carteira da B3 (zeragem, total da nota): grava e recalcula o dia
+  async function salvarCustosDia(dateKey, cartKey, campos) {
+    const entry = entries[dateKey];
+    if (!entry) return;
+    const atual = { ...(entry.custosDia?.[cartKey] || {}), ...campos };
+    Object.keys(atual).forEach(k => { if (atual[k] === null || atual[k] === undefined) delete atual[k]; });
+    const custosDia = { ...(entry.custosDia || {}) };
+    if (Object.keys(atual).length) custosDia[cartKey] = atual; else delete custosDia[cartKey];
+    const novo = { ...entry, custosDia };
+    if (!Object.keys(custosDia).length) delete novo.custosDia;
+    const ok = await saveEntry(dateKey, montarDia(novo, entry.trades || []));
+    if (ok !== false) { setMsg("✓ Custos do dia atualizados."); setTimeout(()=>setMsg(""), 2500); }
+  }
+
   function startEditTrade(dateKey, index, trade) {
     setEditingTrade({
       dateKey,
@@ -143,7 +170,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         tipo: trade.tipo || "WIN",
         mercado: trade.mercado || "B3",
         pontos: trade.pontos !== undefined && trade.pontos !== null ? String(trade.pontos) : "",
-        resultado: trade.resultado !== undefined && trade.resultado !== null ? String(trade.resultado) : "",
+        resultado: trade.descontaCustos ? String(trade.bruto) : trade.resultado !== undefined && trade.resultado !== null ? String(trade.resultado) : "",
+        contratos: trade.contratos ? String(trade.contratos) : "",
+        descontar: !!trade.descontaCustos,
         estrategia: trade.estrategia || "",
         observacao: trade.observacao || "",
         conta: contaDoTrade(trade),
@@ -157,30 +186,24 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     const { dateKey, index, data } = editingTrade;
     const entry = entries[dateKey];
     if (!entry) return;
+    if (data.descontar && !(parseInt(data.contratos) > 0)) { setMsg("Informe os lotes para calcular os custos."); setTimeout(()=>setMsg(""), 3500); return; }
     const updatedTrades = entry.trades.map((t, i) => {
       if (i !== index) return t;
-      // mantém o resto do trade (fotos, horário, lotes, execução)
-      const updated = { ...t, mercado: data.mercado, tipo: data.tipo, estrategia: data.estrategia || "", observacao: data.observacao || "", conta: data.conta || contaDoTrade(t) };
+      // mantém o resto do trade (fotos, horário, execução)
+      let updated = { ...semDesconto(t), mercado: data.mercado, tipo: data.tipo, estrategia: data.estrategia || "", observacao: data.observacao || "", conta: data.conta || contaDoTrade(t) };
       const ativoEd = normalizarAtivo(data.ativo);
       if (ativoEd) updated.ativo = ativoEd; else delete updated.ativo;
       if (data.pontos !== "") updated.pontos = parseFloat(data.pontos); else delete updated.pontos;
       if (data.resultado !== "") updated.resultado = parseFloat(data.resultado); else delete updated.resultado;
+      updated.contratos = data.contratos !== "" ? parseInt(data.contratos) : null;
+      // com desconto, o resultado digitado é o bruto; mantém a taxa da época se nada mudou
+      if (data.descontar && typeof updated.resultado === "number") {
+        const novo = comDesconto(updated, custosDaConta(config, updated.conta));
+        updated = t.descontaCustos && t.ativo === updated.ativo && contaDoTrade(t) === updated.conta ? { ...novo, custoContrato: t.custoContrato, irrf: t.irrf } : novo;
+      }
       return updated;
     });
-    const totalB3     = updatedTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalForex  = updatedTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalCripto = updatedTrades.filter(t=>t.mercado==="Cripto").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalAmericano = updatedTrades.filter(t=>t.mercado==="Americano").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalPts   = updatedTrades.reduce((s,t)=>s+(t.pontos||0),0);
-    const wins       = updatedTrades.filter(t=>t.tipo==="WIN").length;
-    const winRate    = updatedTrades.length > 0 ? Math.round((wins/updatedTrades.length)*100) : null;
-    const data2 = { ...entry, trades: updatedTrades, numTrades: updatedTrades.length, totalPts };
-    if (totalB3     !== 0) data2.totalB3     = totalB3;     else delete data2.totalB3;
-    if (totalForex  !== 0) data2.totalForex  = totalForex;  else delete data2.totalForex;
-    if (totalCripto !== 0) data2.totalCripto = totalCripto; else delete data2.totalCripto;
-    if (totalAmericano !== 0) data2.totalAmericano = totalAmericano; else delete data2.totalAmericano;
-    if (winRate    !== null) data2.winRate = winRate;
-    await saveEntry(dateKey, data2);
+    await saveEntry(dateKey, montarDia(entry, updatedTrades));
     setEditingTrade(null);
     setMsg("✓ Operação atualizada!"); setTimeout(()=>setMsg(""), 2500);
   }
@@ -243,7 +266,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
   function addTrade() {
     if (!novoTrade.resultado && !novoTrade.pontos) return;
-    const t = {
+    if (novoTrade.descontar && novoTrade.resultado === "") { setMsg("Informe o resultado em dinheiro para descontar os custos."); setTimeout(()=>setMsg(""), 3500); return; }
+    if (novoTrade.descontar && !(parseInt(novoTrade.contratos) > 0)) { setMsg("Informe os lotes para calcular os custos."); setTimeout(()=>setMsg(""), 3500); return; }
+    let t = {
       id: Date.now(),
       mercado: novoTrade.mercado,
       resultado: novoTrade.resultado !== "" ? comSinal(novoTrade.resultado) : null,
@@ -259,8 +284,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       imagens: [],
       _pendingFiles: pendingImages.map(p=>p.file),
     };
+    if (novoTrade.descontar) t = comDesconto(t, custosDaConta(config, t.conta));
     setTrades(prev => [...prev, t]);
-    setNovoTrade(p=>({mercado:p.mercado,ativo:p.ativo,resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:"",conta:p.conta}));
+    setNovoTrade(p=>({mercado:p.mercado,ativo:p.ativo,resultado:"",pontos:"",estrategia:"",tipo:"WIN",observacao:"",horario:"",contratos:"",qualidade:"",conta:p.conta,descontar:p.descontar}));
     setPendingImages([]);
   }
 
@@ -311,7 +337,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   }
 
   // diasInfo: { "2026-10-16": { emocoes:[], observacao:"" } } — o que foi marcado para cada dia na prévia
-  async function salvarImportacao(selecionadas, contaId, diasInfo) {
+  // descontar: aplica os custos da conta às operações da B3 (o Profit exporta o bruto)
+  async function salvarImportacao(selecionadas, contaId, diasInfo, descontar) {
+    const cfgCustos = custosDaConta(config, contaId);
     const porDia = {};
     for (const op of selecionadas) (porDia[op.data] ||= []).push(op);
     let total = 0, falhou = false, fotosFalharam = 0;
@@ -332,7 +360,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           catch (e) { console.error("upload da foto:", e); fotosFalharam++; }
         }
         if (imagens.length) t.imagens = imagens;
-        novos.push(t);
+        novos.push(descontar && t.mercado === "B3" && typeof t.resultado === "number" ? comDesconto(t, cfgCustos) : t);
       }
       const obsNova = (info.observacao||"").trim();
       const obsAntiga = (entry.observacao||"").trim();
@@ -373,33 +401,13 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       if (t.pontos    !== null) tr.pontos    = t.pontos;
       if (imagens.length) tr.imagens = imagens;
       if (t.ativo) tr.ativo = t.ativo;
+      if (t.descontaCustos) Object.assign(tr, { descontaCustos:true, bruto:t.bruto, custoContrato:t.custoContrato, irrf:t.irrf });
       novos.push(tr);
     }
     const allTrades = [...existingTrades, ...novos];
     const mergedEmocoes = [...new Set([...(todayEntry?.emocoes||[]), ...emocoes])];
     const mergedObs = observacao.trim() || todayEntry?.observacao || "";
-
-    const totalB3     = allTrades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalForex  = allTrades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalCripto = allTrades.filter(t=>t.mercado==="Cripto").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalAmericano = allTrades.filter(t=>t.mercado==="Americano").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalPts   = allTrades.reduce((s,t)=>s+(t.pontos||0),0);
-    const wins       = allTrades.filter(t=>t.tipo==="WIN").length;
-    const winRate    = allTrades.length > 0 ? Math.round((wins/allTrades.length)*100) : null;
-
-    const data = {
-      trades: allTrades,
-      emocoes: mergedEmocoes,
-      observacao: mergedObs,
-      numTrades: allTrades.length,
-      totalPts,
-      ts: new Date().toISOString()
-    };
-    if (totalB3     !== 0) data.totalB3     = totalB3;
-    if (totalForex  !== 0) data.totalForex  = totalForex;
-    if (totalCripto !== 0) data.totalCripto = totalCripto;
-    if (totalAmericano !== 0) data.totalAmericano = totalAmericano;
-    if (winRate    !== null) data.winRate = winRate;
+    const data = montarDia({ ...(todayEntry||{}), emocoes: mergedEmocoes, observacao: mergedObs, ts: new Date().toISOString() }, allTrades);
 
     const ok = await saveEntry(selectedDate, data);
     if (ok === false) { setMsg("Não foi possível salvar. Suas operações continuam aqui — tente de novo."); return; }
@@ -458,7 +466,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             {contas.length > 1 && (
               <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                 <span style={{color:"var(--text-3)",fontSize:"12px"}}>Registrando em</span>
-                <Select value={novoTrade.conta} onChange={v=>setNovoTrade(p=>({...p,conta:v}))} popWidth={240} align="right" title="Conta das próximas operações"
+                <Select value={novoTrade.conta} onChange={v=>setNovoTrade(p=>({...p,conta:v,descontar:custosDaConta(config,v).automatico}))} popWidth={240} align="right" title="Conta das próximas operações"
                   style={{minHeight:"32px",padding:"5px 12px",borderRadius:"20px",fontSize:"12.5px"}}
                   options={contas.map(c=>({value:c.id,label:c.nome,cor:TIPOS_CONTA[c.tipo]?.cor,hint:c.padrao?"padrão":""}))}/>
               </div>
@@ -545,6 +553,31 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               );
             })}
           </div>
+
+          {/* Descontar custos: o resultado digitado é o bruto */}
+          {(() => {
+            const cfg = custosDaConta(config, novoTrade.conta);
+            const n = parseInt(novoTrade.contratos) || 0;
+            const custo = r2(n * r2(custoPorContrato(cfg, normalizarAtivo(novoTrade.ativo))));
+            const bruto = novoTrade.resultado !== "" && !isNaN(parseFloat(novoTrade.resultado)) ? comSinal(novoTrade.resultado) : null;
+            const m = novoTrade.mercado==="B3" ? "R$ " : "$ ";
+            return (
+              <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap",marginTop:"14px"}}>
+                <div onClick={()=>setNovoTrade(p=>({...p,descontar:!p.descontar}))} style={{display:"flex",alignItems:"center",gap:"9px",cursor:"pointer",userSelect:"none"}}>
+                  <Check marcado={novoTrade.descontar}/>
+                  <span style={{color:"var(--text-2)",fontSize:"13px"}}>Descontar custos</span>
+                </div>
+                {novoTrade.descontar && (
+                  <span style={{color:"var(--text-3)",fontSize:"12.5px",fontFamily:"var(--font-mono)"}}>
+                    {semTaxa(cfg, normalizarAtivo(novoTrade.ativo))
+                      ? <span style={{color:"#f5b941",fontFamily:"var(--font-sans)"}}>Sem taxa para {normalizarAtivo(novoTrade.ativo)||"este ativo"} — configure em Configurações › Contas</span>
+                      : !n ? <span style={{fontFamily:"var(--font-sans)"}}>informe os lotes</span>
+                      : <>custos −{m}{fmtR(custo)}{bruto!==null && <> · líquido <b style={{color:bruto-custo>=0?"#2ee6a0":"#ff5470"}}>{bruto-custo>=0?"+":"-"}{m}{fmtR(bruto-custo)}</b></>}{cfg.irrf && novoTrade.mercado==="B3" ? " · + IRRF no dia" : ""}</>}
+                  </span>
+                )}
+              </div>
+            );
+          })()}
 
           <hr className="mtp-divisor"/>
 
@@ -645,6 +678,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                         <span className="mtp-tag">{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
                         {t.estrategia && <span className="mtp-tag">{t.estrategia}</span>}
                         {t.contratos && <span className="mtp-tag" style={{fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
+                        <TagCustos t={t}/>
                         {t.qualidade && <EstrelasMini q={t.qualidade}/>}
                         {t.horario && <span style={{color:"var(--text-3)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.horario}</span>}
                         {contas.length > 1 && <span className="mtp-tag" style={{color:TIPOS_CONTA[contas.find(c=>c.id===t.conta)?.tipo]?.cor}}>{contas.find(c=>c.id===t.conta)?.nome}</span>}
@@ -676,6 +710,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             </div>
           );
         })()}
+
+        {/* Custos do dia (zeragem, nota de corretagem) — só para operações já salvas na B3 */}
+        {todayEntry && carteirasB3DoDia(config, todayEntry.trades).map(cart => (
+          <CustosDoDia key={selectedDate+cart.key} cart={cart} entry={todayEntry} config={config} varias={carteirasB3DoDia(config, todayEntry.trades).length > 1}
+            onSalvar={campos => salvarCustosDia(selectedDate, cart.key, campos)}/>
+        ))}
 
         {/* Observacao */}
         <div style={{marginBottom:"24px"}}>
@@ -820,7 +860,11 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                 <input type="number" placeholder="Pontos" value={ed.pontos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,pontos:e.target.value}}))} style={{...inpE,width:"90px"}}/>
                                 <Select value={ed.ativo||""} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,ativo:v}}))} style={{...inpE,width:"118px"}} popWidth={190} placeholder="Ativo"
                                   options={[{value:"",label:"Sem ativo"}, ...[...new Set([...(ed.ativo?[ed.ativo]:[]), ...opcoesDeAtivo(entries, ed.mercado)])].map(a=>({value:a,label:a,hint:rotuloAtivo(ed.mercado,a)}))]}/>
-                                <input type="number" placeholder={ed.mercado==="B3"?"R$":"$"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:e.target.value}}))} style={{...inpE,width:"90px"}}/>
+                                <input type="number" placeholder={ed.mercado==="B3"?"R$":"$"} title={ed.descontar?"Resultado bruto (os custos são descontados)":"Resultado"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:e.target.value}}))} style={{...inpE,width:"90px"}}/>
+                                <input type="number" min="1" placeholder="Lotes" value={ed.contratos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,contratos:e.target.value}}))} style={{...inpE,width:"70px"}}/>
+                                <div onClick={()=>setEditingTrade(p=>({...p,data:{...p.data,descontar:!p.data.descontar}}))} style={{display:"flex",alignItems:"center",gap:"7px",cursor:"pointer",userSelect:"none"}}>
+                                  <Check marcado={ed.descontar}/><span style={{color:"var(--text-2)",fontSize:"12px"}}>Descontar custos</span>
+                                </div>
                                 {contas.length > 1 && (
                                   <Select value={ed.conta} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,conta:v}}))} style={{...inpE,width:"150px"}} popWidth={240} title="Conta"
                                     options={contas.map(c=>({value:c.id,label:c.nome,cor:TIPOS_CONTA[c.tipo]?.cor}))}/>
@@ -832,6 +876,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               <div style={{display:"flex",gap:"8px"}}>
                                 <button onClick={saveEditTrade} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"6px",padding:"7px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>Salvar</button>
                                 <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"#86978f",border:"1px solid #26352e",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
+                                {ed.descontar && !(parseInt(ed.contratos) > 0) && <span style={{alignSelf:"center",color:"#ff7a90",fontSize:"12px"}}>Informe os lotes para calcular os custos.</span>}
                               </div>
                             </div>
                           );
@@ -846,6 +891,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
                               {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":"-"}{t.mercado==="B3"?"R$":"$"} {Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>}
                               {t.contratos&&<span style={{color:"#a3b2ab",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
+                              <TagCustos t={t}/>
                               {t.qualidade&&<EstrelasMini q={t.qualidade}/>}
                               {t.estrategia&&<span style={{color:"#86978f",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
                               {t.observacao&&<span style={{color:"#93a39c",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
@@ -942,7 +988,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       {/* Image Viewer fullscreen */}
       {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)}/>}
       {importacao && (
-        <ImportarOperacoes importacao={importacao} entries={entries} contas={contas} contaInicial={novoTrade.conta}
+        <ImportarOperacoes importacao={importacao} entries={entries} contas={contas} contaInicial={novoTrade.conta} config={config}
           estNomes={estNomes} sugerirExecucao={sugerirExecucao}
           onCancelar={()=>setImportacao(null)} onSalvar={salvarImportacao}/>
       )}
@@ -955,9 +1001,76 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   );
 }
 
+// ── Custos do dia de uma carteira da B3: resumo, zeragem automática e o total líquido da nota.
+// Com a nota informada, os custos do dia passam a ser bruto − líquido e a banca bate com a corretora.
+function CustosDoDia({ cart, entry, config, varias, onSalvar }) {
+  const cfg = custosDaConta(config, cart.contaId);
+  const dia = entry.custosDia?.[cart.key] || {};
+  const temNota = typeof dia.liquidoNota === "number";
+  const [nota, setNota] = useState(temNota ? fmtR(dia.liquidoNota) : "");
+  const [dc, setDc] = useState(temNota && dia.liquidoNota > 0 ? "C" : "D");
+  const [salvando, setSalvando] = useState(false);
+  const res = resumoCustos(entry.trades, cart);
+  if (!cfg.automatico && !res.n && !entry.custosDia?.[cart.key]) return null;
+
+  const doDia = (entry.trades || []).filter(t => tradeNaCarteira(t, cart) && typeof (t.descontaCustos ? t.bruto : t.resultado) === "number");
+  const brutoDia = r2(doDia.reduce((s, t) => s + (t.descontaCustos ? t.bruto : t.resultado), 0));
+  const n = parseFloat(String(nota).trim().replace(/\./g, "").replace(",", "."));
+  const liquido = isNaN(n) ? null : r2(dc === "C" ? Math.abs(n) : -Math.abs(n));
+  const custosNota = liquido === null ? null : r2(brutoDia - liquido);
+  const zer = valorZeragem(cfg);
+  const sinal = v => (v >= 0 ? "+" : "-") + "R$ " + fmtR(v);
+  async function salvar(campos) { setSalvando(true); try { await onSalvar(campos); } finally { setSalvando(false); } }
+
+  return (
+    <div className="mtp-op-card" style={{ "--op":"#f5b941", marginBottom:"20px", display:"flex", flexDirection:"column", gap:"12px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", flexWrap:"wrap" }}>
+        <span style={{ color:"var(--text)", fontSize:"13.5px", fontWeight:"800" }}>Custos do dia{varias && <span style={{ color:"var(--text-3)", fontWeight:"600" }}> · {cart.label}</span>}</span>
+        {res.n > 0 && (
+          <span style={{ fontFamily:"var(--font-mono)", fontSize:"12.5px", color:"var(--text-3)" }}>
+            bruto {sinal(res.bruto)} · custos <span style={{ color:"#f5b941" }}>−R$ {fmtR(res.custos)}</span> · líquido <b style={{ color:res.liquido >= 0 ? "#2ee6a0" : "#ff5470" }}>{sinal(res.liquido)}</b>
+          </span>
+        )}
+      </div>
+
+      {zer > 0 && (
+        <div onClick={() => !temNota && !salvando && salvar({ zeragem: dia.zeragem ? null : zer })}
+          style={{ display:"flex", alignItems:"center", gap:"9px", cursor:temNota ? "default" : "pointer", userSelect:"none", opacity:temNota ? 0.5 : 1 }}>
+          <Check marcado={!!dia.zeragem}/>
+          <span style={{ color:"var(--text-2)", fontSize:"13px" }}>Teve zeragem automática <span style={{ color:"var(--text-3)", fontFamily:"var(--font-mono)" }}>(−R$ {fmtR(dia.zeragem || zer)})</span>{temNota && " — já incluída na nota"}</span>
+        </div>
+      )}
+
+      <div style={{ display:"flex", alignItems:"center", gap:"10px", flexWrap:"wrap" }}>
+        <span style={{ color:"var(--text-2)", fontSize:"13px" }}>Total líquido da nota</span>
+        <input value={nota} onChange={e => setNota(e.target.value)} inputMode="decimal" placeholder="0,00"
+          style={{ background:"#18241f", border:"1px solid #26352e", borderRadius:"8px", padding:"7px 11px", color:"#f0f0f0", fontSize:"13.5px", outline:"none", fontFamily:"var(--font-mono)", width:"120px" }}/>
+        <div className="mtp-seg">
+          {[["D","#ff5470"],["C","#2ee6a0"]].map(([k, c]) => (
+            <button key={k} type="button" onClick={() => setDc(k)} className={dc === k ? "on" : ""} style={{ "--seg":c }} title={k === "D" ? "Débito (saiu da conta)" : "Crédito (entrou na conta)"}>{k}</button>
+          ))}
+        </div>
+        <button type="button" className="mtp-btn-sec" disabled={liquido === null || salvando || (temNota && liquido === dia.liquidoNota)}
+          onClick={() => salvar({ liquidoNota: liquido, zeragem: null })} style={{ minHeight:"32px" }}>{temNota ? "Atualizar" : "Aplicar"}</button>
+        {temNota && <button type="button" className="mtp-btn-sec" disabled={salvando} onClick={() => { setNota(""); salvar({ liquidoNota: null }); }} style={{ minHeight:"32px" }}>Remover</button>}
+      </div>
+
+      <p style={{ margin:0, color:custosNota !== null && custosNota < 0 ? "#ff7a90" : "var(--text-3)", fontSize:"12px", lineHeight:1.6 }}>
+        {temNota && liquido === dia.liquidoNota
+          ? <>✓ Conferido pela nota: custos reais de R$ {fmtR(res.custos)} divididos entre as {res.n} operações.</>
+          : custosNota !== null
+            ? custosNota < 0
+              ? <>O líquido da nota é maior que o bruto lançado ({sinal(brutoDia)}). Confira se todas as operações do dia estão no Diário.</>
+              : <>Bruto lançado {sinal(brutoDia)} → custos reais de R$ {fmtR(custosNota)}.</>
+            : <>Copie o "Total líquido da nota" da sua nota de corretagem, com D ou C. A banca passa a bater exatamente com a corretora (taxas, IRRF e zeragem incluídos).</>}
+      </p>
+    </div>
+  );
+}
+
 // ── Prévia da importação: cada linha do arquivo vira uma operação; o trader completa
 // estratégia, execução, comentário e fotos de cada uma, e as emoções/observação de cada dia
-function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes, sugerirExecucao, onCancelar, onSalvar }) {
+function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, estNomes, sugerirExecucao, onCancelar, onSalvar }) {
   const chaveConta = "mtp-import-conta-" + importacao.conta;
   const [conta, setConta] = useState(() => {
     let lembrada = null;
@@ -971,6 +1084,10 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
   const dias = [...new Set(importacao.operacoes.map(o => o.data))].sort();
   const [diasInfo, setDiasInfo] = useState(() => Object.fromEntries(dias.map(d => [d, { emocoes:[], observacao:"" }])));
   const [salvando, setSalvando] = useState(false);
+  // undefined = segue a configuração da conta escolhida
+  const [descontarEsc, setDescontar] = useState(undefined);
+  const cfgCustos = custosDaConta(config, conta);
+  const descontar = importacao.plataforma !== "MT5" && (descontarEsc ?? cfgCustos.automatico);
 
   const comEstrategia = (o, n) => ({ ...o, estrategia:n, qualidade: o.qualidade || (n ? sugerirExecucao(n) : "") || "" });
   const mudar = (id, f) => setOps(p => p.map(o => o.id === id ? f(o) : o));
@@ -998,7 +1115,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
   async function salvar() {
     setSalvando(true);
     try { if (importacao.conta) localStorage.setItem(chaveConta, conta); } catch { /* sem storage */ }
-    try { await onSalvar(selecionadas, conta, diasInfo); } finally { setSalvando(false); }
+    try { await onSalvar(selecionadas, conta, diasInfo, descontar); } finally { setSalvando(false); }
   }
 
   const rotulo = { color:"var(--text-3)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1.2px", fontWeight:"700", display:"block", marginBottom:"10px" };
@@ -1028,12 +1145,15 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
         {dias.map(dia => {
           const doDia = ops.filter(o => o.data === dia);
           const tot = doDia.filter(o => o.incluir).reduce((s, o) => s + o.resultado, 0);
+          const custoDia = descontar ? r2(doDia.filter(o => o.incluir && (o.mercado || "B3") === "B3").reduce((s, o) => s + (o.contratos || 1) * r2(custoPorContrato(cfgCustos, o.ativo)), 0)) : 0;
           const info = diasInfo[dia];
           return (
             <div key={dia} style={{ display:"flex", flexDirection:"column", gap:"16px", paddingTop:dias.length > 1 ? "6px" : 0 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"10px" }}>
                 <span style={{ color:"var(--text)", fontSize:"14px", fontWeight:"800" }}>{formatDateLong(dia)}</span>
-                <span style={{ fontFamily:"var(--font-mono)", fontSize:"13px", color:tot >= 0 ? "#2ee6a0" : "#ff5470", fontWeight:"700" }}>{brl(tot)}</span>
+                <span style={{ fontFamily:"var(--font-mono)", fontSize:"13px", color:tot - custoDia >= 0 ? "#2ee6a0" : "#ff5470", fontWeight:"700" }}>
+                  {custoDia > 0 && <span style={{ color:"var(--text-3)", fontWeight:"500" }}>bruto {brl(tot)} · custos −R$ {fmtR(custoDia)} · </span>}{brl(tot - custoDia)}
+                </span>
               </div>
 
               {/* Emoções do dia */}
@@ -1128,9 +1248,17 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, estNomes
         <p style={{ margin:0, color:"var(--text-3)", fontSize:"12px", lineHeight:1.6 }}>
           {mt5
             ? "Resultado líquido (lucro + comissão + swap), igual ao que entra no saldo. Horários convertidos do servidor da corretora (GMT+2/+3) para o seu horário."
-            : "Resultado bruto, como vem da plataforma (sem corretagem e emolumentos)."}{" "}
+            : descontar
+              ? "Resultado bruto da plataforma, com os custos da conta descontados (taxas por contrato" + (cfgCustos.irrf ? " e IRRF" : "") + "). Para bater no centavo, informe depois o total da nota no dia."
+              : "Resultado bruto, como vem da plataforma (sem corretagem e emolumentos)."}{" "}
           Cada operação entra no Diário no próprio dia e pode ser editada depois.
         </p>
+        {!mt5 && (
+          <div onClick={() => setDescontar(!descontar)} style={{ display:"flex", alignItems:"center", gap:"9px", cursor:"pointer", userSelect:"none", marginTop:"-6px" }}>
+            <Check marcado={descontar}/>
+            <span style={{ color:"var(--text-2)", fontSize:"13px" }}>Descontar custos operacionais</span>
+          </div>
+        )}
 
         <div style={{ display:"flex", gap:"10px", justifyContent:"flex-end", flexWrap:"wrap" }}>
           <button onClick={fechar} disabled={salvando} style={{ background:"transparent", color:"var(--text-2)", border:"1px solid var(--line)", borderRadius:"10px", padding:"10px 16px", fontSize:"13px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Cancelar</button>

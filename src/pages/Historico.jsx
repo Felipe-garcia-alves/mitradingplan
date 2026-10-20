@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Select, Valores } from "../components/ui";
 import { somaPorMoeda, corDasPartes } from "../lib/moedas";
 import { semanasUteis, temFimDeSemana, DIAS_UTEIS, DIAS_SEMANA_SEG } from "../lib/datas";
+import { entradaFiltrada } from "../lib/contas";
+import { recalcularCustos } from "../lib/custos";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
@@ -10,7 +12,7 @@ const EMOCOES_LIST = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansios
 function dayKey(y,m,d) { return y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0"); }
 function formatDateLong(s) { const p=s.split("-"); const d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString("pt-BR",{day:"numeric",month:"long",weekday:"long"}); }
 
-export default function Historico({ entries, saveEntry, deleteEntry, estrategias }) {
+export default function Historico({ entries, saveEntry, deleteEntry, estrategias, config }) {
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -51,19 +53,9 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
   }
 
   function removeTradeFromEdit(idx) {
-    const updated = {...editEntry};
-    updated.trades = updated.trades.filter((_,i)=>i!==idx);
-    // recalculate totals
-    const totalB3    = updated.trades.filter(t=>t.mercado==="B3").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalForex = updated.trades.filter(t=>t.mercado==="Forex").reduce((s,t)=>s+(t.resultado||0),0);
-    const totalPts   = updated.trades.reduce((s,t)=>s+(t.pontos||0),0);
-    const wins       = updated.trades.filter(t=>t.tipo==="WIN").length;
-    updated.totalB3    = totalB3 || undefined;
-    updated.totalForex = totalForex || undefined;
-    updated.totalPts   = totalPts;
-    updated.numTrades  = updated.trades.length;
-    updated.winRate    = updated.trades.length>0 ? Math.round((wins/updated.trades.length)*100) : undefined;
-    setEditEntry(updated);
+    // recalcula custos do dia (IRRF, zeragem, nota) e os totais
+    const resto = editEntry.trades.filter((_,i)=>i!==idx);
+    setEditEntry(entradaFiltrada({ ...editEntry, trades: recalcularCustos(resto, editEntry, config) }, () => true));
   }
 
   function toggleTradeType(idx) {
