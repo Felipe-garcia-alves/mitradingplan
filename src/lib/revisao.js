@@ -15,6 +15,18 @@ export const VEREDITOS = [
 ];
 export const VEREDITO = Object.fromEntries(VEREDITOS.map(v => [v.id, v]));
 
+// No WIN a pergunta é "mérito ou sorte?": mesmos vereditos (as estatísticas somam juntas),
+// outro texto. Ganhar com erro é o caso mais perigoso: ensina o hábito errado.
+const NO_WIN = {
+  sem_erro:  { rot:"Mérito",            desc:"Segui o plano e o mercado pagou" },
+  analise:   { rot:"Sorte · análise",   desc:"Ganhei, mas a leitura estava errada" },
+  execucao:  { rot:"Sorte · execução",  desc:"Ganhei, mas executei fora do plano" },
+  emocional: { rot:"Sorte · emocional", desc:"Ganhei, mas entrei por impulso" },
+};
+export const vereditosDo = t => t?.tipo === "WIN" ? VEREDITOS.map(v => ({ ...v, ...NO_WIN[v.id] })) : VEREDITOS;
+export const vereditoDo = (t, id) => vereditosDo(t).find(v => v.id === id);
+export const perguntaDo = t => t?.tipo === "WIN" ? "Foi mérito ou sorte?" : "Foi erro ou foi o mercado?";
+
 export const FASES_ERRO = [
   { fase:"Entrada", erros:[
     ["antecipada", "Entrou antes da confirmação"], ["atrasada", "Entrou atrasado / correu atrás"],
@@ -76,3 +88,38 @@ export function contarPendentes(entries, dias = 30) {
   const desde = desdeDias(dias);
   return listarTrades(entries).filter(it => it.dia >= desde && precisaRevisar(it)).length;
 }
+
+// ── Datas da revisão semanal e do treino
+export function somarDias(dia, n) {
+  const d = new Date(dia + "T12:00:00");
+  d.setDate(d.getDate() + n);
+  return chaveLocal(d);
+}
+export function segundaDe(dia) {
+  const d = new Date(dia + "T12:00:00");
+  return somarDias(dia, -((d.getDay() + 6) % 7));
+}
+export function rotuloSemana(seg) {
+  const fmt = k => new Date(k + "T12:00:00").toLocaleDateString("pt-BR", { day:"numeric", month:"short" }).replace(/\./g, "");
+  return fmt(seg) + " a " + fmt(somarDias(seg, 4));
+}
+
+// ── Treino "Você entraria?": a foto aparece cortada antes da entrada e você decide.
+// Repetição espaçada por caixas (Leitner): acertou sobe de caixa e demora mais para voltar,
+// errou volta para a caixa 1 e reaparece amanhã.
+//   trade.revisao.treino = { foto, corte, resposta: "entrar"|"nao_entrar", caixa, proxima }
+export const INTERVALOS_TREINO = { 1:1, 2:3, 3:7, 4:21 };
+export const ERROS_DE_ENTRADA = ["antecipada", "atrasada", "contra_tendencia", "fora_setup", "fora_horario"];
+
+export function respostaSugerida({ veredito, erros, marca }) {
+  if ((erros || []).some(e => ERROS_DE_ENTRADA.includes(e)) || marca === "classico") return "nao_entrar";
+  if (veredito === "sem_erro" || marca === "exemplo") return "entrar";
+  return "";
+}
+
+export function proximoTreino(treino, acertou, hoje) {
+  const caixa = acertou ? Math.min(4, (treino.caixa || 1) + 1) : 1;
+  return { ...treino, caixa, proxima: somarDias(hoje, INTERVALOS_TREINO[caixa]) };
+}
+
+export const cartaoVence = (it, hoje) => !!it.t.revisao?.treino && (it.t.revisao.treino.proxima || "") <= hoje;

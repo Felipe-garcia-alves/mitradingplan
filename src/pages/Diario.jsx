@@ -18,6 +18,7 @@ function TagCustos({ t }) {
 }
 import ImageEditor, { uploadTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
 import { fonteDoEditor, enviarFoto, trocarFotoAnotada, semFoto, arquivosDoTrade, apagarArquivos } from "../lib/fotos";
+import { segundaDe } from "../lib/revisao";
 
 function todayKey() {
   const d = new Date();
@@ -448,9 +449,18 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const diaAberto = semanaAberta && semanaAberta.dias.find(([d]) => d === diaModal);
 
   const inp = {background:"#18241f",border:"1px solid #26352e",borderRadius:"8px",padding:"10px 13px",color:"#f0f0f0",fontSize:"14px",outline:"none",fontFamily:"var(--font-sans)"};
+  const focoSemana = config?.revisaoSemanal?.[segundaDe(today)]?.foco;
 
   return (
     <div style={{fontFamily:"var(--font-sans)"}}>
+      {focoSemana && (
+        <button type="button" onClick={()=>setPagina("revisao")} title="Definido na revisão semanal"
+          style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",textAlign:"left",marginBottom:"14px",padding:"10px 14px",borderRadius:"12px",background:"rgba(46,230,160,0.06)",border:"1px solid #2ee6a033",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
+          <span style={{fontSize:"16px"}}>🎯</span>
+          <span style={{color:"#2ee6a0",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px",flexShrink:0}}>Foco da semana</span>
+          <span style={{color:"var(--text)",fontSize:"13.5px",fontWeight:"600",minWidth:0}}>{focoSemana}</span>
+        </button>
+      )}
       
 
       {/* Form */}

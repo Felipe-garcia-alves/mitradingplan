@@ -440,7 +440,7 @@ function AppInterno() {
       case "macro":       return <Macro isAdmin={perfil.papel==="admin"}/>;
       case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid} config={config} setPagina={setPagina}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} config={config}/>;
-      case "revisao":     return <Suspense fallback={<Spinner/>}><Revisao entries={entries} saveEntry={saveEntry} estrategias={estrategias} uid={uid}/></Suspense>;
+      case "revisao":     return <Suspense fallback={<Spinner/>}><Revisao entries={entries} saveEntry={saveEntry} estrategias={estrategias} uid={uid} config={config} saveConfig={saveConfig}/></Suspense>;
       case "estrategias": return <Estrategias estrategias={estrategias} entries={entries} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
       case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig} setPagina={setPagina}/></Suspense>;
       case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries} setPagina={setPagina}/></Suspense>;
