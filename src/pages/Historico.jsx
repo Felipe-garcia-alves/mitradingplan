@@ -4,6 +4,7 @@ import { somaPorMoeda, corDasPartes } from "../lib/moedas";
 import { semanasUteis, temFimDeSemana, DIAS_UTEIS, DIAS_SEMANA_SEG } from "../lib/datas";
 import { entradaFiltrada } from "../lib/contas";
 import { recalcularCustos } from "../lib/custos";
+import { ImageViewer, ImagemSegura } from "../components/ImageEditor";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
@@ -22,6 +23,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
   const [msg, setMsg] = useState("");
   const [filtroMercado, setFiltroMercado] = useState("todos");
   const [filtroEst, setFiltroEst] = useState("todas");
+  const [viewerImg, setViewerImg] = useState(null);
 
   function prevMonth() { if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }
   function nextMonth() { if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }
@@ -229,6 +231,15 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
                       </div>
                     </div>
                     {t.observacao&&<p style={{margin:0,color:"#86978f",fontSize:"12px",fontStyle:"italic",paddingLeft:"32px"}}>"{t.observacao}"</p>}
+                    {(t.imagens||[]).length>0&&(
+                      <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginTop:"10px",paddingLeft:"32px"}}>
+                        {t.imagens.map((url,ii)=>(
+                          <div key={ii} style={{width:"120px",height:"80px",borderRadius:"8px",overflow:"hidden",border:"1px solid #26352e",boxShadow:"0 2px 8px rgba(0,0,0,0.35)"}}>
+                            <ImagemSegura url={url} style={{width:"100%",height:"100%",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -298,6 +309,8 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
           </div>
         </div>
       )}
+
+      {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)}/>}
     </div>
   );
 }
