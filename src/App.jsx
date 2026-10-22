@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { supabase } from "./supabase";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login       from "./pages/Login";
@@ -12,6 +12,7 @@ import Historico   from "./pages/Historico";
 import Estrategias from "./pages/Estrategias";
 import Sidebar     from "./components/Sidebar";
 import { hojeLocal } from "./lib/datas";
+import { contarPendentes } from "./lib/revisao";
 
 const Banca       = lazy(()=>import("./pages/Banca"));
 const Regras      = lazy(()=>import("./pages/Regras"));
@@ -19,6 +20,7 @@ const Crescimento = lazy(()=>import("./pages/Crescimento"));
 const Patrimonio  = lazy(()=>import("./pages/Patrimonio"));
 const Config      = lazy(()=>import("./pages/Config"));
 const Usuarios    = lazy(()=>import("./pages/Usuarios"));
+const Revisao     = lazy(()=>import("./pages/Revisao"));
 
 function Spinner() {
   return (
@@ -249,6 +251,7 @@ function AppInterno() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768);
   const uid = user.id;
+  const pendentesRevisao = useMemo(() => contarPendentes(entries), [entries]);
 
   useEffect(()=>{
     const fn = ()=>setIsMobile(window.innerWidth<768);
@@ -429,7 +432,7 @@ function AppInterno() {
     } catch(e){ console.error(e); }
   };
 
-  const TITLES = {evolucao:"Evolução",macro:"Macro",diario:"Diário",historico:"Histórico",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações",usuarios:"Usuários",termos:"Termos & Privacidade"};
+  const TITLES = {evolucao:"Evolução",macro:"Macro",diario:"Diário",historico:"Histórico",revisao:"Revisão",banca:"Banca",regras:"Disciplina",estrategias:"Estratégias",crescimento:"Crescimento",patrimonio:"Patrimônio",config:"Configurações",usuarios:"Usuários",termos:"Termos & Privacidade"};
 
   const renderPage = () => {
     switch(pagina){
@@ -437,6 +440,7 @@ function AppInterno() {
       case "macro":       return <Macro isAdmin={perfil.papel==="admin"}/>;
       case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid} config={config} setPagina={setPagina}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} config={config}/>;
+      case "revisao":     return <Suspense fallback={<Spinner/>}><Revisao entries={entries} saveEntry={saveEntry} estrategias={estrategias} uid={uid}/></Suspense>;
       case "estrategias": return <Estrategias estrategias={estrategias} entries={entries} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
       case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig} setPagina={setPagina}/></Suspense>;
       case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries} setPagina={setPagina}/></Suspense>;
@@ -479,7 +483,7 @@ function AppInterno() {
 
   return (
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"var(--font-sans)"}}>
-      {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance}/>}
+      {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance} pendentesRevisao={pendentesRevisao}/>}
       <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}
         onTouchStart={e=>{if(isMobile)window._swipeX=e.touches[0].clientX;}}
         onTouchEnd={e=>{if(isMobile&&window._swipeX&&(window._swipeX-e.changedTouches[0].clientX)>60){setSidebarOpen(false);window._swipeX=null;}}}>

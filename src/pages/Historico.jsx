@@ -5,6 +5,7 @@ import { semanasUteis, temFimDeSemana, DIAS_UTEIS, DIAS_SEMANA_SEG } from "../li
 import { entradaFiltrada } from "../lib/contas";
 import { recalcularCustos } from "../lib/custos";
 import { ImageViewer, ImagemSegura } from "../components/ImageEditor";
+import { VEREDITO } from "../lib/revisao";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
@@ -225,6 +226,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
                       <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
                       <span style={{color:"#a3b2ab",fontSize:"12px"}}>{t.mercado}</span>
                       {t.estrategia&&<span style={{color:"#86978f",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
+                      {VEREDITO[t.revisao?.veredito]&&<span title={"Revisado: "+VEREDITO[t.revisao.veredito].desc} style={{color:VEREDITO[t.revisao.veredito].cor,fontSize:"11px",fontWeight:"700",border:"1px solid "+VEREDITO[t.revisao.veredito].cor+"44",padding:"2px 8px",borderRadius:"20px"}}>✓ {VEREDITO[t.revisao.veredito].rot}</span>}
                       <div style={{marginLeft:"auto",display:"flex",gap:"12px"}}>
                         {t.pontos!=null&&<span style={{color:"#ccc",fontSize:"13px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
                         {t.resultado!=null&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":""}{t.mercado==="B3"?"R$":"$"} {t.resultado?.toFixed(2)}</span>}

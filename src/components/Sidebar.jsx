@@ -6,6 +6,7 @@ const MENU = [
   { id:"diario",      label:"Diário",        icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
   { id:"estrategias", label:"Estratégias",   icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> },
   { id:"historico",   label:"Histórico",     icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+  { id:"revisao",     label:"Revisão",       contador:true, icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7.5"/><line x1="21" y1="21" x2="16.4" y2="16.4"/><polyline points="7.5 12.5 9.8 10 11.8 12 14.5 9"/></svg> },
   { id:"banca",       label:"Banca",         icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
   { id:"crescimento", label:"Crescimento",   icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> },
   { id:"patrimonio",  label:"Patrimônio",    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> },
@@ -14,11 +15,11 @@ const MENU = [
 
 const SECOES = [
   { titulo:"Análise",  ids:["evolucao","macro"] },
-  { titulo:"Operação", ids:["regras","diario","estrategias","historico"] },
+  { titulo:"Operação", ids:["regras","diario","estrategias","historico","revisao"] },
   { titulo:"Capital",  ids:["banca","crescimento","patrimonio"] },
 ];
 
-export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClose, compliance }) {
+export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClose, compliance, pendentesRevisao = 0 }) {
   const now = new Date();
   const ym = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
   const daysThisMonth = Object.keys(compliance||{}).filter(k=>k.startsWith(ym));
@@ -38,6 +39,9 @@ export default function Sidebar({ pagina, setPagina, nomeUsuario, mobile, onClos
         <span className="mtp-nav-label">{m.label}</span>
         {m.compliance && compliancePct!==null && (
           <span className="mtp-nav-badge" style={{color:badgeCor,background:"color-mix(in srgb, "+badgeCor+" 12%, transparent)",border:"1px solid color-mix(in srgb, "+badgeCor+" 25%, transparent)"}}>{compliancePct}%</span>
+        )}
+        {m.contador && pendentesRevisao > 0 && (
+          <span className="mtp-nav-badge" title={pendentesRevisao+" trades para revisar (últimos 30 dias)"} style={{color:"var(--warn)",background:"color-mix(in srgb, var(--warn) 12%, transparent)",border:"1px solid color-mix(in srgb, var(--warn) 25%, transparent)"}}>{pendentesRevisao}</span>
         )}
       </button>
     );

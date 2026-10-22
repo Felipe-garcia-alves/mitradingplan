@@ -16,7 +16,8 @@ function TagCustos({ t }) {
   const m = t.mercado==="B3" ? "R$ " : "$ ";
   return <span className="mtp-tag" title={"Bruto "+(t.bruto>=0?"+":"-")+m+fmtR(t.bruto)+" · custos "+m+fmtR(t.custos||0)} style={{fontFamily:"var(--font-mono)",color:"#f5b941"}}>custos −{m}{fmtR(t.custos||0)}</span>;
 }
-import ImageEditor, { uploadTradeImage, deleteTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
+import ImageEditor, { uploadTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
+import { fonteDoEditor, enviarFoto, trocarFotoAnotada, semFoto, arquivosDoTrade, apagarArquivos } from "../lib/fotos";
 
 function todayKey() {
   const d = new Date();
@@ -143,7 +144,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       ? await deleteEntry(dateKey)
       : await saveEntry(dateKey, montarDia(entry, resto));
     if (ok !== false) {
-      for (const url of (alvo?.imagens || [])) await deleteTradeImage(url);
+      await apagarArquivos(arquivosDoTrade(alvo));
       setMsg("✓ Operação apagada."); setTimeout(()=>setMsg(""), 2500);
     }
   }
@@ -282,7 +283,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       conta: novoTrade.conta || contaPadrao(config).id,
       ativo: normalizarAtivo(novoTrade.ativo) || null,
       imagens: [],
-      _pendingFiles: pendingImages.map(p=>p.file),
+      _pendingFiles: pendingImages,
     };
     if (novoTrade.descontar) t = comDesconto(t, custosDaConta(config, t.conta));
     setTrades(prev => [...prev, t]);
@@ -316,14 +317,21 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     setUploadingIdx(null);
   }
 
-  // ── Delete image from saved trade
-  async function handleDeleteImage(dateKey, tradeIdx, imgUrl) {
-    await deleteTradeImage(imgUrl);
+  // ── Nova versão de uma foto anotada de um trade salvo (substitui a anterior; a original fica guardada)
+  async function handleSavedImageReplace(file, formas, dateKey, tradeIdx, url) {
     const entry = entries[dateKey];
-    const updatedTrades = entry.trades.map((t,i) =>
-      i===tradeIdx ? {...t, imagens:(t.imagens||[]).filter(u=>u!==imgUrl)} : t
-    );
-    await saveEntry(dateKey, {...entry, trades:updatedTrades});
+    const { trade, apagar } = await trocarFotoAnotada(entry.trades[tradeIdx], url, file, formas, uid, dateKey);
+    const ok = await saveEntry(dateKey, {...entry, trades: entry.trades.map((t,i) => i===tradeIdx ? trade : t)});
+    if (ok === false) throw new Error("não salvou o dia");
+    await apagarArquivos(apagar);
+  }
+
+  // ── Delete image from saved trade (e a original dela, se foi anotada)
+  async function handleDeleteImage(dateKey, tradeIdx, imgUrl) {
+    const entry = entries[dateKey];
+    const { trade, apagar } = semFoto(entry.trades[tradeIdx], imgUrl);
+    const ok = await saveEntry(dateKey, {...entry, trades: entry.trades.map((t,i) => i===tradeIdx ? trade : t)});
+    if (ok !== false) await apagarArquivos(apagar);
   }
 
   // ── Importar operações de um .csv (cada linha = uma operação)
@@ -390,16 +398,21 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     const novos = [];
     for (const t of trades) {
       const imagens = [...(t.imagens || [])];
+      const camadas = {};
       if (uid) {
-        for (const [i, file] of (t._pendingFiles || []).entries()) {
-          try { imagens.push(await uploadTradeImage(file, uid, selectedDate, t.id + "-" + i)); }
-          catch (e) { console.error("upload da foto:", e); }
+        for (const [i, foto] of (t._pendingFiles || []).entries()) {
+          try {
+            const { url, camada } = await enviarFoto(foto, uid, selectedDate, t.id + "-" + i);
+            imagens.push(url);
+            if (camada) camadas[url] = camada;
+          } catch (e) { console.error("upload da foto:", e); }
         }
       }
       const tr = {mercado:t.mercado, tipo:t.tipo, estrategia:t.estrategia||"", observacao:t.observacao||"", horario:t.horario||"", contratos:t.contratos||null, qualidade:t.qualidade||null, conta:t.conta||contaPadrao(config).id};
       if (t.resultado !== null) tr.resultado = t.resultado;
       if (t.pontos    !== null) tr.pontos    = t.pontos;
       if (imagens.length) tr.imagens = imagens;
+      if (Object.keys(camadas).length) tr.camadas = camadas;
       if (t.ativo) tr.ativo = t.ativo;
       if (t.descontaCustos) Object.assign(tr, { descontaCustos:true, bruto:t.bruto, custoContrato:t.custoContrato, irrf:t.irrf });
       novos.push(tr);
@@ -929,7 +942,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                   <div key={ii} style={{width:"100px",borderRadius:"8px",overflow:"hidden",border:"1px solid #26352e",boxShadow:"0 2px 8px rgba(0,0,0,0.35)"}}>
                                     <ImagemSegura url={url} style={{width:"100%",height:"70px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
                                     <div style={{display:"flex",background:"#0b1210",borderTop:"1px solid #18241f"}}>
-                                      <button onClick={()=>setEditorImg({src:url,saved:true,dateKey:ds,tradeIdx:i,url})}
+                                      <button onClick={()=>setEditorImg({...fonteDoEditor(t,url),saved:true,dateKey:ds,tradeIdx:i,url})}
                                         style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #18241f",color:"#a3b2ab",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
                                         onMouseEnter={e=>e.currentTarget.style.color="#2ee6a0"}
                                         onMouseLeave={e=>e.currentTarget.style.color="#888"}>
@@ -969,15 +982,16 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       {editorImg && (
         <ImageEditor
           src={editorImg.src}
+          formasIniciais={editorImg.formas}
           onClose={()=>setEditorImg(null)}
-          onSave={async(file)=>{
+          onSave={async(file, formas)=>{
             if (editorImg.isNew) {
-              // Add annotated image + any other files to pending
+              // Foto anotada + original e desenhos (para reabrir editável) + demais arquivos escolhidos
               const preview = URL.createObjectURL(file);
               const others = editorImg.otherFiles || [];
-              setPendingImages(prev=>[...prev, {file, preview}, ...others]);
+              setPendingImages(prev=>[...prev, {file, preview, original:editorImg.file, formas}, ...others]);
             } else if(editorImg.saved) {
-              await handleSavedImageUpload(file, editorImg.dateKey, editorImg.tradeIdx);
+              await handleSavedImageReplace(file, formas, editorImg.dateKey, editorImg.tradeIdx, editorImg.url);
             } else {
               await handleImageFile(file, editorImg.tradeId);
             }
