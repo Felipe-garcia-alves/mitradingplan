@@ -105,7 +105,7 @@ export default function Sidebar({ pagina, setPagina, mobile, onClose, compliance
         <nav className="mtp-nav" style={{flex:1,minHeight:0,overflowY:"auto",display:"flex",flexDirection:"column"}}>
           <div className="mtp-nav-secoes">
             {SECOES.map(s=>(
-              <div key={s.titulo}>
+              <div key={s.titulo} className="mtp-secao">
                 <p className="mtp-section-label"><span>{s.titulo}</span></p>
                 {s.ids.map(item)}
               </div>
