@@ -210,7 +210,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
             <div style={{marginBottom:"16px"}}>
               <p style={{margin:"0 0 8px",color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
-                {selEntry.emocoes.map(em=><span key={em} style={{padding:"4px 12px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"var(--text-mute)")+"1a",color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"12px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"var(--text-mute)")+"44"}}>{em}</span>)}
+                {selEntry.emocoes.map(em=><span key={em} style={{padding:"4px 12px",borderRadius:"20px",background:alfa(EMOCAO_COLORS[em]||"var(--text-mute)","1a"),color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"12px",fontWeight:"600",border:"1px solid "+alfa(EMOCAO_COLORS[em]||"var(--text-mute)","44")}}>{em}</span>)}
               </div>
             </div>
           )}

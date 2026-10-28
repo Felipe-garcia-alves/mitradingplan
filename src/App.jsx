@@ -194,7 +194,7 @@ function UserHeader({ nomeUsuario, entries }) {
               <p style={{margin:"0 0 8px",color:"var(--text-4)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções Registradas</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
                 {todayEntry.emocoes.map(em=>(
-                  <span key={em} style={{padding:"4px 10px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"var(--text-mute)")+"18",color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"12px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"var(--text-mute)")+"33"}}>{em}</span>
+                  <span key={em} style={{padding:"4px 10px",borderRadius:"20px",background:alfa(EMOCAO_COLORS[em]||"var(--text-mute)","18"),color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"12px",fontWeight:"600",border:"1px solid "+alfa(EMOCAO_COLORS[em]||"var(--text-mute)","33")}}>{em}</span>
                 ))}
               </div>
             </div>

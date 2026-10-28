@@ -252,7 +252,7 @@ export default function Crescimento({ entries, config }) {
                 </div>
                 <div style={{ minWidth:0 }}>
                   <div style={{ height:"6px", borderRadius:"6px", background:"var(--line)", overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:pct+"%", borderRadius:"6px", background:"linear-gradient(90deg,"+cor+"55,"+cor+")", boxShadow:"0 0 8px "+alfa(cor,"88") }}/>
+                    <div style={{ height:"100%", width:pct+"%", borderRadius:"6px", background:"linear-gradient(90deg,"+alfa(cor,"55")+","+cor+")", boxShadow:"0 0 8px "+alfa(cor,"88") }}/>
                   </div>
                   <p style={{ margin:"8px 0 0", color:"var(--text-3)", fontSize:"11.5px", fontFamily:"var(--font-mono)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                     {fmtC(r.inicio)} → {fmtC(r.fim)}
@@ -291,11 +291,11 @@ export default function Crescimento({ entries, config }) {
               <span style={{ color:i===0?"var(--text)":"var(--text-2)", fontSize:"13.5px", fontWeight:"600", whiteSpace:"nowrap" }}>{nomeFuturo(i+1)}</span>
               <div style={{ display:"flex", flexDirection:"column", gap:"4px", minWidth:0 }}>
                 <div style={{ height:"6px", borderRadius:"6px", background:"var(--line)", overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:larg(p.metaFinal), borderRadius:"6px", background:"linear-gradient(90deg,"+color+"33,"+color+")" }}/>
+                  <div style={{ height:"100%", width:larg(p.metaFinal), borderRadius:"6px", background:"linear-gradient(90deg,"+alfa(color,"33")+","+color+")" }}/>
                 </div>
                 {r && (
                   <div style={{ height:"6px", borderRadius:"6px", background:"var(--line)", overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:larg(r.metaFinal), borderRadius:"6px", background:"linear-gradient(90deg,"+corRitmo+"33,"+corRitmo+")" }}/>
+                    <div style={{ height:"100%", width:larg(r.metaFinal), borderRadius:"6px", background:"linear-gradient(90deg,"+alfa(corRitmo,"33")+","+corRitmo+")" }}/>
                   </div>
                 )}
               </div>

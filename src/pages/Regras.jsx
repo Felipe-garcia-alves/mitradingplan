@@ -361,7 +361,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
             </div>
           </div>
           <div style={{height:"6px",borderRadius:"6px",background:"var(--line)",overflow:"hidden",marginBottom:"16px"}}>
-            <div style={{height:"100%",width:(pct||0)+"%",borderRadius:"6px",background:"linear-gradient(90deg,"+corPct(pct)+"77,"+corPct(pct)+")",boxShadow:"0 0 10px "+corPct(pct),transition:"width .4s var(--ease)"}}/>
+            <div style={{height:"100%",width:(pct||0)+"%",borderRadius:"6px",background:"linear-gradient(90deg,"+alfa(corPct(pct),"77")+","+corPct(pct)+")",boxShadow:"0 0 10px "+corPct(pct),transition:"width .4s var(--ease)"}}/>
           </div>
           <div className="mtp-regras-lista">
             {regrasList.map((rule,idx) => {
@@ -441,7 +441,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
                     const dt = new Date(d+"T12:00:00");
                     return (
                       <div key={d} title={formatDateFull(d)+(v!==null?" · "+v+"%":" · sem registro")} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",height:"100%",justifyContent:"flex-end"}}>
-                        <div style={{width:"100%",maxWidth:"18px",height:v!==null?Math.max(6,v)+"%":"4px",borderRadius:"4px",background:v!==null?"linear-gradient(180deg,"+corPct(v)+","+corPct(v)+"66)":"var(--line)",boxShadow:v!==null?"0 0 8px "+corPct(v)+"55":"none"}}/>
+                        <div style={{width:"100%",maxWidth:"18px",height:v!==null?Math.max(6,v)+"%":"4px",borderRadius:"4px",background:v!==null?"linear-gradient(180deg,"+corPct(v)+","+alfa(corPct(v),"66")+")":"var(--line)",boxShadow:v!==null?"0 0 8px "+alfa(corPct(v),"55"):"none"}}/>
                         <span style={{fontSize:"9.5px",fontFamily:"var(--font-mono)",color:d===today?"var(--text)":"var(--text-3)"}}>{dt.getDate()}</span>
                       </div>
                     );

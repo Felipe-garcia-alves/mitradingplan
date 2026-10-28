@@ -192,7 +192,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             )}
             <div style={{ display:"flex", gap:"8px" }}>
               <button onClick={criarBanca} disabled={!novoTipo || !novoValor}
-                style={{ flex:1, background:novoTipo&&novoValor?"linear-gradient(135deg,"+(BANCOS_META[novoTipo]?.cor||"#2ee6a0")+","+(BANCOS_META[novoTipo]?.cor||"#2ee6a0")+"cc)":"var(--line)", color:novoTipo&&novoValor?"#000":"var(--text-5)", border:"none", borderRadius:"10px", padding:"12px", fontWeight:"700", fontSize:"13px", cursor:novoTipo&&novoValor?"pointer":"default" }}>
+                style={{ flex:1, background:novoTipo&&novoValor?"linear-gradient(135deg,"+(BANCOS_META[novoTipo]?.cor||"#2ee6a0")+","+alfa(BANCOS_META[novoTipo]?.cor||"#2ee6a0","cc")+")":"var(--line)", color:novoTipo&&novoValor?"#000":"var(--text-5)", border:"none", borderRadius:"10px", padding:"12px", fontWeight:"700", fontSize:"13px", cursor:novoTipo&&novoValor?"pointer":"default" }}>
                 Criar Banca
               </button>
               <button onClick={() => { setShowCriar(false); setNovoTipo(""); setNovoValor(""); }}

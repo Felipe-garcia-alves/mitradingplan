@@ -29,7 +29,7 @@ export default function Parciais({ config }) {
       </div>
 
       {guide.map((g,i)=>(
-        <div key={i} style={{ border:"1px solid "+alfa(g.cor,"33"), borderRadius:"14px", padding:"22px", marginBottom:"16px", background:"linear-gradient(135deg,"+g.cor+"06,transparent)", position:"relative", overflow:"hidden" }}>
+        <div key={i} style={{ border:"1px solid "+alfa(g.cor,"33"), borderRadius:"14px", padding:"22px", marginBottom:"16px", background:"linear-gradient(135deg,"+alfa(g.cor,"06")+",transparent)", position:"relative", overflow:"hidden" }}>
           <div style={{ position:"absolute", top:0, left:0, width:"3px", bottom:0, background:g.cor }}/>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"16px", flexWrap:"wrap", gap:"8px" }}>
             <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>

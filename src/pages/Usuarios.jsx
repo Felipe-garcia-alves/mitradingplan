@@ -128,7 +128,7 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
           return (
             <div key={u.id} style={{display:"grid",gridTemplateColumns:"minmax(0,2fr) 130px 210px 250px",alignItems:"center",gap:"16px",padding:"14px 20px",borderBottom:i<filtrados.length-1?"1px solid var(--line)":"none"}}>
               <div style={{display:"flex",alignItems:"center",gap:"12px",minWidth:0}}>
-                <div style={{width:"36px",height:"36px",borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,"+cor+"33,"+cor+"0d)",border:"1px solid "+alfa(cor,"55"),display:"flex",alignItems:"center",justifyContent:"center",color:cor,fontWeight:"800",fontSize:"14px"}}>{(u.nome||u.email||"?")[0].toUpperCase()}</div>
+                <div style={{width:"36px",height:"36px",borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,"+alfa(cor,"33")+","+alfa(cor,"0d")+")",border:"1px solid "+alfa(cor,"55"),display:"flex",alignItems:"center",justifyContent:"center",color:cor,fontWeight:"800",fontSize:"14px"}}>{(u.nome||u.email||"?")[0].toUpperCase()}</div>
                 <div style={{minWidth:0}}>
                   <p style={{margin:0,color:"var(--text)",fontSize:"14px",fontWeight:"700",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                     {u.nome||"Sem nome"} {admin && <span style={{marginLeft:"6px",fontSize:"10px",fontWeight:"800",letterSpacing:"0.8px",color:"var(--warn)",border:"1px solid color-mix(in srgb, var(--warn) 26.7%, transparent)",background:"color-mix(in srgb, var(--warn) 7.1%, transparent)",borderRadius:"20px",padding:"1px 7px",verticalAlign:"middle"}}>ADMIN</span>}

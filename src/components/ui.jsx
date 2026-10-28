@@ -175,7 +175,7 @@ export function CapitalChart({ points, height=210 }) {
             <text key={i} x={x(i)} y={H-6} textAnchor={i===0?"start":i===n-1?"end":"middle"} {...AX}>{fmtDia(points[i].d)}</text>
           ))}
           <path d={area} fill={`url(#${id})`}/>
-          <path d={path} fill="none" stroke={cor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+cor+"88)"}}/>
+          <path d={path} fill="none" stroke={cor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+alfa(cor,"88")+")"}}/>
           {hp && <>
             <line x1={x(hover)} x2={x(hover)} y1={PT} y2={H-PB} stroke="color-mix(in srgb, var(--ink) 18.8%, transparent)" strokeDasharray="3,3"/>
             <circle cx={x(hover)} cy={y(hp.val)} r="4.5" fill={cor} stroke="var(--bg)" strokeWidth="2"/>
@@ -361,7 +361,7 @@ export function ProjectionChart({ real, proj, base, color="var(--accent)", cur="
           {temReal && <path d={area} fill={`url(#${id})`}/>}
           <path d={projPath} fill="none" stroke={color} strokeOpacity="0.55" strokeWidth="1.8" strokeDasharray="6,5" strokeLinejoin="round"/>
           {proj.length>0 && <circle cx={xP(proj.length-1)} cy={y(proj[proj.length-1].val)} r="3.5" fill="none" stroke={color} strokeOpacity="0.7" strokeWidth="1.5"/>}
-          {temReal && <path d={realPath} fill="none" stroke={color} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+color+"88)"}}/>}
+          {temReal && <path d={realPath} fill="none" stroke={color} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+alfa(color,"88")+")"}}/>}
           {temReal && <circle cx={xR(real.length-1)} cy={y(real[real.length-1].val)} r="4" fill={color} stroke="var(--bg)" strokeWidth="2"/>}
           {hp && <>
             <line x1={hx} x2={hx} y1={PT} y2={H-PB} stroke="color-mix(in srgb, var(--ink) 18.8%, transparent)" strokeDasharray="3,3"/>

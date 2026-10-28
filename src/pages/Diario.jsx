@@ -808,7 +808,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           const wr = trs.length ? Math.round(trs.filter(t=>t.tipo==="WIN").length / trs.length * 100) : null;
           return (
             <button key={ds} type="button" onClick={()=>setDiaModal(ds)} title="Ver o dia" className={"mtp-cal-dia tem"+(hoje?" hoje":"")}
-              style={{border:"1px solid "+cor+(hoje?"66":"33"),background:"linear-gradient(180deg,"+cor+"14,"+cor+"05)",minHeight:"118px",overflow:"hidden"}}>
+              style={{border:"1px solid "+alfa(cor,hoje?"66":"33"),background:"linear-gradient(180deg,"+alfa(cor,"14")+","+alfa(cor,"05")+")",minHeight:"118px",overflow:"hidden"}}>
               <span className="mtp-cal-rot">{nome}</span>
               <span className="mtp-cal-num">{+ds.slice(8)}</span>
               <Valores partes={partes} empilhar style={{fontSize:"16px"}}/>
@@ -877,7 +877,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                     <div style={{marginBottom:"14px"}}>
                       <p style={{margin:"0 0 8px",color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções</p>
                       <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
-                        {entry.emocoes.map(em=><span key={em} style={{padding:"4px 12px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"var(--text-mute)")+"1a",color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"13px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"var(--text-mute)")+"44"}}>{em}</span>)}
+                        {entry.emocoes.map(em=><span key={em} style={{padding:"4px 12px",borderRadius:"20px",background:alfa(EMOCAO_COLORS[em]||"var(--text-mute)","1a"),color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"13px",fontWeight:"600",border:"1px solid "+alfa(EMOCAO_COLORS[em]||"var(--text-mute)","44")}}>{em}</span>)}
                       </div>
                     </div>
                   )}
@@ -1202,7 +1202,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
                     const on = info.emocoes.includes(em);
                     const cor = EMOCAO_COLORS[em] || "var(--text-mute)";
                     return <button key={em} type="button" onClick={() => mudarDia(dia, { emocoes: on ? info.emocoes.filter(e => e !== em) : [...info.emocoes, em] })}
-                      style={{ padding:"6px 11px", borderRadius:"20px", border:"1px solid " + (on ? cor + "66" : "var(--line-strong)"), background:on ? cor + "1a" : "transparent", color:on ? cor : "var(--text-soft)", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>{em}</button>;
+                      style={{ padding:"6px 11px", borderRadius:"20px", border:"1px solid " + (on ? alfa(cor,"66") : "var(--line-strong)"), background:on ? alfa(cor,"1a") : "transparent", color:on ? cor : "var(--text-soft)", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>{em}</button>;
                   })}
                 </div>
               </div>
@@ -1229,7 +1229,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
                           <input type="checkbox" checked={o.incluir} onChange={e => mudar(o.id, x => ({ ...x, incluir:e.target.checked }))}
                             aria-label="Importar esta operação" style={{ width:"16px", height:"16px", accentColor:"var(--accent)", cursor:"pointer" }}/>
                           <span style={{ color:"var(--text-3)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.horario}</span>
-                          <span style={{ padding:"3px 9px", borderRadius:"6px", fontSize:"11.5px", fontWeight:"800", background:cor + "1f", color:cor }}>{o.tipo}</span>
+                          <span style={{ padding:"3px 9px", borderRadius:"6px", fontSize:"11.5px", fontWeight:"800", background:alfa(cor,"1f"), color:cor }}>{o.tipo}</span>
                           <span style={{ color:cor, fontSize:"14.5px", fontWeight:"700", fontFamily:"var(--font-mono)", minWidth:"96px" }}>{brl(o.resultado)}</span>
                           {o.pontos !== null && <span style={{ color:"var(--text-2)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.pontos >= 0 ? "+" : ""}{o.pontos} {mt5 ? "pips" : "pts"}</span>}
                           <span className="mtp-tag"><b style={{ fontFamily:"var(--font-mono)", color:"var(--text)" }}>{o.ativo}</b></span>

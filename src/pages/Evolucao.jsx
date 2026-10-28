@@ -538,7 +538,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
             const pct = totGanho>0 ? Math.round((v/totGanho)*100) : 0;
             return (
               <div key={n} className="mtp-click-row" onClick={()=>abrirEst(n,{filtro:"win",ordem:"maior"})} style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
-                <div style={{width:"26px",height:"26px",borderRadius:"6px",background:colors[i%colors.length]+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <div style={{width:"26px",height:"26px",borderRadius:"6px",background:alfa(colors[i%colors.length],"22"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <span style={{color:colors[i%colors.length],fontSize:"9px",fontWeight:"800"}}>{n.slice(0,2).toUpperCase()}</span>
                 </div>
                 <div style={{flex:1}}>
@@ -1110,7 +1110,7 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
       <p style={{margin:"0 0 12px",color:"var(--text-3)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
         {alertas.slice(0,5).map((a,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"9px 12px",borderRadius:"8px",background:cores[a.tipo]+"0d",border:"1px solid "+cores[a.tipo]+"33"}}>
+          <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"9px 12px",borderRadius:"8px",background:alfa(cores[a.tipo],"0d"),border:"1px solid "+alfa(cores[a.tipo],"33")}}>
             <p style={{margin:0,color:"var(--text)",fontSize:"13px",lineHeight:"1.6"}}>{a.msg}</p>
           </div>
         ))}
