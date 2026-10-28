@@ -1,5 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { hojeLocal } from "../lib/datas";
+import { useTema } from "../lib/tema";
 import { somaPorMoeda, fmtMoeda, corDasPartes } from "../lib/moedas";
 const MENU = [
   { id:"evolucao",    label:"Evolução",      icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
@@ -34,6 +35,7 @@ export default function Sidebar({ pagina, setPagina, mobile, onClose, compliance
     .filter(v => v!==null);
   const compliancePct = valsMes.length>0 ? Math.round(valsMes.reduce((a,b)=>a+b,0)/valsMes.length) : null;
   const { logout } = useAuth();
+  const [tema, trocarTema] = useTema();
 
   const item = id => {
     const m = MENU.find(x=>x.id===id);
@@ -69,7 +71,7 @@ export default function Sidebar({ pagina, setPagina, mobile, onClose, compliance
         {/* Logo sozinho no topo, com respiro até as ações */}
         <div className="mtp-brand" style={{padding:mobile?"44px 20px 30px 38px":"32px 16px 0",marginBottom:mobile?0:"clamp(24px,5vh,44px)",cursor:"default"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px",whiteSpace:"nowrap"}}>
-            <div className="mtp-logo" style={{width:"40px",height:"40px",borderRadius:"11px",background:"linear-gradient(135deg,var(--accent),var(--accent-2))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 6px 24px -6px rgba(46,230,160,0.45)"}}>
+            <div className="mtp-logo" style={{width:"40px",height:"40px",borderRadius:"11px",background:"linear-gradient(135deg,var(--accent),var(--accent-2))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 6px 24px -6px color-mix(in srgb, var(--accent) 45%, transparent)"}}>
               <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#04110b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <div className="mtp-brand-text">
@@ -120,11 +122,11 @@ export default function Sidebar({ pagina, setPagina, mobile, onClose, compliance
               <span className="mtp-nav-label">{fixa ? "Recolher barra" : "Manter aberta"}</span>
             </button>
           )}
-          {/* Tema claro: lugar reservado, o tema ainda não existe */}
-          <button className="mtp-nav-item" disabled title="Tema claro — em breve" style={{color:"var(--text-3)",cursor:"default"}}>
-            <span className="mtp-nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
-            <span className="mtp-nav-label">Tema claro</span>
-            <span className="mtp-nav-badge" style={{color:"var(--text-3)",border:"1px solid var(--line-strong)"}}>em breve</span>
+          <button className="mtp-nav-item" onClick={trocarTema} title={tema==="light"?"Mudar para o tema escuro":"Mudar para o tema claro"} style={{color:"var(--text-3)"}}>
+            <span className="mtp-nav-icon">{tema==="light" ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            ) : (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>)}</span>
+            <span className="mtp-nav-label">{tema==="light" ? "Tema escuro" : "Tema claro"}</span>
           </button>
           <button className="mtp-nav-item mtp-logout" onClick={logout} style={{color:"var(--text-3)"}}>
             <span className="mtp-nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>

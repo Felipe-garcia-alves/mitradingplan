@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { createPortal } from "react-dom";
 import { fmtMoeda, corValor } from "../lib/moedas";
+import { alfa } from "../lib/cor.js";
 
 const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 
@@ -115,13 +116,13 @@ function Tip({ x, y, children }) {
   return (
     <div style={{position:"absolute",left:x,top:y,transform:"translate(-50%,calc(-100% - 12px))",pointerEvents:"none",zIndex:5,
       background:"rgba(8,14,11,0.92)",backdropFilter:"blur(8px)",border:"1px solid var(--line-strong)",borderRadius:"10px",
-      padding:"8px 11px",whiteSpace:"nowrap",boxShadow:"0 10px 30px rgba(0,0,0,0.6)",fontFamily:"var(--font-mono)",fontSize:"12px"}}>
+      padding:"8px 11px",whiteSpace:"nowrap",boxShadow:"0 10px 30px color-mix(in srgb, var(--shade) 60%, transparent)",fontFamily:"var(--font-mono)",fontSize:"12px"}}>
       {children}
     </div>
   );
 }
 
-const AX = { fill:"#5d6f67", fontSize:10, fontFamily:"var(--font-mono)" };
+const AX = { fill:"var(--text-4)", fontSize:10, fontFamily:"var(--font-mono)" };
 
 // ── Curva de capital com eixos e tooltip ─────────────────────────
 export function CapitalChart({ points, height=210 }) {
@@ -142,7 +143,7 @@ export function CapitalChart({ points, height=210 }) {
   const x = i => PL + (i/(n-1))*iw;
   const y = v => PT + (1-(v-lo)/(hi-lo))*(H-PT-PB);
   const last = vals[n-1];
-  const cor = last>=0 ? "#2ee6a0" : "#ff5470";
+  const cor = last>=0 ? "var(--accent)" : "var(--neg)";
   const path = points.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(p.val).toFixed(1)).join(" ");
   const area = path+` L${x(n-1).toFixed(1)},${y(0).toFixed(1)} L${PL},${y(0).toFixed(1)} Z`;
   const labelIdx = spacedIdx(n, x, 56);
@@ -166,7 +167,7 @@ export function CapitalChart({ points, height=210 }) {
           </defs>
           {ticks.map(t=>(
             <g key={t}>
-              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke={t===0?"#ffffff22":"#ffffff0a"} strokeDasharray={t===0?"4,4":"none"}/>
+              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke={t===0?"color-mix(in srgb, var(--ink) 13.3%, transparent)":"color-mix(in srgb, var(--ink) 3.9%, transparent)"} strokeDasharray={t===0?"4,4":"none"}/>
               <text x={PL-8} y={y(t)+3} textAnchor="end" {...AX}>{fmtK(t)}</text>
             </g>
           ))}
@@ -176,15 +177,15 @@ export function CapitalChart({ points, height=210 }) {
           <path d={area} fill={`url(#${id})`}/>
           <path d={path} fill="none" stroke={cor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+cor+"88)"}}/>
           {hp && <>
-            <line x1={x(hover)} x2={x(hover)} y1={PT} y2={H-PB} stroke="#ffffff30" strokeDasharray="3,3"/>
-            <circle cx={x(hover)} cy={y(hp.val)} r="4.5" fill={cor} stroke="#050907" strokeWidth="2"/>
+            <line x1={x(hover)} x2={x(hover)} y1={PT} y2={H-PB} stroke="color-mix(in srgb, var(--ink) 18.8%, transparent)" strokeDasharray="3,3"/>
+            <circle cx={x(hover)} cy={y(hp.val)} r="4.5" fill={cor} stroke="var(--bg)" strokeWidth="2"/>
           </>}
         </svg>
       )}
       {hp && (
         <Tip x={x(hover)} y={y(hp.val)}>
           <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{fmtDia(hp.d)}</div>
-          <div style={{color:hp.val>=0?"#2ee6a0":"#ff5470",fontWeight:700}}>{hp.val>=0?"+":""}R$ {hp.val.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style={{color:hp.val>=0?"var(--accent)":"var(--neg)",fontWeight:700}}>{hp.val>=0?"+":""}R$ {hp.val.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
         </Tip>
       )}
     </div>
@@ -228,12 +229,12 @@ export function DailyBars({ bars, height=210, onBarClick }) {
       {w>0 && (
         <svg width={w} height={H} style={{display:"block",cursor:onBarClick&&hover!=null?"pointer":"default"}} onMouseMove={onMove} onMouseLeave={()=>setHover(null)} onClick={e=>{ if(!onBarClick) return; const r=e.currentTarget.getBoundingClientRect(); const i=Math.floor((e.clientX-r.left-PL)/slot); if(i>=0&&i<n) onBarClick(bars[i]); }}>
           <defs>
-            <linearGradient id={id+"p"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3fe8a8"/><stop offset="100%" stopColor="#1fb57e"/></linearGradient>
-            <linearGradient id={id+"n"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#d9435d"/><stop offset="100%" stopColor="#ff5470"/></linearGradient>
+            <linearGradient id={id+"p"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--accent)"/><stop offset="100%" stopColor="var(--accent-deep)"/></linearGradient>
+            <linearGradient id={id+"n"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--neg)"/><stop offset="100%" stopColor="var(--neg)"/></linearGradient>
           </defs>
           {ticks.map(t=>(
             <g key={t}>
-              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke={t===0?"#ffffff22":"#ffffff0a"}/>
+              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke={t===0?"color-mix(in srgb, var(--ink) 13.3%, transparent)":"color-mix(in srgb, var(--ink) 3.9%, transparent)"}/>
               <text x={PL-8} y={y(t)+3} textAnchor="end" {...AX}>{fmtK(t)}</text>
             </g>
           ))}
@@ -247,23 +248,23 @@ export function DailyBars({ bars, height=210, onBarClick }) {
               <rect key={i} x={cx(i)-bw/2} y={top} width={bw} height={Math.max(1.5,bot-top)} rx={Math.min(3,bw/3)}
                 fill={b.val>=0?`url(#${id}p)`:`url(#${id}n)`}
                 opacity={hover==null||ativo?1:0.45}
-                style={{transition:"opacity .2s",filter:ativo?"drop-shadow(0 0 6px "+(b.val>=0?"#2ee6a0":"#ff5470")+")":"none"}}/>
+                style={{transition:"opacity .2s",filter:ativo?"drop-shadow(0 0 6px "+(b.val>=0?"var(--accent)":"var(--neg)")+")":"none"}}/>
             );
           })}
           {mPos!==null && <>
-            <line x1={PL} x2={w-PR} y1={y(mPos)} y2={y(mPos)} stroke="#2ee6a0" strokeOpacity="0.55" strokeDasharray="4,4"/>
-            <text x={w-PR} y={y(mPos)-5} textAnchor="end" fill="#2ee6a0" fontSize="10" fontFamily="var(--font-mono)" stroke="#0a110e" strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">média {fmtK(mPos)}</text>
+            <line x1={PL} x2={w-PR} y1={y(mPos)} y2={y(mPos)} stroke="var(--accent)" strokeOpacity="0.55" strokeDasharray="4,4"/>
+            <text x={w-PR} y={y(mPos)-5} textAnchor="end" fill="var(--accent)" fontSize="10" fontFamily="var(--font-mono)" stroke="var(--surface)" strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">média {fmtK(mPos)}</text>
           </>}
           {mNeg!==null && <>
-            <line x1={PL} x2={w-PR} y1={y(mNeg)} y2={y(mNeg)} stroke="#ff5470" strokeOpacity="0.55" strokeDasharray="4,4"/>
-            <text x={w-PR} y={y(mNeg)+13} textAnchor="end" fill="#ff5470" fontSize="10" fontFamily="var(--font-mono)" stroke="#0a110e" strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">média {fmtK(mNeg)}</text>
+            <line x1={PL} x2={w-PR} y1={y(mNeg)} y2={y(mNeg)} stroke="var(--neg)" strokeOpacity="0.55" strokeDasharray="4,4"/>
+            <text x={w-PR} y={y(mNeg)+13} textAnchor="end" fill="var(--neg)" fontSize="10" fontFamily="var(--font-mono)" stroke="var(--surface)" strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">média {fmtK(mNeg)}</text>
           </>}
         </svg>
       )}
       {hb && (
         <Tip x={cx(hover)} y={y(Math.max(0,hb.val))}>
           <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{fmtDia(hb.d)}</div>
-          <div style={{color:hb.val>=0?"#2ee6a0":"#ff5470",fontWeight:700}}>{hb.val>=0?"+":""}R$ {hb.val.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+          <div style={{color:hb.val>=0?"var(--accent)":"var(--neg)",fontWeight:700}}>{hb.val>=0?"+":""}R$ {hb.val.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
           {hb.pts!=null && <div style={{color:"var(--text-2)",fontSize:"11px"}}>{hb.pts>=0?"+":""}{(+hb.pts).toFixed(1)} pts</div>}
         </Tip>
       )}
@@ -291,7 +292,7 @@ export function Modal({ onClose, children, width=720 }) {
 }
 
 // ── Histórico real | projeção futura, divididos em "hoje" ────────
-export function ProjectionChart({ real, proj, base, color="#2ee6a0", cur="R$", height=290 }) {
+export function ProjectionChart({ real, proj, base, color="var(--accent)", cur="R$", height=290 }) {
   const [ref, w] = useWidth();
   const [hover, setHover] = useState(null);
   const id = useId();
@@ -341,15 +342,15 @@ export function ProjectionChart({ real, proj, base, color="#2ee6a0", cur="R$", h
           </defs>
           {ticks.map(t=>(
             <g key={t}>
-              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke="#ffffff0a"/>
+              <line x1={PL} x2={w-PR} y1={y(t)} y2={y(t)} stroke="color-mix(in srgb, var(--ink) 3.9%, transparent)"/>
               <text x={PL-8} y={y(t)+3} textAnchor="end" {...AX}>{fmtK(t, cur)}</text>
             </g>
           ))}
-          <line x1={PL} x2={w-PR} y1={y(base)} y2={y(base)} stroke="#ffffff26" strokeDasharray="2,5"/>
+          <line x1={PL} x2={w-PR} y1={y(base)} y2={y(base)} stroke="color-mix(in srgb, var(--ink) 14.9%, transparent)" strokeDasharray="2,5"/>
           {temReal && <>
-            <rect x={xs} y={PT} width={PL+iw-xs} height={H-PT-PB} fill="#ffffff04"/>
-            <line x1={xs} x2={xs} y1={PT} y2={H-PB} stroke="#ffffff22" strokeDasharray="3,3"/>
-            <text x={xs+6} y={PT+11} fill="#82948c" fontSize="10" fontFamily="var(--font-mono)">hoje →</text>
+            <rect x={xs} y={PT} width={PL+iw-xs} height={H-PT-PB} fill="color-mix(in srgb, var(--ink) 1.6%, transparent)"/>
+            <line x1={xs} x2={xs} y1={PT} y2={H-PB} stroke="color-mix(in srgb, var(--ink) 13.3%, transparent)" strokeDasharray="3,3"/>
+            <text x={xs+6} y={PT+11} fill="var(--text-mute)" fontSize="10" fontFamily="var(--font-mono)">hoje →</text>
           </>}
           {realLabels.map(i=>(
             <text key={"r"+i} x={xR(i)} y={H-8} textAnchor={i===0?"start":"middle"} {...AX}>{fmtDia(real[i].d)}</text>
@@ -361,10 +362,10 @@ export function ProjectionChart({ real, proj, base, color="#2ee6a0", cur="R$", h
           <path d={projPath} fill="none" stroke={color} strokeOpacity="0.55" strokeWidth="1.8" strokeDasharray="6,5" strokeLinejoin="round"/>
           {proj.length>0 && <circle cx={xP(proj.length-1)} cy={y(proj[proj.length-1].val)} r="3.5" fill="none" stroke={color} strokeOpacity="0.7" strokeWidth="1.5"/>}
           {temReal && <path d={realPath} fill="none" stroke={color} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px "+color+"88)"}}/>}
-          {temReal && <circle cx={xR(real.length-1)} cy={y(real[real.length-1].val)} r="4" fill={color} stroke="#050907" strokeWidth="2"/>}
+          {temReal && <circle cx={xR(real.length-1)} cy={y(real[real.length-1].val)} r="4" fill={color} stroke="var(--bg)" strokeWidth="2"/>}
           {hp && <>
-            <line x1={hx} x2={hx} y1={PT} y2={H-PB} stroke="#ffffff30" strokeDasharray="3,3"/>
-            <circle cx={hx} cy={y(hp.val)} r="4.5" fill={hover.lado==="r"?color:"#0a110e"} stroke={hover.lado==="r"?"#050907":color} strokeWidth="2"/>
+            <line x1={hx} x2={hx} y1={PT} y2={H-PB} stroke="color-mix(in srgb, var(--ink) 18.8%, transparent)" strokeDasharray="3,3"/>
+            <circle cx={hx} cy={y(hp.val)} r="4.5" fill={hover.lado==="r"?color:"var(--surface)"} stroke={hover.lado==="r"?"var(--bg)":color} strokeWidth="2"/>
           </>}
         </svg>
       )}
@@ -372,7 +373,7 @@ export function ProjectionChart({ real, proj, base, color="#2ee6a0", cur="R$", h
         <Tip x={hx} y={y(hp.val)}>
           <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{hover.lado==="r" ? fmtDia(hp.d) : hp.label+" · projeção"}</div>
           <div style={{color:hover.lado==="r"?color:"var(--text)",fontWeight:700}}>{fmtCur(hp.val)}</div>
-          <div style={{color:hp.val>=base?"#2ee6a0":"#ff5470",fontSize:"11px"}}>{hp.val>=base?"+":"-"}{fmtCur(Math.abs(hp.val-base))} vs inicial</div>
+          <div style={{color:hp.val>=base?"var(--accent)":"var(--neg)",fontSize:"11px"}}>{hp.val>=base?"+":"-"}{fmtCur(Math.abs(hp.val-base))} vs inicial</div>
         </Tip>
       )}
     </div>
@@ -485,8 +486,8 @@ export function TimePicker({ value, onChange, style, horas = [9,10,11,12,13,14,1
   const setH = hh => onChange(String(hh).padStart(2,"0")+":"+(m || "00"));
   const setM = mm => onChange((h || String(new Date().getHours()).padStart(2,"0"))+":"+String(mm).padStart(2,"0"));
   const cel = ativo => ({
-    padding:"7px 0", borderRadius:"8px", border:"1px solid "+(ativo?"rgba(46,230,160,0.4)":"var(--line)"),
-    background: ativo?"rgba(46,230,160,0.12)":"transparent", color: ativo?"var(--accent)":"var(--text-2)",
+    padding:"7px 0", borderRadius:"8px", border:"1px solid "+(ativo?"color-mix(in srgb, var(--accent) 40%, transparent)":"var(--line)"),
+    background: ativo?"color-mix(in srgb, var(--accent) 12%, transparent)":"transparent", color: ativo?"var(--accent)":"var(--text-2)",
     fontFamily:"var(--font-mono)", fontSize:"12.5px", fontWeight:600, cursor:"pointer",
   });
   return (
@@ -502,7 +503,7 @@ export function TimePicker({ value, onChange, style, horas = [9,10,11,12,13,14,1
         <Popover rect={rect} onClose={() => setRect(null)} width={252} maxHeight={400} anchorRef={btn}>
           <div style={{ padding:"6px" }}>
             <div style={{ display:"flex", gap:"6px", marginBottom:"10px" }}>
-              <button type="button" onClick={() => { onChange(agora()); setRect(null); }} style={{ ...cel(false), flex:1, color:"var(--accent)", borderColor:"rgba(46,230,160,0.3)" }}>Agora · {agora()}</button>
+              <button type="button" onClick={() => { onChange(agora()); setRect(null); }} style={{ ...cel(false), flex:1, color:"var(--accent)", borderColor:"color-mix(in srgb, var(--accent) 30%, transparent)" }}>Agora · {agora()}</button>
               {value && <button type="button" onClick={() => { onChange(""); setRect(null); }} style={{ ...cel(false), padding:"7px 10px", color:"var(--text-3)" }}>Limpar</button>}
             </div>
             <p style={{ margin:"0 2px 6px", color:"var(--text-3)", fontSize:"10px", fontWeight:700, letterSpacing:"1.2px", textTransform:"uppercase" }}>Hora</p>
@@ -523,12 +524,12 @@ export function TimePicker({ value, onChange, style, horas = [9,10,11,12,13,14,1
 // ── Confirmação (substitui o window.confirm) ─────────────────────
 export function Confirmar({ titulo, texto, botao = "Apagar", perigo = true, onConfirmar, onCancelar }) {
   const [ocupado, setOcupado] = useState(false);
-  const cor = perigo ? "#ff5470" : "#2ee6a0";
+  const cor = perigo ? "var(--neg)" : "var(--accent)";
   return (
     <Modal onClose={onCancelar} width={420}>
       <div style={{ padding:"24px 26px", display:"flex", flexDirection:"column", gap:"16px" }}>
         <div style={{ display:"flex", gap:"14px", alignItems:"flex-start" }}>
-          <div style={{ width:"40px", height:"40px", borderRadius:"12px", flexShrink:0, background:cor+"18", border:"1px solid "+cor+"44", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ width:"40px", height:"40px", borderRadius:"12px", flexShrink:0, background:alfa(cor,"18"), border:"1px solid "+alfa(cor,"44"), display:"flex", alignItems:"center", justifyContent:"center" }}>
             {perigo
               ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}

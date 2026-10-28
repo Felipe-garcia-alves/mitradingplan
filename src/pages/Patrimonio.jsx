@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CountUp, ProjectionChart } from "../components/ui";
 import { listaCarteiras, bancaCarteira, totalSaques, totalDepositos, curvaCarteira, resultadoDia } from "../lib/banca";
 import { useCotacaoUSD, paraBRL } from "../lib/cambio";
+import { alfa } from "../lib/cor.js";
 
 function gerarProjecao(base, meses, taxa) {
   const rows=[]; let b=base;
@@ -46,7 +47,7 @@ function Cotacao({ cot }) {
       <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
         <span style={{ color:"var(--text-3)", fontSize:"12px" }}>US$ 1 = R$</span>
         <input autoFocus type="number" step="0.01" value={txt} onChange={e=>setTxt(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter") salvar(); if(e.key==="Escape") setEditando(false); }}
-          style={{ width:"70px", background:"rgba(255,255,255,0.05)", border:"1px solid var(--line-strong)", borderRadius:"8px", padding:"5px 8px", color:"var(--text)", fontSize:"13px", fontFamily:"var(--font-mono)", outline:"none" }}/>
+          style={{ width:"70px", background:"color-mix(in srgb, var(--ink) 5%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"8px", padding:"5px 8px", color:"var(--text)", fontSize:"13px", fontFamily:"var(--font-mono)", outline:"none" }}/>
         <button onClick={salvar} className="mtp-ctx-ghost" style={{ padding:"4px 8px" }}>ok</button>
         {cot.origem==="manual" && <button onClick={()=>{ cot.setManual(null); setEditando(false); }} className="mtp-ctx-ghost" style={{ padding:"4px 8px" }}>usar ao vivo</button>}
       </div>
@@ -54,7 +55,7 @@ function Cotacao({ cot }) {
   }
   return (
     <button onClick={()=>{ setTxt(cot.valor ? cot.valor.toFixed(2) : ""); setEditando(true); }} title="Clique para usar outra cotação"
-      style={{ display:"flex", alignItems:"center", gap:"8px", background:"rgba(255,255,255,0.03)", border:"1px solid var(--line)", borderRadius:"20px", padding:"6px 12px", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
+      style={{ display:"flex", alignItems:"center", gap:"8px", background:"color-mix(in srgb, var(--ink) 3%, transparent)", border:"1px solid var(--line)", borderRadius:"20px", padding:"6px 12px", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
       <i className="mtp-dot" style={{ background: cot.origem==="ao vivo" ? "var(--accent)" : cot.origem ? "var(--warn)" : "var(--neg)", color: cot.origem==="ao vivo" ? "var(--accent)" : "var(--warn)" }}/>
       <span style={{ color:"var(--text-2)", fontSize:"12px", fontFamily:"var(--font-mono)" }}>{cot.valor ? "US$ 1 = R$ "+cot.valor.toFixed(2).replace(".",",") : "informe a cotação do dólar"}</span>
       {cot.origem && <span style={{ color:"var(--text-3)", fontSize:"11px" }}>{cot.origem}</span>}
@@ -103,15 +104,15 @@ function PatrimonioTotal({ entries, config, carteiras, cot, onAbrir }) {
   return (
     <>
       {semCot && (
-        <div style={{ padding:"11px 16px", borderRadius:"12px", background:"rgba(245,185,65,0.06)", border:"1px solid #f5b94133", marginBottom:"14px", color:"var(--text-2)", fontSize:"12.5px" }}>
+        <div style={{ padding:"11px 16px", borderRadius:"12px", background:"color-mix(in srgb, var(--warn) 6%, transparent)", border:"1px solid color-mix(in srgb, var(--warn) 20%, transparent)", marginBottom:"14px", color:"var(--text-2)", fontSize:"12.5px" }}>
           Não consegui buscar a cotação do dólar. Informe uma no topo para incluir as contas em $ na soma.
         </div>
       )}
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))", gap:"14px", marginBottom:"14px" }}>
-        <div style={{ ...kpiCard, borderColor:"#2ee6a033" }}>
+        <div style={{ ...kpiCard, borderColor:"color-mix(in srgb, var(--accent) 20%, transparent)" }}>
           <p style={kpiLabel}>Patrimônio total</p>
-          <p style={{ ...kpiValue, color:"var(--accent)", textShadow:"0 0 22px #2ee6a044" }}><CountUp value={total} format={fmtR}/></p>
+          <p style={{ ...kpiValue, color:"var(--accent)", textShadow:"0 0 22px color-mix(in srgb, var(--accent) 26.7%, transparent)" }}><CountUp value={total} format={fmtR}/></p>
           <p style={kpiSub}>{conta.length} conta{conta.length!==1?"s":""}{temDolar && cot.valor ? " · em R$" : ""}</p>
         </div>
         <div style={kpiCard}>
@@ -134,9 +135,9 @@ function PatrimonioTotal({ entries, config, carteiras, cot, onAbrir }) {
       <div style={{ background:"var(--card)", border:"1px solid var(--line)", borderRadius:"16px", padding:"18px 20px 10px", marginBottom:"14px" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", flexWrap:"wrap", marginBottom:"10px" }}>
           <p className="mtp-card-title">Evolução & Projeção · todas as contas</p>
-          <Legenda color="#2ee6a0" rotulo="Patrimônio real"/>
+          <Legenda color="var(--accent)" rotulo="Patrimônio real"/>
         </div>
-        <ProjectionChart real={real} proj={projSerie} base={inicial} color="#2ee6a0" cur="R$"/>
+        <ProjectionChart real={real} proj={projSerie} base={inicial} color="var(--accent)" cur="R$"/>
         {temDolar && cot.valor && <p style={{ margin:"6px 0 4px", color:"var(--text-3)", fontSize:"11px" }}>Contas em dólar convertidas pela cotação atual em toda a curva.</p>}
       </div>
 
@@ -149,7 +150,7 @@ function PatrimonioTotal({ entries, config, carteiras, cot, onAbrir }) {
         {total > 0 && (
           <div style={{ display:"flex", height:"10px", borderRadius:"6px", overflow:"hidden", gap:"2px", marginBottom:"12px" }}>
             {ordenadas.map(l => (
-              <div key={l.c.key} title={l.c.label} style={{ width:(l.atual*l.f/total*100)+"%", background:l.c.cor, boxShadow:"0 0 10px "+l.c.cor+"66" }}/>
+              <div key={l.c.key} title={l.c.label} style={{ width:(l.atual*l.f/total*100)+"%", background:l.c.cor, boxShadow:"0 0 10px "+alfa(l.c.cor,"66") }}/>
             ))}
           </div>
         )}
@@ -216,15 +217,15 @@ function PatrimonioConta({ entries, config, cart }) {
           <p style={{ ...kpiValue, color:"var(--text-2)" }}>{fmtC(bancaIn)}</p>
           <p style={kpiSub}>ponto de partida</p>
         </div>
-        <div style={{ ...kpiCard, borderColor:color+"33" }}>
+        <div style={{ ...kpiCard, borderColor:alfa(color,"33") }}>
           <p style={kpiLabel}>Banca real atual</p>
-          <p style={{ ...kpiValue, color, textShadow:"0 0 22px "+color+"44" }}><CountUp value={bancaAt} format={fmtC}/></p>
+          <p style={{ ...kpiValue, color, textShadow:"0 0 22px "+alfa(color,"44") }}><CountUp value={bancaAt} format={fmtC}/></p>
           <p style={{ ...kpiSub, color:lucro>=0?"var(--pos)":"var(--neg)", fontFamily:"var(--font-mono)" }}>{lucro>=0?"↑ +":"↓ -"}{Math.abs(pctLucro).toFixed(1)}% em trades</p>
         </div>
         <div style={kpiCard}>
           <p style={kpiLabel}>Resultado acumulado</p>
           <p style={{ ...kpiValue, color:lucro>=0?"var(--pos)":"var(--neg)" }}><CountUp value={lucro} format={v=>(v<0?"-":"+")+fmtC(v)}/></p>
-          <p style={kpiSub}>{sortedDays.length} dias registrados{depositado>0 && <span style={{ color:"#7fd8ff" }}> · {fmtC(depositado)} depositado</span>}{sacado>0 && <span style={{ color:"#f5b941" }}> · {fmtC(sacado)} sacado</span>}</p>
+          <p style={kpiSub}>{sortedDays.length} dias registrados{depositado>0 && <span style={{ color:"var(--info)" }}> · {fmtC(depositado)} depositado</span>}{sacado>0 && <span style={{ color:"var(--warn)" }}> · {fmtC(sacado)} sacado</span>}</p>
         </div>
         <div style={kpiCard}>
           <p style={kpiLabel}>Meta 12 meses</p>
@@ -246,18 +247,18 @@ function PatrimonioConta({ entries, config, cart }) {
       {perdedoras.length > 0 && (
         <div style={{ background:"var(--card)", border:"1px solid var(--line)", borderRadius:"16px", padding:"18px 20px" }}>
           <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"14px" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff5470" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--neg)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
             <p className="mtp-card-title">Piores dias · {nomeMercado}</p>
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
             {perdedoras.map((op,i)=>(
               <div key={i} style={{ display:"grid", gridTemplateColumns:"28px 110px minmax(0,1fr) auto", alignItems:"center", gap:"14px" }}>
-                <span style={{ width:"24px", height:"24px", borderRadius:"7px", background:"rgba(255,84,112,0.1)", border:"1px solid #ff547033", color:"#ff7a90", fontSize:"11px", fontWeight:"800", fontFamily:"var(--font-mono)", display:"flex", alignItems:"center", justifyContent:"center" }}>{i+1}</span>
+                <span style={{ width:"24px", height:"24px", borderRadius:"7px", background:"color-mix(in srgb, var(--neg) 10%, transparent)", border:"1px solid color-mix(in srgb, var(--neg) 20%, transparent)", color:"var(--neg-soft)", fontSize:"11px", fontWeight:"800", fontFamily:"var(--font-mono)", display:"flex", alignItems:"center", justifyContent:"center" }}>{i+1}</span>
                 <span style={{ color:"var(--text-2)", fontSize:"13px", fontFamily:"var(--font-mono)" }}>{formatDateFull(op.d)}</span>
                 <div style={{ height:"4px", borderRadius:"4px", background:"var(--line)", overflow:"hidden" }}>
                   <div style={{ height:"100%", width:(Math.abs(op.val)/piorAbs*100)+"%", borderRadius:"4px", background:"linear-gradient(90deg,#ff547055,#ff5470)" }}/>
                 </div>
-                <span style={{ color:"#ff5470", fontSize:"13.5px", fontWeight:"700", fontFamily:"var(--font-mono)", textAlign:"right" }}>-{fmtC(op.val)}</span>
+                <span style={{ color:"var(--neg)", fontSize:"13.5px", fontWeight:"700", fontFamily:"var(--font-mono)", textAlign:"right" }}>-{fmtC(op.val)}</span>
               </div>
             ))}
           </div>
@@ -265,7 +266,7 @@ function PatrimonioConta({ entries, config, cart }) {
       )}
 
       {realPoints.length <= 1 && (
-        <div style={{ padding:"20px", borderRadius:"12px", background:"rgba(255,255,255,0.01)", border:"1px solid var(--line)", textAlign:"center" }}>
+        <div style={{ padding:"20px", borderRadius:"12px", background:"color-mix(in srgb, var(--ink) 1%, transparent)", border:"1px solid var(--line)", textAlign:"center" }}>
           <p style={{ margin:0, color:"var(--text-3)", fontSize:"13px" }}>Registre operações no Diário para a curva real aparecer.</p>
         </div>
       )}
@@ -285,12 +286,12 @@ export default function Patrimonio({ entries, config }) {
     <div style={{ fontFamily:"var(--font-sans)" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:"16px", flexWrap:"wrap", marginBottom:"24px" }}>
         <div>
-          <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Patrimônio</h1>
-          <p style={{ margin:"4px 0 0", color:"#86978f", fontSize:"13px" }}>{todas ? "A soma de todas as suas contas" : "Evolução real dia a dia vs projeção"}</p>
+          <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"var(--text)", letterSpacing:"-0.8px" }}>Patrimônio</h1>
+          <p style={{ margin:"4px 0 0", color:"var(--text-mute)", fontSize:"13px" }}>{todas ? "A soma de todas as suas contas" : "Evolução real dia a dia vs projeção"}</p>
         </div>
         <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", alignItems:"center" }}>
           {todas && temDolar && <Cotacao cot={cot}/>}
-          <button onClick={()=>setCartKey("todas")} className={"mtp-pill"+(todas?" active":"")} style={{"--pill":"#2ee6a0"}}>Todas</button>
+          <button onClick={()=>setCartKey("todas")} className={"mtp-pill"+(todas?" active":"")} style={{"--pill":"var(--accent)"}}>Todas</button>
           {carteiras.map(c=>(
             <button key={c.key} onClick={()=>setCartKey(c.key)} className={"mtp-pill"+(cartKey===c.key?" active":"")} style={{"--pill":c.cor}}>{c.curto}</button>
           ))}

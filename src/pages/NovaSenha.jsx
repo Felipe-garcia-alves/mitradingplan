@@ -32,29 +32,29 @@ export default function NovaSenha() {
   }
 
   const inp = {
-    width:"100%", background:"rgba(255,255,255,0.04)",
-    border:"1px solid #26352e", borderRadius:"10px",
-    padding:"13px 14px", color:"#f0f0f0", fontSize:"14px",
+    width:"100%", background:"color-mix(in srgb, var(--ink) 4%, transparent)",
+    border:"1px solid var(--line-strong)", borderRadius:"10px",
+    padding:"13px 14px", color:"var(--text)", fontSize:"14px",
     outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)"
   };
-  const lbl = {color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"};
+  const lbl = {color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"};
 
   return (
-    <div style={{minHeight:"100vh",background:"#050907",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)",padding:"20px"}}>
+    <div style={{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)",padding:"20px"}}>
       <div style={{width:"100%",maxWidth:"400px"}}>
         <div style={{textAlign:"center",marginBottom:"32px"}}>
           <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
-          <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>Mi Trading Plan</h1>
-          <p style={{margin:0,color:"#7a8c84",fontSize:"13px"}}>Plataforma profissional para traders</p>
+          <h1 style={{margin:"0 0 4px",fontSize:"22px",fontWeight:"800",color:"var(--text)",letterSpacing:"-0.5px"}}>Mi Trading Plan</h1>
+          <p style={{margin:0,color:"var(--text-3)",fontSize:"13px"}}>Plataforma profissional para traders</p>
         </div>
 
-        <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"32px"}}>
-          <p style={{margin:"0 0 20px",color:"#f0f0f0",fontSize:"15px",fontWeight:"700"}}>Definir nova senha</p>
+        <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"32px"}}>
+          <p style={{margin:"0 0 20px",color:"var(--text)",fontSize:"15px",fontWeight:"700"}}>Definir nova senha</p>
 
           {erro && (
-            <div style={{background:"rgba(255,84,112,0.1)",border:"1px solid rgba(255,84,112,0.2)",borderRadius:"8px",padding:"10px 14px",color:"#ff7a90",fontSize:"13px",marginBottom:"16px"}}>
+            <div style={{background:"color-mix(in srgb, var(--neg) 10%, transparent)",border:"1px solid color-mix(in srgb, var(--neg) 20%, transparent)",borderRadius:"8px",padding:"10px 14px",color:"var(--neg-soft)",fontSize:"13px",marginBottom:"16px"}}>
               {erro}
             </div>
           )}
@@ -74,7 +74,7 @@ export default function NovaSenha() {
           </button>
 
           <div style={{display:"flex",justifyContent:"center"}}>
-            <button onClick={cancelarRecovery} style={{background:"none",border:"none",color:"#7a8c84",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
+            <button onClick={cancelarRecovery} style={{background:"none",border:"none",color:"var(--text-3)",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
               ← Voltar ao login
             </button>
           </div>

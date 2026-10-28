@@ -7,16 +7,16 @@ import { supabase } from "../supabase";
    mude o outro — a tela e o log têm de contar a mesma história. */
 
 const FAIXAS = [
-  { de: -6,   ate: -4.5, t: "Forte",    c: "#ff5470" },
+  { de: -6,   ate: -4.5, t: "Forte",    c: "var(--neg)" },
   { de: -4.5, ate: -2.5, t: "Moderada", c: "#d2706b" },
   { de: -2.5, ate: -1.5, t: "Fraca",    c: "#b08268" },
-  { de: -1.5, ate:  1.5, t: "Lateral",  c: "#f5b941" },
+  { de: -1.5, ate:  1.5, t: "Lateral",  c: "var(--warn)" },
   { de:  1.5, ate:  2.5, t: "Fraca",    c: "#6aae95" },
-  { de:  2.5, ate:  4.5, t: "Moderada", c: "#48bd9c" },
-  { de:  4.5, ate:  6,   t: "Forte",    c: "#2ee6a0" },
+  { de:  2.5, ate:  4.5, t: "Moderada", c: "var(--accent-deep)" },
+  { de:  4.5, ate:  6,   t: "Forte",    c: "var(--accent)" },
 ];
 const MIN = -6, MAX = 6;
-const CORES = { positiva: "#2ee6a0", negativa: "#ff5470", lateral: "#f5b941" };
+const CORES = { positiva: "var(--accent)", negativa: "var(--neg)", lateral: "var(--warn)" };
 /* Bandeira em SVG, não emoji: o Windows não traz os glifos de bandeira e renderiza
    o par de letras no lugar do desenho ("BR" vira o texto BR). */
 function Bandeira({ pais }) {
@@ -122,8 +122,8 @@ const ACAO = {
 };
 
 const CSS = `
-.mx{--surf:#0e1713;--surf2:#111c17;--line:#1f2d27;--line2:#18241f;--txt:#eef4f1;--mut:#a9b8b1;
-  --dim:#82948c;--faint:#62746c;--up:#2ee6a0;--down:#ff5470;--flat:#f5b941;--blue:#5aa9f0;--roxo:#7fd8ff;
+.mx{--surf:var(--surface);--surf2:var(--line);--line:var(--line-strong);--line2:var(--line);--txt:var(--text);--mut:var(--text-soft);
+  --dim:var(--text-mute);--faint:var(--text-4);--up:var(--accent);--down:var(--neg);--flat:var(--warn);--blue:#5aa9f0;--roxo:var(--info);
   --mono:var(--font-mono);
   --ui:var(--font-sans);
   max-width:1080px;margin:0 auto;font-family:var(--ui);display:flex;flex-direction:column;gap:16px;
@@ -138,11 +138,11 @@ const CSS = `
   background:color-mix(in srgb,var(--roxo) 9%,transparent)}
 .mx .status.off{color:var(--faint);border-color:var(--line)}
 .mx .card{position:relative;border:1px solid var(--line);border-radius:16px;padding:24px 26px;
-  background:linear-gradient(180deg,rgba(46,230,160,0.035) 0%,rgba(46,230,160,0) 40%),linear-gradient(160deg,#0f1814 0%,#0a110e 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 1px 2px rgba(0,0,0,0.4),0 12px 32px -12px rgba(0,0,0,0.6);
+  background:linear-gradient(180deg,rgba(46,230,160,0.035) 0%,rgba(46,230,160,0) 40%),linear-gradient(160deg,var(--surface) 0%,var(--surface) 100%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent),0 1px 2px rgba(0,0,0,0.4),0 12px 32px -12px rgba(0,0,0,0.6);
   transition:box-shadow .35s cubic-bezier(.2,.8,.2,1),border-color .35s cubic-bezier(.2,.8,.2,1)}
 .mx .card:hover{border-color:var(--line-strong);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 0 0 1px rgba(46,230,160,0.08),0 18px 40px -14px rgba(0,0,0,0.75),0 0 40px -14px rgba(46,230,160,0.16)}
+  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent),0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent),0 18px 40px -14px rgba(0,0,0,0.75),0 0 40px -14px color-mix(in srgb, var(--accent) 16%, transparent)}
 .mx .card>h2{margin:0 0 18px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:var(--faint)}
 @media(max-width:520px){.mx .card{padding:20px 16px}}
 .mx .cal-topo{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
@@ -191,7 +191,7 @@ const CSS = `
 .mx .faixa{display:grid;place-items:center;font-size:9.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
   min-width:0;overflow:hidden;transition:.3s ease;background:color-mix(in srgb,var(--fc) 9%,var(--surf2));
   color:color-mix(in srgb,var(--fc) 42%,var(--faint))}
-.mx .faixa.on{background:color-mix(in srgb,var(--fc) 82%,#050907);color:#050907;font-weight:700}
+.mx .faixa.on{background:color-mix(in srgb,var(--fc) 82%,var(--bg));color:var(--bg);font-weight:700}
 .mx .escala{position:relative;height:15px;margin-top:5px}
 .mx .tick{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:9.5px;color:var(--faint)}
 .mx .pernas{margin-top:24px;padding-top:20px;border-top:1px solid var(--line2);
@@ -221,9 +221,9 @@ const CSS = `
 .mx .ctx-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:18px}
 .mx .ctx-head h2{margin:0}
 .mx .ctx{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:11px}
-.mx .ctx div{border:1px solid var(--line2);border-radius:10px;padding:11px 12px;background:rgba(255,255,255,0.015);
+.mx .ctx div{border:1px solid var(--line2);border-radius:10px;padding:11px 12px;background:color-mix(in srgb, var(--ink) 1.5%, transparent);
   display:flex;flex-direction:column;gap:5px;min-width:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,background .3s}
-.mx .ctx div:hover{transform:translateY(-2px);border-color:var(--line-strong);background:rgba(46,230,160,0.04)}
+.mx .ctx div:hover{transform:translateY(-2px);border-color:var(--line-strong);background:color-mix(in srgb, var(--accent) 4%, transparent)}
 .mx .ctx .t{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .mx .ctx em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--mut);letter-spacing:.5px;font-weight:500}
 .mx .ctx b{font-family:var(--mono);font-size:15px;font-weight:400}
@@ -308,7 +308,7 @@ export default function Macro({ isAdmin = false }) {
   const naAbertura = naJanela();
 
   if (carregando) return (
-    <div className="mx"><style>{CSS}</style><p style={{ color: "#7f8a97" }}>Carregando leitura…</p></div>
+    <div className="mx"><style>{CSS}</style><p style={{ color: "var(--text-3)" }}>Carregando leitura…</p></div>
   );
 
   if (!vies) return (
@@ -369,7 +369,7 @@ export default function Macro({ isAdmin = false }) {
               ? `${vies.evento_nome} às 09h00. Notícia 3★ no Brasil.`
               : "Sem notícia 3★ no Brasil às 09h00."}
           </p>
-          <span className="modo" style={{ "--mc": temNoticia ? "#5aa9f0" : "#2ee6a0" }}>
+          <span className="modo" style={{ "--mc": temNoticia ? "#5aa9f0" : "var(--accent)" }}>
             {temNoticia ? "MODO ADR" : "MODO MACRO"}
           </span>
         </div>
@@ -383,8 +383,8 @@ export default function Macro({ isAdmin = false }) {
                   <Bandeira pais={e.pais} />
                   {(e.pais || "BR").toUpperCase()}
                 </span>
-                <span style={{ color: e.estrelas >= 3 ? "#eceef2" : "#a9b8b1", minWidth: 0 }}>{e.nome}</span>
-                <s style={{ color: e.estrelas >= 3 ? "#f5b941" : "#62746c" }}>
+                <span style={{ color: e.estrelas >= 3 ? "var(--text)" : "var(--text-soft)", minWidth: 0 }}>{e.nome}</span>
+                <s style={{ color: e.estrelas >= 3 ? "var(--warn)" : "var(--text-4)" }}>
                   {"★".repeat(e.estrelas) + "☆".repeat(Math.max(0, 3 - e.estrelas))}
                 </s>
               </div>
@@ -422,7 +422,7 @@ export default function Macro({ isAdmin = false }) {
               {alt.pernas.map((p) => (
                 <span key={p.symbol}>
                   {p.rotulo}{" "}
-                  <b style={{ color: (p.contribuicao ?? 0) > 0 ? "#2ee6a0" : (p.contribuicao ?? 0) < 0 ? "#ff5470" : "#62746c" }}>
+                  <b style={{ color: (p.contribuicao ?? 0) > 0 ? "var(--accent)" : (p.contribuicao ?? 0) < 0 ? "var(--neg)" : "var(--text-4)" }}>
                     {p.contribuicao == null ? "—" : sg(p.contribuicao)}
                   </b>
                 </span>
@@ -448,7 +448,7 @@ export default function Macro({ isAdmin = false }) {
         {naAbertura ? (
           <p className="acao">{ACAO[mostra.direcao](mostra.intensidade.toLowerCase())}</p>
         ) : (
-          <p className="acao" style={{ color: "#a9b8b1" }}>
+          <p className="acao" style={{ color: "var(--text-soft)" }}>
             Cotação do momento, fora da janela da abertura. O viés registrado às{" "}
             {horaBRT(vies.atualizado_em)} foi <b>{sg(calc.resultado, n1)}%</b>, {calc.direcao}
             {calc.direcao === "lateral" ? "" : " " + calc.intensidade.toLowerCase()}.
@@ -484,7 +484,7 @@ export default function Macro({ isAdmin = false }) {
           {mostra.pernas.map((p) => {
             const v = p.contribuicao ?? 0;
             const w = Math.abs(v) / maxAbs * 50;
-            const c = v > 0 ? "#2ee6a0" : v < 0 ? "#ff5470" : "#262639";
+            const c = v > 0 ? "var(--accent)" : v < 0 ? "var(--neg)" : "var(--line-strong)";
             const manual = p.entrada === "manual";
             const selo = manual ? "man" : p.parado ? "parado" : p.ausente ? "sem" : frescor(p.preco_em);
             const legenda = manual
@@ -508,7 +508,7 @@ export default function Macro({ isAdmin = false }) {
                   {manual && isAdmin
                     ? <input type="number" step="0.01" inputMode="decimal" value={fef2} placeholder="0,00"
                              onChange={(e) => digitar(e.target.value)} aria-label={`${p.rotulo} — variação em %`} />
-                    : <span style={{ color: v > 0 ? "#2ee6a0" : v < 0 ? "#ff5470" : "#62746c" }}>
+                    : <span style={{ color: v > 0 ? "var(--accent)" : v < 0 ? "var(--neg)" : "var(--text-4)" }}>
                         {p.contribuicao == null ? "—" : sg(v)}
                       </span>}
                 </span>
@@ -551,7 +551,7 @@ export default function Macro({ isAdmin = false }) {
             return (
               <div key={sym}>
                 <span className="t"><em>{rotulo}</em><Selo tipo={frescor(q?.preco_em)} /></span>
-                <b style={{ color: v == null ? "#62746c" : v > 0 ? "#2ee6a0" : v < 0 ? "#ff5470" : "#a9b8b1" }}>
+                <b style={{ color: v == null ? "var(--text-4)" : v > 0 ? "var(--accent)" : v < 0 ? "var(--neg)" : "var(--text-soft)" }}>
                   {v == null ? "—" : sg(v) + "%"}
                 </b>
                 <small>{nome}</small>

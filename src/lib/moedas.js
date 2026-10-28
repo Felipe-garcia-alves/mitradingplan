@@ -31,8 +31,8 @@ export function fmtMoeda(valor, moeda, { compacto = false } = {}) {
 }
 
 // Cor do conjunto: verde se só ganhou, vermelho se só perdeu, âmbar se uma moeda ganhou e a outra perdeu
-export const corValor = v => v > 0 ? "#2ee6a0" : v < 0 ? "#ff5470" : "#86978f";
+export const corValor = v => v > 0 ? "var(--accent)" : v < 0 ? "var(--neg)" : "var(--text-mute)";
 export function corDasPartes(partes) {
   const ganhou = partes.some(p => p.valor > 0), perdeu = partes.some(p => p.valor < 0);
-  return ganhou && perdeu ? "#f5b941" : ganhou ? "#2ee6a0" : perdeu ? "#ff5470" : "#86978f";
+  return ganhou && perdeu ? "var(--warn)" : ganhou ? "var(--accent)" : perdeu ? "var(--neg)" : "var(--text-mute)";
 }

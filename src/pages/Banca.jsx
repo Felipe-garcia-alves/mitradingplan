@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CountUp, Sparkline, Modal } from "../components/ui";
 import { listaCarteiras, mercadoAtivo, carteira, bancaCarteira, totalSaques, listaSaques, totalDepositos, listaDepositos, curvaCarteira, carteiraDoSaque } from "../lib/banca";
 import { TIPOS_CONTA } from "../lib/contas";
+import { alfa } from "../lib/cor.js";
 
 function hojeISO() {
   const d = new Date();
@@ -10,8 +11,8 @@ function hojeISO() {
 function fmtData(s) { const p = s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
 
 const BANCOS_META = {
-  B3:        { label:"Mini Índice B3",   emoji:"🇧🇷", sigla:"B3", moeda:"R$", cor:"#2ee6a0", key:"bancaB3",        entry:"totalB3",        core:true  },
-  Forex:     { label:"Forex",            emoji:"🌍",  sigla:"FX", moeda:"$",  cor:"#f5b941", key:"bancaForex",     entry:"totalForex",     core:true  },
+  B3:        { label:"Mini Índice B3",   emoji:"🇧🇷", sigla:"B3", moeda:"R$", cor:"var(--accent)", key:"bancaB3",        entry:"totalB3",        core:true  },
+  Forex:     { label:"Forex",            emoji:"🌍",  sigla:"FX", moeda:"$",  cor:"var(--warn)", key:"bancaForex",     entry:"totalForex",     core:true  },
   Cripto:    { label:"Cripto",           emoji:"₿",   sigla:"₿",  moeda:"$",  cor:"#a78bfa", key:"bancaCripto",    entry:"totalCripto",    core:false },
   Americano: { label:"Ações Americanas", emoji:"🇺🇸",  sigla:"US", moeda:"$",  cor:"#60a5fa", key:"bancaAmericano", entry:"totalAmericano", core:false },
 };
@@ -24,7 +25,7 @@ function CardItem({ label, value, fmt, sub, color, pct }) {
       <div style={{ position:"absolute", left:0, top:"18px", bottom:"18px", width:"3px", borderRadius:"0 3px 3px 0", background:color, boxShadow:"0 0 10px "+color }}/>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:"8px" }}>
         <p style={kpiLabel}>{label}</p>
-        <span style={{ color, background:color+"15", border:"1px solid "+color+"33", borderRadius:"20px", padding:"1px 8px", fontSize:"10.5px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>{pct}</span>
+        <span style={{ color, background:alfa(color,"15"), border:"1px solid "+alfa(color,"33"), borderRadius:"20px", padding:"1px 8px", fontSize:"10.5px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>{pct}</span>
       </div>
       <p style={{ margin:0, color, fontSize:"clamp(17px,1.5vw,22px)", fontWeight:"700", fontFamily:"var(--font-mono)", whiteSpace:"nowrap" }}><CountUp value={value} format={fmt}/></p>
       <p style={{ margin:0, color:"var(--text-3)", fontSize:"11.5px" }}>{sub}</p>
@@ -34,7 +35,7 @@ function CardItem({ label, value, fmt, sub, color, pct }) {
 
 function Selo({ meta, size=34 }) {
   return (
-    <div style={{ width:size, height:size, borderRadius:"10px", background:meta.cor+"18", border:"1px solid "+meta.cor+"44", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 0 18px -6px "+meta.cor }}>
+    <div style={{ width:size, height:size, borderRadius:"10px", background:alfa(meta.cor,"18"), border:"1px solid "+alfa(meta.cor,"44"), display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 0 18px -6px "+meta.cor }}>
       <span style={{ color:meta.cor, fontSize:size<30?"9.5px":"12px", fontWeight:"800", fontFamily:"var(--font-mono)" }}>{meta.sigla}</span>
     </div>
   );
@@ -121,8 +122,8 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
     setMsg("Banca removida."); setTimeout(() => setMsg(""), 2500);
   }
 
-  const colStop = "#ff5470";
-  const inp = { width:"100%", background:"rgba(255,255,255,0.07)", border:"1px solid #3a3a4a", borderRadius:"10px", padding:"11px 13px", color:"#fff", fontSize:"16px", fontWeight:"700", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-mono)" };
+  const colStop = "var(--neg)";
+  const inp = { width:"100%", background:"color-mix(in srgb, var(--ink) 7%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"10px", padding:"11px 13px", color:"var(--text)", fontSize:"16px", fontWeight:"700", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-mono)" };
 
 
   return (
@@ -130,24 +131,24 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"28px", flexWrap:"wrap", gap:"10px" }}>
         <div>
-          <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Gestão de Banca</h1>
-          <p style={{ margin:"4px 0 0", color:"#86978f", fontSize:"13px" }}>Referências de risco calculadas sobre sua banca real</p>
+          <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"var(--text)", letterSpacing:"-0.8px" }}>Gestão de Banca</h1>
+          <p style={{ margin:"4px 0 0", color:"var(--text-mute)", fontSize:"13px" }}>Referências de risco calculadas sobre sua banca real</p>
         </div>
         <div style={{ display:"flex", gap:"8px", alignItems:"center", flexWrap:"wrap" }}>
-          {msg && <span style={{ color:"#2ee6a0", fontSize:"13px", fontWeight:"600" }}>{msg}</span>}
+          {msg && <span style={{ color:"var(--accent)", fontSize:"13px", fontWeight:"600" }}>{msg}</span>}
           <button onClick={() => abrirSaque(undefined, "deposito")}
-            style={{ background:"rgba(127,216,255,0.08)", border:"1px solid #7fd8ff44", borderRadius:"8px", padding:"8px 16px", color:"#7fd8ff", fontSize:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"var(--font-sans)", display:"flex", alignItems:"center", gap:"6px" }}>
+            style={{ background:"color-mix(in srgb, var(--info) 8%, transparent)", border:"1px solid color-mix(in srgb, var(--info) 26.7%, transparent)", borderRadius:"8px", padding:"8px 16px", color:"var(--info)", fontSize:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"var(--font-sans)", display:"flex", alignItems:"center", gap:"6px" }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="15" x2="12" y2="3"/><polyline points="7 8 12 3 17 8"/><path d="M4 19h16"/></svg>
             Depositar
           </button>
           <button onClick={() => abrirSaque()}
-            style={{ background:"rgba(245,185,65,0.08)", border:"1px solid #f5b94144", borderRadius:"8px", padding:"8px 16px", color:"#f5b941", fontSize:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"var(--font-sans)", display:"flex", alignItems:"center", gap:"6px" }}>
+            style={{ background:"color-mix(in srgb, var(--warn) 8%, transparent)", border:"1px solid color-mix(in srgb, var(--warn) 26.7%, transparent)", borderRadius:"8px", padding:"8px 16px", color:"var(--warn)", fontSize:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"var(--font-sans)", display:"flex", alignItems:"center", gap:"6px" }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></svg>
             Registrar saque
           </button>
           {availableBancos.length > 0 && (
             <button onClick={() => { setShowCriar(true); setNovoTipo(availableBancos[0][0]); }}
-              style={{ background:"rgba(46,230,160,0.08)", border:"1px solid #2ee6a044", borderRadius:"8px", padding:"8px 16px", color:"#2ee6a0", fontSize:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"var(--font-sans)", display:"flex", alignItems:"center", gap:"6px" }}>
+              style={{ background:"color-mix(in srgb, var(--accent) 8%, transparent)", border:"1px solid color-mix(in srgb, var(--accent) 26.7%, transparent)", borderRadius:"8px", padding:"8px 16px", color:"var(--accent)", fontSize:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"var(--font-sans)", display:"flex", alignItems:"center", gap:"6px" }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Criar Banca
             </button>
@@ -157,7 +158,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             activeBancos.forEach(([tipo, meta]) => { init[tipo] = String(getBancaInicial(meta)); });
             setInputs(init);
             setEditando(!editando);
-          }} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid #26352e", borderRadius:"8px", padding:"8px 16px", color:"#a3b2ab", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
+          }} style={{ background:"color-mix(in srgb, var(--ink) 4%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"8px", padding:"8px 16px", color:"var(--text-soft)", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
             {editando ? "✕ Cancelar" : "Editar banca inicial"}
           </button>
         </div>
@@ -168,34 +169,34 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
         <>
           <div onClick={() => { setShowCriar(false); setNovoTipo(""); setNovoValor(""); }}
             style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", zIndex:200 }}/>
-          <div style={{ position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", background:"#0c1411", border:"1px solid #26352e", borderRadius:"20px", padding:"28px", zIndex:201, width:"380px", maxWidth:"92vw", boxShadow:"0 24px 60px rgba(0,0,0,0.8)" }}>
-            <p style={{ margin:"0 0 4px", color:"#f0f0f0", fontSize:"16px", fontWeight:"800" }}>Criar Nova Banca</p>
-            <p style={{ margin:"0 0 22px", color:"#7a8c84", fontSize:"12px" }}>Escolha o mercado e defina o capital inicial</p>
+          <div style={{ position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", background:"var(--surface)", border:"1px solid var(--line-strong)", borderRadius:"20px", padding:"28px", zIndex:201, width:"380px", maxWidth:"92vw", boxShadow:"0 24px 60px color-mix(in srgb, var(--shade) 80%, transparent)" }}>
+            <p style={{ margin:"0 0 4px", color:"var(--text)", fontSize:"16px", fontWeight:"800" }}>Criar Nova Banca</p>
+            <p style={{ margin:"0 0 22px", color:"var(--text-3)", fontSize:"12px" }}>Escolha o mercado e defina o capital inicial</p>
             <div style={{ display:"flex", gap:"8px", marginBottom:"20px", flexWrap:"wrap" }}>
               {availableBancos.map(([tipo, meta]) => (
                 <button key={tipo} onClick={() => setNovoTipo(tipo)}
-                  style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid "+(novoTipo===tipo?meta.cor+"66":"#26352e"), background:novoTipo===tipo?meta.cor+"15":"rgba(255,255,255,0.02)", color:novoTipo===tipo?meta.cor:"#777", fontSize:"13px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px", transition:"all 0.15s" }}>
+                  style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid "+(novoTipo===tipo?alfa(meta.cor,"66"):"var(--line-strong)"), background:novoTipo===tipo?alfa(meta.cor,"15"):"color-mix(in srgb, var(--ink) 2%, transparent)", color:novoTipo===tipo?meta.cor:"var(--text-3)", fontSize:"13px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px", transition:"all 0.15s" }}>
                   <Selo meta={meta} size={22}/> {meta.label}
                 </button>
               ))}
             </div>
             {novoTipo && (
               <div style={{ marginBottom:"20px" }}>
-                <label style={{ color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
+                <label style={{ color:"var(--text-mute)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
                   Capital inicial ({BANCOS_META[novoTipo].moeda})
                 </label>
                 <input type="number" value={novoValor} onChange={e => setNovoValor(e.target.value)}
                   placeholder={BANCOS_META[novoTipo].key==="bancaCripto"?"Ex: 500":"Ex: 1000"}
-                  style={{ ...inp, borderColor:BANCOS_META[novoTipo].cor+"44" }} autoFocus/>
+                  style={{ ...inp, borderColor:alfa(BANCOS_META[novoTipo].cor,"44") }} autoFocus/>
               </div>
             )}
             <div style={{ display:"flex", gap:"8px" }}>
               <button onClick={criarBanca} disabled={!novoTipo || !novoValor}
-                style={{ flex:1, background:novoTipo&&novoValor?"linear-gradient(135deg,"+(BANCOS_META[novoTipo]?.cor||"#2ee6a0")+","+(BANCOS_META[novoTipo]?.cor||"#2ee6a0")+"cc)":"#18241f", color:novoTipo&&novoValor?"#000":"#444", border:"none", borderRadius:"10px", padding:"12px", fontWeight:"700", fontSize:"13px", cursor:novoTipo&&novoValor?"pointer":"default" }}>
+                style={{ flex:1, background:novoTipo&&novoValor?"linear-gradient(135deg,"+(BANCOS_META[novoTipo]?.cor||"#2ee6a0")+","+(BANCOS_META[novoTipo]?.cor||"#2ee6a0")+"cc)":"var(--line)", color:novoTipo&&novoValor?"#000":"var(--text-5)", border:"none", borderRadius:"10px", padding:"12px", fontWeight:"700", fontSize:"13px", cursor:novoTipo&&novoValor?"pointer":"default" }}>
                 Criar Banca
               </button>
               <button onClick={() => { setShowCriar(false); setNovoTipo(""); setNovoValor(""); }}
-                style={{ background:"transparent", color:"#86978f", border:"1px solid #26352e", borderRadius:"10px", padding:"12px 16px", fontSize:"13px", cursor:"pointer" }}>
+                style={{ background:"transparent", color:"var(--text-mute)", border:"1px solid var(--line-strong)", borderRadius:"10px", padding:"12px 16px", fontSize:"13px", cursor:"pointer" }}>
                 Cancelar
               </button>
             </div>
@@ -205,12 +206,12 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
 
       {/* Editor banca inicial */}
       {editando && (
-        <div style={{ background:"rgba(245,158,11,0.06)", border:"1px solid #f59e0b33", borderRadius:"14px", padding:"22px", marginBottom:"20px" }}>
-          <p style={{ margin:"0 0 16px", color:"#f59e0b", fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>Configurar Banca Inicial</p>
+        <div style={{ background:"color-mix(in srgb, var(--warn-2) 6%, transparent)", border:"1px solid color-mix(in srgb, var(--warn-2) 20%, transparent)", borderRadius:"14px", padding:"22px", marginBottom:"20px" }}>
+          <p style={{ margin:"0 0 16px", color:"var(--warn-2)", fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>Configurar Banca Inicial</p>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"14px", marginBottom:"16px" }}>
             {activeBancos.map(([tipo, meta]) => (
               <div key={tipo}>
-                <label style={{ color:"#93a39c", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
+                <label style={{ color:"var(--text-mute)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
                   {meta.label} ({meta.moeda})
                 </label>
                 <input type="number" value={inputs[tipo]||""} onChange={e => setInputs(p => ({ ...p, [tipo]:e.target.value }))} style={inp} placeholder={"Ex: "+getBancaInicial(meta)}/>
@@ -221,7 +222,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             <button onClick={salvarEdicao} style={{ background:"linear-gradient(135deg,#f59e0b,#d97706)", color:"#000", border:"none", borderRadius:"10px", padding:"11px 22px", fontWeight:"700", fontSize:"13px", cursor:"pointer" }}>
               Salvar
             </button>
-            <p style={{ margin:0, color:"#999", fontSize:"12px" }}>Todos os cálculos atualizam automaticamente.</p>
+            <p style={{ margin:0, color:"var(--text-mute)", fontSize:"12px" }}>Todos os cálculos atualizam automaticamente.</p>
           </div>
         </div>
       )}
@@ -249,9 +250,9 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                   <div>
                     <p className="mtp-section-title" style={{ fontSize:"15px" }}>
                       {meta.label}
-                      {meta.extra && <span style={{ marginLeft:"8px", fontSize:"10px", fontWeight:"700", letterSpacing:"0.8px", textTransform:"uppercase", color:meta.cor, border:"1px solid "+meta.cor+"44", background:meta.cor+"12", borderRadius:"20px", padding:"1px 8px", verticalAlign:"middle" }}>{TIPOS_CONTA[meta.tipo]?.label || "conta"} · {meta.mercado}</span>}
+                      {meta.extra && <span style={{ marginLeft:"8px", fontSize:"10px", fontWeight:"700", letterSpacing:"0.8px", textTransform:"uppercase", color:meta.cor, border:"1px solid "+alfa(meta.cor,"44"), background:alfa(meta.cor,"12"), borderRadius:"20px", padding:"1px 8px", verticalAlign:"middle" }}>{TIPOS_CONTA[meta.tipo]?.label || "conta"} · {meta.mercado}</span>}
                     </p>
-                    <p style={{ margin:"2px 0 0", color:"var(--text-3)", fontSize:"11.5px", fontFamily:"var(--font-mono)" }}>inicial {fmtV(inicial)}{depositado>0 && <span style={{ color:"#7fd8ff" }}> · depositado {fmtV(depositado)}</span>}{sacado>0 && <span style={{ color:"#f5b941" }}> · sacado {fmtV(sacado)}</span>}</p>
+                    <p style={{ margin:"2px 0 0", color:"var(--text-3)", fontSize:"11.5px", fontFamily:"var(--font-mono)" }}>inicial {fmtV(inicial)}{depositado>0 && <span style={{ color:"var(--info)" }}> · depositado {fmtV(depositado)}</span>}{sacado>0 && <span style={{ color:"var(--warn)" }}> · sacado {fmtV(sacado)}</span>}</p>
                   </div>
                 </div>
                 <div style={{ display:"flex", gap:"8px" }}>
@@ -271,7 +272,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                 )}
                 {!meta.extra && carteiras.length > 1 && (
                   <button onClick={() => deletarBanca(tipo)} title="Excluir esta banca"
-                    style={{ background:"rgba(255,84,112,0.05)", border:"1px solid #ff547022", borderRadius:"8px", padding:"5px 12px", color:"#ff7a90", cursor:"pointer", fontSize:"11.5px", fontWeight:"600", fontFamily:"var(--font-sans)" }}>
+                    style={{ background:"color-mix(in srgb, var(--neg) 5%, transparent)", border:"1px solid color-mix(in srgb, var(--neg) 13.3%, transparent)", borderRadius:"8px", padding:"5px 12px", color:"var(--neg-soft)", cursor:"pointer", fontSize:"11.5px", fontWeight:"600", fontFamily:"var(--font-sans)" }}>
                     remover
                   </button>
                 )}
@@ -279,7 +280,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:"14px" }}>
                 {/* Banca atual (destaque) */}
-                <div style={{ gridColumn:"span 2", background:"var(--card)", border:"1px solid "+meta.cor+"33", borderRadius:"16px", padding:"20px 22px", position:"relative", overflow:"hidden", minHeight:"140px", display:"flex", flexDirection:"column", justifyContent:"space-between", gap:"10px" }}>
+                <div style={{ gridColumn:"span 2", background:"var(--card)", border:"1px solid "+alfa(meta.cor,"33"), borderRadius:"16px", padding:"20px 22px", position:"relative", overflow:"hidden", minHeight:"140px", display:"flex", flexDirection:"column", justifyContent:"space-between", gap:"10px" }}>
                   <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:"linear-gradient(90deg,"+meta.cor+",transparent)" }}/>
                   <div style={{ position:"absolute", left:"40%", right:0, bottom:0, height:"70%", opacity:0.55, pointerEvents:"none", maskImage:"linear-gradient(90deg,transparent,#000 40%)", WebkitMaskImage:"linear-gradient(90deg,transparent,#000 40%)" }}>
                     <Sparkline values={curva} color={meta.cor} width="100%" height="100%"/>
@@ -287,12 +288,12 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", position:"relative" }}>
                     <p style={kpiLabel}>Banca atual</p>
                     {temOps && pctLucro!==null && (
-                      <span style={{ color:lucro>=0?"var(--pos)":"var(--neg)", background:lucro>=0?"rgba(46,230,160,0.12)":"rgba(255,84,112,0.12)", border:"1px solid "+(lucro>=0?"#2ee6a033":"#ff547033"), borderRadius:"20px", padding:"2px 9px", fontSize:"11px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>
+                      <span style={{ color:lucro>=0?"var(--pos)":"var(--neg)", background:lucro>=0?"color-mix(in srgb, var(--accent) 12%, transparent)":"color-mix(in srgb, var(--neg) 12%, transparent)", border:"1px solid "+(lucro>=0?"color-mix(in srgb, var(--accent) 20%, transparent)":"color-mix(in srgb, var(--neg) 20%, transparent)"), borderRadius:"20px", padding:"2px 9px", fontSize:"11px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>
                         {lucro>=0?"↑ +":"↓ "}{pctLucro.toFixed(1)}%
                       </span>
                     )}
                   </div>
-                  <p style={{ margin:0, color:meta.cor, fontSize:"clamp(24px,2.4vw,32px)", fontWeight:"700", fontFamily:"var(--font-mono)", letterSpacing:"-0.5px", position:"relative", textShadow:"0 0 24px "+meta.cor+"44" }}>
+                  <p style={{ margin:0, color:meta.cor, fontSize:"clamp(24px,2.4vw,32px)", fontWeight:"700", fontFamily:"var(--font-mono)", letterSpacing:"-0.5px", position:"relative", textShadow:"0 0 24px "+alfa(meta.cor,"44") }}>
                     <CountUp value={real} format={fmtV}/>
                   </p>
                   <p style={{ margin:0, fontSize:"12px", color:lucro>=0?"var(--pos)":"var(--neg)", fontFamily:"var(--font-mono)", position:"relative" }}>
@@ -330,9 +331,9 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                     <Selo meta={meta} size={26}/>
                     <span style={{ color:"var(--text-2)", fontSize:"13px", fontFamily:"var(--font-mono)" }}>{fmtData(sq.data)}</span>
                     <span style={{ color:"var(--text-3)", fontSize:"12.5px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                      <span style={{ color: dep ? "#7fd8ff" : "#f5b941", fontWeight:"700", marginRight:"8px" }}>{dep ? "Depósito" : "Saque"}</span>{sq.obs || meta.label}
+                      <span style={{ color: dep ? "var(--info)" : "var(--warn)", fontWeight:"700", marginRight:"8px" }}>{dep ? "Depósito" : "Saque"}</span>{sq.obs || meta.label}
                     </span>
-                    <span style={{ color: dep ? "#7fd8ff" : "#f5b941", fontSize:"14px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>{dep ? "+" : "-"}{meta.moeda} {Number(sq.valor).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+                    <span style={{ color: dep ? "var(--info)" : "var(--warn)", fontSize:"14px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>{dep ? "+" : "-"}{meta.moeda} {Number(sq.valor).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
                     <button onClick={() => removerMov(sq)} aria-label={dep ? "Remover depósito" : "Remover saque"} style={{ background:"none", border:"none", color:"var(--text-3)", cursor:"pointer", fontSize:"14px", padding:"4px 6px" }}>✕</button>
                   </div>
                 );
@@ -345,12 +346,12 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
       {/* Modal de depósito / saque */}
       {saqueAberto && (() => {
         const dep = saque.tipo === "deposito";
-        const cor = dep ? "#7fd8ff" : "#f5b941";
+        const cor = dep ? "var(--info)" : "var(--warn)";
         return (
         <Modal onClose={() => setSaqueAberto(false)} width={440}>
           <div style={{ padding:"24px 26px" }}>
             <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"16px" }}>
-              <div style={{ width:"40px", height:"40px", borderRadius:"12px", background:cor+"1f", border:"1px solid "+cor+"44", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ width:"40px", height:"40px", borderRadius:"12px", background:alfa(cor,"1f"), border:"1px solid "+alfa(cor,"44"), display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {dep
                   ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="15" x2="12" y2="3"/><polyline points="7 8 12 3 17 8"/><path d="M4 19h16"/></svg>
                   : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></svg>}
@@ -362,15 +363,15 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             </div>
 
             <div className="mtp-opcoes" style={{ display:"inline-flex" }}>
-              <button onClick={() => { setSaque(p => ({ ...p, tipo:"deposito" })); setErroSaque(""); }} className={"mtp-opcao"+(dep?" ativo":"")} style={dep?{color:"#7fd8ff"}:undefined}>Depósito</button>
-              <button onClick={() => { setSaque(p => ({ ...p, tipo:"saque" })); setErroSaque(""); }} className={"mtp-opcao"+(!dep?" ativo":"")} style={!dep?{color:"#f5b941"}:undefined}>Saque</button>
+              <button onClick={() => { setSaque(p => ({ ...p, tipo:"deposito" })); setErroSaque(""); }} className={"mtp-opcao"+(dep?" ativo":"")} style={dep?{color:"var(--info)"}:undefined}>Depósito</button>
+              <button onClick={() => { setSaque(p => ({ ...p, tipo:"saque" })); setErroSaque(""); }} className={"mtp-opcao"+(!dep?" ativo":"")} style={!dep?{color:"var(--warn)"}:undefined}>Saque</button>
             </div>
 
             <p style={{ ...kpiLabel, margin:"20px 0 8px" }}>{dep ? "Entra em" : "Sai de"}</p>
             <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
               {carteiras.map(meta => (
                 <button key={meta.key} onClick={() => setSaque(p => ({ ...p, cart:meta.key }))}
-                  style={{ padding:"8px 12px", borderRadius:"10px", border:"1px solid "+(saque.cart===meta.key?meta.cor+"66":"var(--line)"), background:saque.cart===meta.key?meta.cor+"15":"transparent", color:saque.cart===meta.key?meta.cor:"var(--text-3)", fontSize:"12.5px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", fontFamily:"var(--font-sans)" }}>
+                  style={{ padding:"8px 12px", borderRadius:"10px", border:"1px solid "+(saque.cart===meta.key?alfa(meta.cor,"66"):"var(--line)"), background:saque.cart===meta.key?alfa(meta.cor,"15"):"transparent", color:saque.cart===meta.key?meta.cor:"var(--text-3)", fontSize:"12.5px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", fontFamily:"var(--font-sans)" }}>
                   <Selo meta={meta} size={22}/> {meta.label}
                 </button>
               ))}
@@ -392,7 +393,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             <p style={{ ...kpiLabel, margin:"16px 0 8px" }}>Observação (opcional)</p>
             <input value={saque.obs} onChange={e => setSaque(p => ({ ...p, obs:e.target.value }))} placeholder={dep ? "Ex: aporte mensal" : "Ex: retirada mensal"} style={{ ...inp, border:"1px solid var(--line-strong)", fontSize:"14px", fontWeight:"500", fontFamily:"var(--font-sans)" }}/>
 
-            {erroSaque && <p style={{ margin:"14px 0 0", color:"#ff7a90", fontSize:"12.5px" }}>{erroSaque}</p>}
+            {erroSaque && <p style={{ margin:"14px 0 0", color:"var(--neg-soft)", fontSize:"12.5px" }}>{erroSaque}</p>}
 
             <div style={{ display:"flex", gap:"10px", marginTop:"22px" }}>
               <button onClick={registrarSaque} style={{ flex:1, background: dep ? "linear-gradient(135deg,#7fd8ff,#3fb6e8)" : "linear-gradient(135deg,#f5b941,#e09a1f)", color: dep ? "#04141a" : "#1a1204", border:"none", borderRadius:"10px", padding:"12px", fontWeight:"800", fontSize:"13px", cursor:"pointer" }}>{dep ? "Confirmar depósito" : "Confirmar saque"}</button>
@@ -403,7 +404,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
         );
       })()}
 
-      {!hasData && <p style={{ margin:"20px 0 0", color:"#a3b2ab", fontSize:"12px", textAlign:"center" }}>Registre operações no Diário para os valores atualizarem automaticamente.</p>}
+      {!hasData && <p style={{ margin:"20px 0 0", color:"var(--text-soft)", fontSize:"12px", textAlign:"center" }}>Registre operações no Diário para os valores atualizarem automaticamente.</p>}
     </div>
   );
 }

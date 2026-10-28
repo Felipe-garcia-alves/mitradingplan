@@ -13,6 +13,7 @@ import Estrategias from "./pages/Estrategias";
 import Sidebar     from "./components/Sidebar";
 import { hojeLocal } from "./lib/datas";
 import { contarPendentes } from "./lib/revisao";
+import { alfa } from "./lib/cor.js";
 
 const Banca       = lazy(()=>import("./pages/Banca"));
 const Regras      = lazy(()=>import("./pages/Regras"));
@@ -25,7 +26,7 @@ const Revisao     = lazy(()=>import("./pages/Revisao"));
 function Spinner() {
   return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"200px"}}>
-      <div style={{width:"28px",height:"28px",border:"3px solid #18241f",borderTop:"3px solid #2ee6a0",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+      <div style={{width:"28px",height:"28px",border:"3px solid var(--line)",borderTop:"3px solid var(--accent)",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
     </div>
   );
 }
@@ -48,11 +49,11 @@ function AvisoVencimento({ perfil, hoje }) {
   const teste = perfil.status === "teste";
   const quando = dias === 0 ? "hoje" : dias === 1 ? "amanhã" : "em " + dias + " dias";
   const urgente = dias <= 1;
-  const cor = urgente ? "#ff7a90" : "#f5b941";
-  const fundo = urgente ? "rgba(255,84,112,0.08)" : "rgba(245,185,65,0.07)";
+  const cor = urgente ? "var(--neg-soft)" : "var(--warn)";
+  const fundo = urgente ? "color-mix(in srgb, var(--neg) 8%, transparent)" : "color-mix(in srgb, var(--warn) 7%, transparent)";
   return (
-    <div style={{background:fundo,border:"1px solid "+cor+"44",borderRadius:"12px",padding:"12px 16px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"12px"}}>
-      <div style={{width:"32px",height:"32px",borderRadius:"9px",flexShrink:0,background:cor+"1f",border:"1px solid "+cor+"55",display:"flex",alignItems:"center",justifyContent:"center"}}>
+    <div style={{background:fundo,border:"1px solid "+alfa(cor,"44"),borderRadius:"12px",padding:"12px 16px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"12px"}}>
+      <div style={{width:"32px",height:"32px",borderRadius:"9px",flexShrink:0,background:alfa(cor,"1f"),border:"1px solid "+alfa(cor,"55"),display:"flex",alignItems:"center",justifyContent:"center"}}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
       </div>
       <div style={{minWidth:0}}>
@@ -74,15 +75,15 @@ function AssinaturaInativa({ perfil, onSair }) {
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",fontFamily:"var(--font-sans)"}}>
       <div style={{width:"100%",maxWidth:"440px",background:"var(--panel)",border:"1px solid var(--line-strong)",borderRadius:"20px",padding:"32px",textAlign:"center"}}>
-        <div style={{width:"52px",height:"52px",borderRadius:"14px",margin:"0 auto 18px",background:"rgba(245,185,65,0.1)",border:"1px solid #f5b94144",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5b941" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div style={{width:"52px",height:"52px",borderRadius:"14px",margin:"0 auto 18px",background:"color-mix(in srgb, var(--warn) 10%, transparent)",border:"1px solid color-mix(in srgb, var(--warn) 26.7%, transparent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
         <h1 style={{margin:"0 0 8px",color:"var(--text)",fontSize:"21px",fontWeight:"800"}}>{vencida ? "Sua assinatura venceu" : "Acesso suspenso"}</h1>
         <p style={{margin:"0 0 24px",color:"var(--text-3)",fontSize:"13.5px",lineHeight:1.6}}>
           {vencida && perfil.ate ? "Seu acesso foi até "+perfil.ate.split("-").reverse().join("/")+". " : ""}
           Seus dados continuam guardados. Fale com o suporte para renovar e voltar a usar o Mi Trading Plan.
         </p>
-        <button onClick={onSair} style={{background:"rgba(255,255,255,0.05)",border:"1px solid var(--line-strong)",borderRadius:"10px",padding:"11px 22px",color:"var(--text-2)",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Sair da conta</button>
+        <button onClick={onSair} style={{background:"color-mix(in srgb, var(--ink) 5%, transparent)",border:"1px solid var(--line-strong)",borderRadius:"10px",padding:"11px 22px",color:"var(--text-2)",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Sair da conta</button>
       </div>
     </div>
   );
@@ -104,7 +105,7 @@ function UserHeader({ nomeUsuario, entries }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
+  const EMOCAO_COLORS = {"Focado":"var(--accent)","Confiante":"#0099ff","Neutro":"var(--text-mute)","Atento":"#a78bfa","Cauteloso":"var(--warn-2)","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
 
   const trades = todayEntry?.trades || [];
   const wins = trades.filter(t=>t.tipo==="WIN").length;
@@ -122,31 +123,31 @@ function UserHeader({ nomeUsuario, entries }) {
 
   return (
     <div ref={ref} style={{position:"relative"}}>
-      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"rgba(46,230,160,0.08)":"rgba(255,255,255,0.04)",border:"1px solid "+(open?"#2ee6a044":"#1b2823"),borderRadius:"10px",padding:"7px 12px",cursor:"pointer",fontFamily:"var(--font-sans)",transition:"all 0.2s"}}>
-        <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,#2ee6a022,#0099ff22)",border:"1px solid #2ee6a044",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:"700",color:"#2ee6a0",flexShrink:0}}>{inicial}</div>
-        <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600"}}>{nomeUsuario||"Trader"}</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><polyline points="6 9 12 15 18 9"/></svg>
+      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"color-mix(in srgb, var(--accent) 8%, transparent)":"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid "+(open?"color-mix(in srgb, var(--accent) 26.7%, transparent)":"var(--line)"),borderRadius:"10px",padding:"7px 12px",cursor:"pointer",fontFamily:"var(--font-sans)",transition:"all 0.2s"}}>
+        <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,#2ee6a022,#0099ff22)",border:"1px solid color-mix(in srgb, var(--accent) 26.7%, transparent)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:"700",color:"var(--accent)",flexShrink:0}}>{inicial}</div>
+        <span style={{color:"var(--text-2)",fontSize:"13px",fontWeight:"600"}}>{nomeUsuario||"Trader"}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-5)" strokeWidth="2" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       {open && (
-        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"#0c1411",border:"1px solid #1b2823",borderRadius:"20px",padding:"0",zIndex:300,width:"min(340px, calc(100vw - 24px))",maxHeight:"calc(100dvh - 90px)",overflowY:"auto",overscrollBehavior:"contain",boxShadow:"0 24px 60px rgba(0,0,0,0.8)",animation:"mtpPopDown .2s var(--ease) both"}}>
+        <div style={{position:"absolute",top:"calc(100% + 10px)",right:0,background:"var(--surface)",border:"1px solid var(--line)",borderRadius:"20px",padding:"0",zIndex:300,width:"min(340px, calc(100vw - 24px))",maxHeight:"calc(100dvh - 90px)",overflowY:"auto",overscrollBehavior:"contain",boxShadow:"0 24px 60px color-mix(in srgb, var(--shade) 80%, transparent)",animation:"mtpPopDown .2s var(--ease) both"}}>
           
           {/* Header */}
-          <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #18241f"}}>
+          <div style={{padding:"20px 20px 16px",borderBottom:"1px solid var(--line)"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"15px",fontWeight:"700",lineHeight:1.35,paddingRight:"10px"}}>{today.split("-").reverse().join(" de ").replace(/(\d+) de (\d+) de (\d+)/,(_,d,m,y)=>{const meses=["","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];return `${d} de ${meses[parseInt(m)]}, ${["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][new Date(today+"T12:00:00").getDay()]}`})}</p>
-              <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"18px",padding:"0",lineHeight:1}}>×</button>
+              <p style={{margin:0,color:"var(--text)",fontSize:"15px",fontWeight:"700",lineHeight:1.35,paddingRight:"10px"}}>{today.split("-").reverse().join(" de ").replace(/(\d+) de (\d+) de (\d+)/,(_,d,m,y)=>{const meses=["","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];return `${d} de ${meses[parseInt(m)]}, ${["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][new Date(today+"T12:00:00").getDay()]}`})}</p>
+              <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"var(--text-4)",cursor:"pointer",fontSize:"18px",padding:"0",lineHeight:1}}>×</button>
             </div>
 
             {/* Stats topo */}
             {todayEntry ? (
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"}}>
-                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px",minWidth:0}}>
-                  <p style={{margin:"0 0 2px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos do dia</p>
-                  <p style={{margin:0,color:totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"17px",fontWeight:"800",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
+                <div style={{background:"var(--line)",borderRadius:"10px",padding:"12px",minWidth:0}}>
+                  <p style={{margin:"0 0 2px",color:"var(--text-3)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Pontos do dia</p>
+                  <p style={{margin:0,color:totalPts>=0?"var(--accent)":"var(--neg)",fontSize:"17px",fontWeight:"800",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{totalPts>=0?"+":""}{totalPts} pts</p>
                 </div>
-                <div style={{background:"#18241f",borderRadius:"10px",padding:"12px",minWidth:0}}>
-                  <p style={{margin:"0 0 2px",color:"#7a8c84",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado R$</p>
-                  <p style={{margin:0,color:totalHoje>=0?"#2ee6a0":"#ff5470",fontSize:"17px",fontWeight:"800",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
+                <div style={{background:"var(--line)",borderRadius:"10px",padding:"12px",minWidth:0}}>
+                  <p style={{margin:"0 0 2px",color:"var(--text-3)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Resultado R$</p>
+                  <p style={{margin:0,color:totalHoje>=0?"var(--accent)":"var(--neg)",fontSize:"17px",fontWeight:"800",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{totalHoje>=0?"R$ +":"R$ "}{Math.abs(totalHoje).toLocaleString("pt-BR",{minimumFractionDigits:0})}</p>
                 </div>
               </div>
             ) : null}
@@ -154,17 +155,17 @@ function UserHeader({ nomeUsuario, entries }) {
             {/* Trades + exec */}
             {todayEntry && (
               <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                <span style={{background:"#18241f",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#aaa",fontWeight:"600"}}>{trades.length} trades</span>
-                {execPct!==null&&wins===trades.length&&<span style={{background:"rgba(46,230,160,0.1)",border:"1px solid #2ee6a033",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#2ee6a0",fontWeight:"600"}}>WIN ({wins})</span>}
-                {execPct!==null&&<span style={{background:"rgba(46,230,160,0.08)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"#2ee6a0",fontWeight:"600"}}>● {execPct}% exec.</span>}
+                <span style={{background:"var(--line)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"var(--text-soft)",fontWeight:"600"}}>{trades.length} trades</span>
+                {execPct!==null&&wins===trades.length&&<span style={{background:"color-mix(in srgb, var(--accent) 10%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 20%, transparent)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"var(--accent)",fontWeight:"600"}}>WIN ({wins})</span>}
+                {execPct!==null&&<span style={{background:"color-mix(in srgb, var(--accent) 8%, transparent)",borderRadius:"20px",padding:"5px 12px",fontSize:"12px",color:"var(--accent)",fontWeight:"600"}}>● {execPct}% exec.</span>}
               </div>
             )}
           </div>
 
           {/* Emoção predominante */}
           {emocaoPred && (
-            <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
-              <p style={{margin:"0 0 8px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoção Predominante</p>
+            <div style={{padding:"14px 20px",borderBottom:"1px solid var(--line)"}}>
+              <p style={{margin:"0 0 8px",color:"var(--text-4)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoção Predominante</p>
               <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:"10px",padding:"10px 14px",display:"flex",alignItems:"center",gap:"10px"}}>
                 <span style={{fontSize:"18px"}}>🎯</span>
                 <span style={{color:"#c4b5fd",fontSize:"14px",fontWeight:"700"}}>{emocaoPred}</span>
@@ -174,13 +175,13 @@ function UserHeader({ nomeUsuario, entries }) {
 
           {/* Estratégias */}
           {estratUsadas.length > 0 && (
-            <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
-              <p style={{margin:"0 0 8px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Estratégias Utilizadas</p>
+            <div style={{padding:"14px 20px",borderBottom:"1px solid var(--line)"}}>
+              <p style={{margin:"0 0 8px",color:"var(--text-4)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Estratégias Utilizadas</p>
               <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                 {estratUsadas.map(e=>(
-                  <div key={e} style={{background:"#18241f",borderRadius:"8px",padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{color:"#ccc",fontSize:"13px",fontWeight:"600",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.slice(0,2).toUpperCase()} — {e}</span>
-                    <span style={{color:"#7a8c84",fontSize:"12px"}}>({estratCount[e]})</span>
+                  <div key={e} style={{background:"var(--line)",borderRadius:"8px",padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{color:"var(--text-2)",fontSize:"13px",fontWeight:"600",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.slice(0,2).toUpperCase()} — {e}</span>
+                    <span style={{color:"var(--text-3)",fontSize:"12px"}}>({estratCount[e]})</span>
                   </div>
                 ))}
               </div>
@@ -189,11 +190,11 @@ function UserHeader({ nomeUsuario, entries }) {
 
           {/* Emoções */}
           {todayEntry?.emocoes?.length > 0 && (
-            <div style={{padding:"14px 20px",borderBottom:"1px solid #18241f"}}>
-              <p style={{margin:"0 0 8px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções Registradas</p>
+            <div style={{padding:"14px 20px",borderBottom:"1px solid var(--line)"}}>
+              <p style={{margin:"0 0 8px",color:"var(--text-4)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções Registradas</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
                 {todayEntry.emocoes.map(em=>(
-                  <span key={em} style={{padding:"4px 10px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"#888")+"18",color:EMOCAO_COLORS[em]||"#888",fontSize:"12px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"#888")+"33"}}>{em}</span>
+                  <span key={em} style={{padding:"4px 10px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"var(--text-mute)")+"18",color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"12px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"var(--text-mute)")+"33"}}>{em}</span>
                 ))}
               </div>
             </div>
@@ -202,19 +203,19 @@ function UserHeader({ nomeUsuario, entries }) {
           {/* Operações */}
           {trades.length > 0 && (
             <div style={{padding:"14px 20px"}}>
-              <p style={{margin:"0 0 10px",color:"#6f8179",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações ({trades.length})</p>
+              <p style={{margin:"0 0 10px",color:"var(--text-4)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações ({trades.length})</p>
               <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                 {trades.map((t,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#18241f",borderRadius:"8px"}}>
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"var(--line)",borderRadius:"8px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                      <span style={{color:"#86978f",fontSize:"11px"}}>#{i+1}</span>
-                      <span style={{padding:"2px 6px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
+                      <span style={{color:"var(--text-mute)",fontSize:"11px"}}>#{i+1}</span>
+                      <span style={{padding:"2px 6px",borderRadius:"4px",fontSize:"11px",fontWeight:"700",background:t.tipo==="WIN"?"color-mix(in srgb, var(--accent) 15%, transparent)":"color-mix(in srgb, var(--neg) 15%, transparent)",color:t.tipo==="WIN"?"var(--accent)":"var(--neg)"}}>{t.tipo}</span>
                       {t.estrategia&&<span style={{padding:"2px 7px",borderRadius:"4px",background:"rgba(0,153,255,0.15)",color:"#0099ff",fontSize:"11px",fontWeight:"600"}}>{t.estrategia.slice(0,2).toUpperCase()}</span>}
-                      {t.mercado&&<span style={{color:"#7a8c84",fontSize:"11px"}}>{t.mercado}</span>}
+                      {t.mercado&&<span style={{color:"var(--text-3)",fontSize:"11px"}}>{t.mercado}</span>}
                     </div>
                     <div style={{textAlign:"right"}}>
-                      {t.pontos!=null&&<p style={{margin:0,color:"#aaa",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
-                      {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>R$ {t.resultado>=0?"+":""}{t.resultado}</p>}
+                      {t.pontos!=null&&<p style={{margin:0,color:"var(--text-soft)",fontSize:"12px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</p>}
+                      {t.resultado!=null&&<p style={{margin:0,color:t.resultado>=0?"var(--accent)":"var(--neg)",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700"}}>R$ {t.resultado>=0?"+":""}{t.resultado}</p>}
                     </div>
                   </div>
                 ))}
@@ -223,7 +224,7 @@ function UserHeader({ nomeUsuario, entries }) {
           )}
 
           {!todayEntry && (
-            <div style={{padding:"30px 20px",textAlign:"center",color:"#64766e",fontSize:"13px"}}>
+            <div style={{padding:"30px 20px",textAlign:"center",color:"var(--text-4)",fontSize:"13px"}}>
               Nenhum registro hoje ainda.
             </div>
           )}
@@ -460,12 +461,12 @@ function AppInterno() {
   };
 
   if (loading) return (
-    <div style={{minHeight:"100vh",background:"#050907",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)"}}>
+    <div style={{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)"}}>
       <div style={{textAlign:"center"}}>
         <div style={{width:"44px",height:"44px",borderRadius:"12px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
-        <p style={{color:"#6f8179",fontSize:"14px"}}>Carregando...</p>
+        <p style={{color:"var(--text-4)",fontSize:"14px"}}>Carregando...</p>
       </div>
     </div>
   );
@@ -494,9 +495,9 @@ function AppInterno() {
         onTouchEnd={e=>{if(isMobile&&window._swipeX&&(window._swipeX-e.changedTouches[0].clientX)>60){setSidebarOpen(false);window._swipeX=null;}}}>
         <div className="mtp-topbar" style={{position:"sticky",top:0,zIndex:100,padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-            {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#a3b2ab",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
-            <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"rgba(46,230,160,0.1)",border:"1px solid #2ee6a033",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <span style={{color:"#2ee6a0",fontSize:"11px",fontWeight:"800"}}>{pagina.slice(0,2).toUpperCase()}</span>
+            {isMobile&&<button onClick={()=>setSidebarOpen(true)} style={{background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"var(--text-soft)",flexShrink:0}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>}
+            <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"color-mix(in srgb, var(--accent) 10%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 20%, transparent)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{color:"var(--accent)",fontSize:"11px",fontWeight:"800"}}>{pagina.slice(0,2).toUpperCase()}</span>
             </div>
             <h2 className="mtp-page-title">{TITLES[pagina]||pagina}</h2>
           </div>
@@ -515,13 +516,13 @@ function AppInterno() {
             const salvouHoje = compliance[today] !== undefined;
             if (salvouHoje || pagina === "regras") return null;
             return (
-              <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:"10px",padding:"10px 16px",marginBottom:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+              <div style={{background:"color-mix(in srgb, var(--warn-2) 8%, transparent)",border:"1px solid color-mix(in srgb, var(--warn-2) 20%, transparent)",borderRadius:"10px",padding:"10px 16px",marginBottom:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                   <span style={{fontSize:"14px"}}>🔔</span>
-                  <p style={{margin:0,color:"#f59e0b",fontSize:"13px",fontWeight:"600"}}>Você ainda não registrou sua disciplina hoje</p>
+                  <p style={{margin:0,color:"var(--warn-2)",fontSize:"13px",fontWeight:"600"}}>Você ainda não registrou sua disciplina hoje</p>
                 </div>
                 <button onClick={()=>setPagina("regras")}
-                  style={{background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"7px",padding:"5px 12px",color:"#f59e0b",fontSize:"12px",fontWeight:"700",cursor:"pointer",fontFamily:"var(--font-sans)",flexShrink:0}}>
+                  style={{background:"color-mix(in srgb, var(--warn-2) 15%, transparent)",border:"1px solid color-mix(in srgb, var(--warn-2) 30%, transparent)",borderRadius:"7px",padding:"5px 12px",color:"var(--warn-2)",fontSize:"12px",fontWeight:"700",cursor:"pointer",fontFamily:"var(--font-sans)",flexShrink:0}}>
                   Registrar agora
                 </button>
               </div>
@@ -529,7 +530,7 @@ function AppInterno() {
           })()}
           <div key={pagina} className="mtp-page">{renderPage()}</div>
           {aviso && (
-            <div role="alert" style={{position:"fixed",right:"24px",bottom:"24px",zIndex:700,maxWidth:"380px",padding:"12px 16px",borderRadius:"12px",background:"rgba(40,10,16,0.96)",border:"1px solid #ff547055",color:"#ffb3c0",fontSize:"13px",lineHeight:1.5,boxShadow:"0 18px 50px -12px rgba(0,0,0,0.8)",animation:"mtpFadeUp .3s var(--ease) both"}}>
+            <div role="alert" style={{position:"fixed",right:"24px",bottom:"24px",zIndex:700,maxWidth:"380px",padding:"12px 16px",borderRadius:"12px",background:"rgba(40,10,16,0.96)",border:"1px solid color-mix(in srgb, var(--neg) 33.3%, transparent)",color:"#ffb3c0",fontSize:"13px",lineHeight:1.5,boxShadow:"0 18px 50px -12px color-mix(in srgb, var(--shade) 80%, transparent)",animation:"mtpFadeUp .3s var(--ease) both"}}>
               {aviso}
             </div>
           )}

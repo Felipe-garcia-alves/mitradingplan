@@ -12,8 +12,8 @@
 import { listaContas, contaDoTrade, limitesDaConta, ID_PRINCIPAL, TIPOS_CONTA } from "./contas";
 
 export const MERCADOS = {
-  B3:        { label:"Mini Índice B3",   curto:"B3",        moeda:"R$", key:"bancaB3",        entry:"totalB3",        padrao:3000, cor:"#2ee6a0", sigla:"B3", core:true  },
-  Forex:     { label:"Forex",            curto:"Forex",     moeda:"$",  key:"bancaForex",     entry:"totalForex",     padrao:200,  cor:"#f5b941", sigla:"FX", core:true  },
+  B3:        { label:"Mini Índice B3",   curto:"B3",        moeda:"R$", key:"bancaB3",        entry:"totalB3",        padrao:3000, cor:"var(--accent)", sigla:"B3", core:true  },
+  Forex:     { label:"Forex",            curto:"Forex",     moeda:"$",  key:"bancaForex",     entry:"totalForex",     padrao:200,  cor:"var(--warn)", sigla:"FX", core:true  },
   Cripto:    { label:"Cripto",           curto:"Cripto",    moeda:"$",  key:"bancaCripto",    entry:"totalCripto",    padrao:1000, cor:"#a78bfa", sigla:"₿",  core:false },
   Americano: { label:"Ações Americanas", curto:"Americano", moeda:"$",  key:"bancaAmericano", entry:"totalAmericano", padrao:500,  cor:"#60a5fa", sigla:"US", core:false },
 };

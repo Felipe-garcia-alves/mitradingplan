@@ -9,9 +9,9 @@
 export const ID_PRINCIPAL = "principal";
 
 export const TIPOS_CONTA = {
-  real:      { label:"Conta real",        cor:"#2ee6a0" },
-  simulador: { label:"Simulador",         cor:"#7fd8ff" },
-  mesa:      { label:"Mesa proprietária", cor:"#f5b941" },
+  real:      { label:"Conta real",        cor:"var(--accent)" },
+  simulador: { label:"Simulador",         cor:"var(--info)" },
+  mesa:      { label:"Mesa proprietária", cor:"var(--warn)" },
 };
 
 export const LIMITES_PADRAO = { risco:1, meta:2, stop:3 }; // % da banca

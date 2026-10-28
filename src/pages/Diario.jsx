@@ -14,11 +14,12 @@ const fmtR = v => Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,ma
 function TagCustos({ t }) {
   if (!t.descontaCustos) return null;
   const m = t.mercado==="B3" ? "R$ " : "$ ";
-  return <span className="mtp-tag" title={"Bruto "+(t.bruto>=0?"+":"-")+m+fmtR(t.bruto)+" · custos "+m+fmtR(t.custos||0)} style={{fontFamily:"var(--font-mono)",color:"#f5b941"}}>custos −{m}{fmtR(t.custos||0)}</span>;
+  return <span className="mtp-tag" title={"Bruto "+(t.bruto>=0?"+":"-")+m+fmtR(t.bruto)+" · custos "+m+fmtR(t.custos||0)} style={{fontFamily:"var(--font-mono)",color:"var(--warn)"}}>custos −{m}{fmtR(t.custos||0)}</span>;
 }
 import ImageEditor, { uploadTradeImage, ImageThumb, ImageViewer, ImagemSegura } from "../components/ImageEditor";
 import { fonteDoEditor, enviarFoto, trocarFotoAnotada, semFoto, arquivosDoTrade, apagarArquivos } from "../lib/fotos";
 import { segundaDe } from "../lib/revisao";
+import { alfa } from "../lib/cor.js";
 
 function todayKey() {
   const d = new Date();
@@ -49,10 +50,10 @@ function rotuloSemana(seg) {
 }
 
 const EMOCOES = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansioso","Impaciente","Frustrado","Eufórico","Medo","Cansado","Revanche","Compulsivo"];
-const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
+const EMOCAO_COLORS = {"Focado":"var(--accent)","Confiante":"#0099ff","Neutro":"var(--text-mute)","Atento":"#a78bfa","Cauteloso":"var(--warn-2)","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
 
 // Execução em estrelas: 3 bom · 2 regular · 1 ruim. Registros antigos guardavam A+/A/B/C.
-const EXECUCAO = { 3:{ rot:"bom", cor:"#2ee6a0" }, 2:{ rot:"regular", cor:"#f5b941" }, 1:{ rot:"ruim", cor:"#ff5470" } };
+const EXECUCAO = { 3:{ rot:"bom", cor:"var(--accent)" }, 2:{ rot:"regular", cor:"var(--warn)" }, 1:{ rot:"ruim", cor:"var(--neg)" } };
 function estrelasDe(q) {
   if (typeof q === "number") return q;
   return ({ "A+":3, "A":3, "B":2, "C":1, "3":3, "2":2, "1":1 })[q] || 0;
@@ -69,7 +70,7 @@ function EstrelasMini({ q }) {
   const n = estrelasDe(q);
   if (!n) return null;
   return (
-    <span title={"Execução: "+EXECUCAO[n].rot} style={{display:"inline-flex",gap:"1px",color:"#f5b941",lineHeight:0}}>
+    <span title={"Execução: "+EXECUCAO[n].rot} style={{display:"inline-flex",gap:"1px",color:"var(--warn)",lineHeight:0}}>
       {[1,2,3].map(i => <span key={i} style={{opacity:i<=n?1:0.25}}><Estrela cheia={i<=n} size={12}/></span>)}
     </span>
   );
@@ -461,32 +462,32 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const semanaAberta = diaModal ? semanaAtual : null;
   const diaAberto = semanaAberta && semanaAberta.dias.find(([d]) => d === diaModal);
 
-  const inp = {background:"#18241f",border:"1px solid #26352e",borderRadius:"8px",padding:"10px 13px",color:"#f0f0f0",fontSize:"14px",outline:"none",fontFamily:"var(--font-sans)"};
+  const inp = {background:"var(--line)",border:"1px solid var(--line-strong)",borderRadius:"8px",padding:"10px 13px",color:"var(--text)",fontSize:"14px",outline:"none",fontFamily:"var(--font-sans)"};
   const focoSemana = config?.revisaoSemanal?.[segundaDe(today)]?.foco;
 
   return (
     <div style={{fontFamily:"var(--font-sans)"}}>
       {focoSemana && (
         <button type="button" onClick={()=>setPagina("revisao")} title="Definido na revisão semanal"
-          style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",textAlign:"left",marginBottom:"14px",padding:"10px 14px",borderRadius:"12px",background:"rgba(46,230,160,0.06)",border:"1px solid #2ee6a033",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
+          style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",textAlign:"left",marginBottom:"14px",padding:"10px 14px",borderRadius:"12px",background:"color-mix(in srgb, var(--accent) 6%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 20%, transparent)",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
           <span style={{fontSize:"16px"}}>🎯</span>
-          <span style={{color:"#2ee6a0",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px",flexShrink:0}}>Foco da semana</span>
+          <span style={{color:"var(--accent)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px",flexShrink:0}}>Foco da semana</span>
           <span style={{color:"var(--text)",fontSize:"13.5px",fontWeight:"600",minWidth:0}}>{focoSemana}</span>
         </button>
       )}
       
 
       {/* Form */}
-      <div style={{background:"var(--panel)",border:"1px solid "+(todayEntry?"#2ee6a022":"#18241f"),borderRadius:"16px",padding:"28px",marginBottom:"24px"}}>
+      <div style={{background:"var(--panel)",border:"1px solid "+(todayEntry?"color-mix(in srgb, var(--accent) 13.3%, transparent)":"var(--line)"),borderRadius:"16px",padding:"28px",marginBottom:"24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
           <div>
-            <p style={{margin:"0 0 8px",color:"#a3b2ab",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar</p>
+            <p style={{margin:"0 0 8px",color:"var(--text-soft)",fontSize:"12px",textTransform:"uppercase",letterSpacing:"1px"}}>Registrar</p>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-              <button onClick={()=>changeDate(-1)} style={{background:"rgba(255,255,255,0.05)",border:"1px solid #26352e",borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#aaa",flexShrink:0}}>
+              <button onClick={()=>changeDate(-1)} style={{background:"color-mix(in srgb, var(--ink) 5%, transparent)",border:"1px solid var(--line-strong)",borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"var(--text-soft)",flexShrink:0}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"17px",fontWeight:"700",whiteSpace:"nowrap"}}>{selectedDate===today?"Hoje — ":""}{formatDateLong(selectedDate)}</p>
-              <button onClick={()=>changeDate(+1)} disabled={selectedDate===today} style={{background:selectedDate===today?"transparent":"rgba(255,255,255,0.05)",border:"1px solid "+(selectedDate===today?"#18241f":"#26352e"),borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:selectedDate===today?"default":"pointer",color:selectedDate===today?"#333":"#aaa",flexShrink:0}}>
+              <p style={{margin:0,color:"var(--text)",fontSize:"17px",fontWeight:"700",whiteSpace:"nowrap"}}>{selectedDate===today?"Hoje — ":""}{formatDateLong(selectedDate)}</p>
+              <button onClick={()=>changeDate(+1)} disabled={selectedDate===today} style={{background:selectedDate===today?"transparent":"color-mix(in srgb, var(--ink) 5%, transparent)",border:"1px solid "+(selectedDate===today?"var(--line)":"var(--line-strong)"),borderRadius:"8px",width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",cursor:selectedDate===today?"default":"pointer",color:selectedDate===today?"var(--text-5)":"var(--text-soft)",flexShrink:0}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
@@ -507,10 +508,10 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   options={contas.map(c=>({value:c.id,label:c.nome,cor:TIPOS_CONTA[c.tipo]?.cor,hint:c.padrao?"padrão":""}))}/>
               </div>
             )}
-            {todayEntry && <span style={{background:"rgba(46,230,160,0.1)",color:"#2ee6a0",padding:"5px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ {selectedDate===today?"Registrado hoje":"Já registrado"}</span>}
+            {todayEntry && <span style={{background:"color-mix(in srgb, var(--accent) 10%, transparent)",color:"var(--accent)",padding:"5px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:"600"}}>✓ {selectedDate===today?"Registrado hoje":"Já registrado"}</span>}
           </div>
         </div>
-        {avisoImport && <p style={{margin:"-14px 0 22px",color:avisoImport.startsWith("✓")?"#2ee6a0":"#ff7a90",fontSize:"13px",fontWeight:"600"}}>{avisoImport}</p>}
+        {avisoImport && <p style={{margin:"-14px 0 22px",color:avisoImport.startsWith("✓")?"var(--accent)":"var(--neg-soft)",fontSize:"13px",fontWeight:"600"}}>{avisoImport}</p>}
 
         {/* Emocoes */}
         <div style={{marginBottom:"32px"}}>
@@ -518,8 +519,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           <div className="mtp-linha-unica">
             {EMOCOES.map(em => {
               const sel = emocoes.includes(em);
-              const cor = EMOCAO_COLORS[em]||"#888";
-              return <button key={em} onClick={()=>toggleEmocao(em)} style={{flex:"1 0 auto",padding:"8px 10px",whiteSpace:"nowrap",borderRadius:"20px",border:"1px solid "+(sel?cor+"66":"#26352e"),background:sel?cor+"1a":"transparent",color:sel?cor:"#aaa",fontSize:"12.5px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"var(--font-sans)"}}>{em}</button>;
+              const cor = EMOCAO_COLORS[em]||"var(--text-mute)";
+              return <button key={em} onClick={()=>toggleEmocao(em)} style={{flex:"1 0 auto",padding:"8px 10px",whiteSpace:"nowrap",borderRadius:"20px",border:"1px solid "+(sel?alfa(cor,"66"):"var(--line-strong)"),background:sel?alfa(cor,"1a"):"transparent",color:sel?cor:"var(--text-soft)",fontSize:"12.5px",fontWeight:"600",cursor:"pointer",transition:"all 0.15s",fontFamily:"var(--font-sans)"}}>{em}</button>;
             })}
           </div>
         </div>
@@ -535,7 +536,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           <div className="mtp-bloco">
             <span className="mtp-rotulo-linha">Tipo</span>
             <div className="mtp-seg">
-              {[["WIN","#2ee6a0"],["LOSS","#ff5470"]].map(([t,c])=>(
+              {[["WIN","var(--accent)"],["LOSS","var(--neg)"]].map(([t,c])=>(
                 <button key={t} type="button" onClick={()=>trocarTipo(t)} className={novoTrade.tipo===t?"on":""} style={{"--seg":c}}>{t}</button>
               ))}
             </div>
@@ -578,7 +579,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             ].map(c=>{
               const v = novoTrade[c.k];
               const n = parseFloat(v);
-              const cor = c.k==="contratos" || v==="" || isNaN(n) ? "var(--text)" : (n<0 || novoTrade.tipo==="LOSS") ? "#ff5470" : "#2ee6a0";
+              const cor = c.k==="contratos" || v==="" || isNaN(n) ? "var(--text)" : (n<0 || novoTrade.tipo==="LOSS") ? "var(--neg)" : "var(--accent)";
               return (
                 <label key={c.k} className="mtp-campo">
                   <span>{c.l}</span>
@@ -606,9 +607,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 {novoTrade.descontar && (
                   <span style={{color:"var(--text-3)",fontSize:"12.5px",fontFamily:"var(--font-mono)"}}>
                     {semTaxa(cfg, normalizarAtivo(novoTrade.ativo))
-                      ? <span style={{color:"#f5b941",fontFamily:"var(--font-sans)"}}>Sem taxa para {normalizarAtivo(novoTrade.ativo)||"este ativo"} — configure em Configurações › Contas</span>
+                      ? <span style={{color:"var(--warn)",fontFamily:"var(--font-sans)"}}>Sem taxa para {normalizarAtivo(novoTrade.ativo)||"este ativo"} — configure em Configurações › Contas</span>
                       : !n ? <span style={{fontFamily:"var(--font-sans)"}}>informe os lotes</span>
-                      : <>custos −{m}{fmtR(custo)}{bruto!==null && <> · líquido <b style={{color:bruto-custo>=0?"#2ee6a0":"#ff5470"}}>{bruto-custo>=0?"+":"-"}{m}{fmtR(bruto-custo)}</b></>}{cfg.irrf && novoTrade.mercado==="B3" ? " · + IRRF no dia" : ""}</>}
+                      : <>custos −{m}{fmtR(custo)}{bruto!==null && <> · líquido <b style={{color:bruto-custo>=0?"var(--accent)":"var(--neg)"}}>{bruto-custo>=0?"+":"-"}{m}{fmtR(bruto-custo)}</b></>}{cfg.irrf && novoTrade.mercado==="B3" ? " · + IRRF no dia" : ""}</>}
                   </span>
                 )}
               </div>
@@ -670,7 +671,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               Foto{pendingImages.length>0 && <span className="mtp-ctx-badge">{pendingImages.length}</span>}
             </label>
             <button type="button" onClick={addTrade} disabled={!novoTrade.resultado && !novoTrade.pontos}
-              style={{background:(!novoTrade.resultado && !novoTrade.pontos)?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:(!novoTrade.resultado && !novoTrade.pontos)?"var(--text-3)":"#000",border:"none",borderRadius:"10px",padding:"0 20px",minHeight:"42px",fontWeight:"800",fontSize:"13px",cursor:(!novoTrade.resultado && !novoTrade.pontos)?"not-allowed":"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:"8px"}}>
+              style={{background:(!novoTrade.resultado && !novoTrade.pontos)?"color-mix(in srgb, var(--ink) 5%, transparent)":"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:(!novoTrade.resultado && !novoTrade.pontos)?"var(--text-3)":"#000",border:"none",borderRadius:"10px",padding:"0 20px",minHeight:"42px",fontWeight:"800",fontSize:"13px",cursor:(!novoTrade.resultado && !novoTrade.pontos)?"not-allowed":"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:"8px"}}>
               Adicionar <span style={{opacity:.6,fontSize:"11px",fontFamily:"var(--font-mono)"}}>↵</span>
             </button>
           </div>
@@ -695,19 +696,19 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           return (
             <div style={{marginBottom:"20px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px",gap:"12px",flexWrap:"wrap"}}>
-                <span className="mtp-section-hint" style={{color:"#f5b941"}}>● {trades.length} {trades.length===1?"operação":"operações"} ainda não {trades.length===1?"salva":"salvas"} — clique em Salvar dia</span>
+                <span className="mtp-section-hint" style={{color:"var(--warn)"}}>● {trades.length} {trades.length===1?"operação":"operações"} ainda não {trades.length===1?"salva":"salvas"} — clique em Salvar dia</span>
                 <span style={{fontFamily:"var(--font-mono)",fontSize:"12.5px",color:"var(--text-3)"}}>
                   <Valores partes={partesPend}/> · {Math.round(w/trades.length*100)}% acerto
                 </span>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                 {trades.map(t => {
-                  const cor = t.tipo==="WIN" ? "#2ee6a0" : "#ff5470";
+                  const cor = t.tipo==="WIN" ? "var(--accent)" : "var(--neg)";
                   return (
                     <div key={t.id} className="mtp-op-card" style={{"--op":cor}}>
                       <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
-                        <span style={{padding:"3px 9px",borderRadius:"6px",fontSize:"11.5px",fontWeight:"800",background:cor+"1f",color:cor,letterSpacing:"0.5px"}}>{t.tipo}</span>
-                        <span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"16px",fontWeight:"700",fontFamily:"var(--font-mono)",minWidth:"110px"}}>
+                        <span style={{padding:"3px 9px",borderRadius:"6px",fontSize:"11.5px",fontWeight:"800",background:alfa(cor,"1f"),color:cor,letterSpacing:"0.5px"}}>{t.tipo}</span>
+                        <span style={{color:t.resultado>=0?"var(--accent)":"var(--neg)",fontSize:"16px",fontWeight:"700",fontFamily:"var(--font-mono)",minWidth:"110px"}}>
                           {t.resultado !== null ? (t.resultado>=0?"+":"-")+(t.mercado==="B3"?"R$ ":"$ ")+Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"}
                         </span>
                         {t.pontos !== null && <span style={{color:"var(--text-2)",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
@@ -761,7 +762,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
         <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
           <button onClick={handleSave} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px 24px",fontWeight:"700",fontSize:"14px",cursor:"pointer"}}>Salvar dia</button>
-          {msg && <span style={{color:msg.includes("✓")?"#2ee6a0":"#ff7a90",fontSize:"14px",fontWeight:"600"}}>{msg}</span>}
+          {msg && <span style={{color:msg.includes("✓")?"var(--accent)":"var(--neg-soft)",fontSize:"14px",fontWeight:"600"}}>{msg}</span>}
         </div>
       </div>
 
@@ -772,7 +773,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
           {semanaAtual.numTrades > 0 && (
             <p style={{margin:"6px 0 0",fontSize:"13px",color:"var(--text-3)"}}>
               {semanaAtual.numTrades} trade{semanaAtual.numTrades!==1?"s":""}
-              {semanaAtual.winRate!==null && <> · <span style={{color:"#2ee6a0",fontWeight:"600"}}>{semanaAtual.winRate}% acerto</span></>} ·{" "}
+              {semanaAtual.winRate!==null && <> · <span style={{color:"var(--accent)",fontWeight:"600"}}>{semanaAtual.winRate}% acerto</span></>} ·{" "}
               <Valores partes={semanaAtual.partes}/>
             </p>
           )}
@@ -795,7 +796,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             return (
               <button key={ds} type="button" disabled={futuro} onClick={()=>{ setSelectedDate(ds); window.scrollTo({top:0,behavior:"smooth"}); }}
                 title={futuro ? "" : "Registrar este dia"} className={"mtp-cal-dia"+(futuro?"":" tem")+(hoje?" hoje":"")}
-                style={{border:"1px dashed "+(hoje?"#2ee6a055":"var(--line)"),background:"transparent",minHeight:"118px",opacity:futuro?0.4:0.8}}>
+                style={{border:"1px dashed "+(hoje?"color-mix(in srgb, var(--accent) 33.3%, transparent)":"var(--line)"),background:"transparent",minHeight:"118px",opacity:futuro?0.4:0.8}}>
                 <span className="mtp-cal-rot">{nome}</span>
                 <span className="mtp-cal-num">{+ds.slice(8)}</span>
                 <span className="mtp-cal-sub">{futuro ? "—" : "+ registrar"}</span>
@@ -811,8 +812,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               <span className="mtp-cal-rot">{nome}</span>
               <span className="mtp-cal-num">{+ds.slice(8)}</span>
               <Valores partes={partes} empilhar style={{fontSize:"16px"}}/>
-              <span className="mtp-cal-sub">{trs.length} trade{trs.length!==1?"s":""}{wr!==null && <> · <b style={{color:wr>=60?"#2ee6a0":wr>=40?"#f59e0b":"#ff5470"}}>{wr}%</b></>}</span>
-              {e.emocoes?.length > 0 && <span className="mtp-cal-sub" style={{color:EMOCAO_COLORS[e.emocoes[0]]||"#888",fontWeight:"600"}}>{e.emocoes[0]}{e.emocoes.length>1 ? " +"+(e.emocoes.length-1) : ""}</span>}
+              <span className="mtp-cal-sub">{trs.length} trade{trs.length!==1?"s":""}{wr!==null && <> · <b style={{color:wr>=60?"var(--accent)":wr>=40?"var(--warn-2)":"var(--neg)"}}>{wr}%</b></>}</span>
+              {e.emocoes?.length > 0 && <span className="mtp-cal-sub" style={{color:EMOCAO_COLORS[e.emocoes[0]]||"var(--text-mute)",fontWeight:"600"}}>{e.emocoes[0]}{e.emocoes.length>1 ? " +"+(e.emocoes.length-1) : ""}</span>}
             </button>
           );
         })}
@@ -828,7 +829,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 <p style={{margin:"4px 0 0",color:"var(--text)",fontSize:"19px",fontWeight:"800"}}>{rotuloSemana(semanaAberta.chave)}</p>
                 <p style={{margin:"6px 0 0",color:"var(--text-3)",fontSize:"13px"}}>
                   {semanaAberta.dias.length} {semanaAberta.dias.length===1?"dia":"dias"} · {semanaAberta.numTrades} trade{semanaAberta.numTrades!==1?"s":""}
-                  {semanaAberta.winRate!==null && <> · <span style={{color:"#2ee6a0",fontWeight:"600"}}>{semanaAberta.winRate}% acerto</span></>} ·{" "}
+                  {semanaAberta.winRate!==null && <> · <span style={{color:"var(--accent)",fontWeight:"600"}}>{semanaAberta.winRate}% acerto</span></>} ·{" "}
                   <Valores partes={semanaAberta.partes}/>
                 </p>
               </div>
@@ -842,7 +843,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                 const cor = corDasPartes(partes);
                 return (
                   <button key={ds} type="button" onClick={()=>setDiaModal(ds)} aria-pressed={on} className={"mtp-cal-dia tem"+(ds===today?" hoje":"")}
-                    style={{border:"1px solid "+(on?cor+"88":"var(--line)"),background:on?cor+"18":"rgba(255,255,255,0.02)",minHeight:"78px"}}>
+                    style={{border:"1px solid "+(on?alfa(cor,"88"):"var(--line)"),background:on?alfa(cor,"18"):"color-mix(in srgb, var(--ink) 2%, transparent)",minHeight:"78px"}}>
                     <span className="mtp-cal-rot">{ds===today?"Hoje":DIAS_SEMANA[new Date(ds+"T12:00").getDay()]}</span>
                     <span className="mtp-cal-num">{+ds.slice(8)}</span>
                     <Valores partes={partes} compacto empilhar style={{fontSize:"13.5px"}}/>
@@ -855,44 +856,44 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         {[diaAberto].map(([ds, entry]) => {
           const isToday = ds === today;
           return (
-            <div key={ds} style={{borderRadius:"14px",overflow:"hidden",border:"1px solid "+(isToday?"#2ee6a022":"#18241f"),background:"var(--card)"}}>
+            <div key={ds} style={{borderRadius:"14px",overflow:"hidden",border:"1px solid "+(isToday?"color-mix(in srgb, var(--accent) 13.3%, transparent)":"var(--line)"),background:"var(--card)"}}>
               <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px"}}>
                 <div style={{minWidth:"100px"}}>
-                  <p style={{margin:0,color:isToday?"#2ee6a0":"#ccc",fontSize:"13px",fontWeight:"600"}}>{isToday?"Hoje":formatDateFull(ds)}</p>
+                  <p style={{margin:0,color:isToday?"var(--accent)":"var(--text-2)",fontSize:"13px",fontWeight:"600"}}>{isToday?"Hoje":formatDateFull(ds)}</p>
                 </div>
                 <div style={{display:"flex",gap:"14px",flex:1,flexWrap:"wrap",alignItems:"center"}}>
-                  {entry.numTrades !== undefined && <span style={{color:"#a3b2ab",fontSize:"13px"}}>{entry.numTrades} trade{entry.numTrades!==1?"s":""}</span>}
-                  {entry.winRate   !== undefined && <span style={{color:"#2ee6a0",fontSize:"13px",fontWeight:"600"}}>{entry.winRate}% acerto</span>}
-                  {entry.emocoes?.length > 0 && <span style={{color:EMOCAO_COLORS[entry.emocoes[0]]||"#888",fontSize:"13px"}}>{entry.emocoes[0]}</span>}
+                  {entry.numTrades !== undefined && <span style={{color:"var(--text-soft)",fontSize:"13px"}}>{entry.numTrades} trade{entry.numTrades!==1?"s":""}</span>}
+                  {entry.winRate   !== undefined && <span style={{color:"var(--accent)",fontSize:"13px",fontWeight:"600"}}>{entry.winRate}% acerto</span>}
+                  {entry.emocoes?.length > 0 && <span style={{color:EMOCAO_COLORS[entry.emocoes[0]]||"var(--text-mute)",fontSize:"13px"}}>{entry.emocoes[0]}</span>}
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:"12px",flexShrink:0}}>
-                  {entry.totalPts !== undefined && <span style={{color:entry.totalPts>=0?"#2ee6a0":"#ff5470",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{entry.totalPts>=0?"+":""}{Number((+entry.totalPts).toFixed(1))} pts</span>}
+                  {entry.totalPts !== undefined && <span style={{color:entry.totalPts>=0?"var(--accent)":"var(--neg)",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{entry.totalPts>=0?"+":""}{Number((+entry.totalPts).toFixed(1))} pts</span>}
                   <Valores partes={somaPorMoeda(entry.trades)} style={{fontSize:"14px",fontWeight:700}}/>
-                  <button title="Apagar o dia inteiro" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar o dia "+formatDateFull(ds)+"?",texto:"Isso apaga "+((entries[ds]?.trades||[]).length)+" operação(ões), as emoções e a observação desse dia. Não dá para desfazer.",botao:"Apagar dia",acao:()=>deleteEntry(ds)});}} style={{background:"none",border:"none",color:"#6f8179",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
+                  <button title="Apagar o dia inteiro" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar o dia "+formatDateFull(ds)+"?",texto:"Isso apaga "+((entries[ds]?.trades||[]).length)+" operação(ões), as emoções e a observação desse dia. Não dá para desfazer.",botao:"Apagar dia",acao:()=>deleteEntry(ds)});}} style={{background:"none",border:"none",color:"var(--text-4)",cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>✕</button>
                 </div>
               </div>
-                <div style={{borderTop:"1px solid #18241f",padding:"16px 18px"}}>
+                <div style={{borderTop:"1px solid var(--line)",padding:"16px 18px"}}>
                   {entry.emocoes?.length>0 && (
                     <div style={{marginBottom:"14px"}}>
-                      <p style={{margin:"0 0 8px",color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções</p>
+                      <p style={{margin:"0 0 8px",color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Emoções</p>
                       <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
-                        {entry.emocoes.map(em=><span key={em} style={{padding:"4px 12px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"#888")+"1a",color:EMOCAO_COLORS[em]||"#888",fontSize:"13px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"#888")+"44"}}>{em}</span>)}
+                        {entry.emocoes.map(em=><span key={em} style={{padding:"4px 12px",borderRadius:"20px",background:(EMOCAO_COLORS[em]||"var(--text-mute)")+"1a",color:EMOCAO_COLORS[em]||"var(--text-mute)",fontSize:"13px",fontWeight:"600",border:"1px solid "+(EMOCAO_COLORS[em]||"var(--text-mute)")+"44"}}>{em}</span>)}
                       </div>
                     </div>
                   )}
                   {entry.trades?.length>0 && (
                     <div style={{marginBottom:"14px"}}>
-                      <p style={{margin:"0 0 8px",color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações</p>
+                      <p style={{margin:"0 0 8px",color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Operações</p>
                       {entry.trades.map((t,i)=>{
                         const isEditing = editingTrade?.dateKey===ds && editingTrade?.index===i;
                         if (isEditing) {
                           const ed = editingTrade.data;
-                          const inpE = {background:"#0b1210",border:"1px solid #26352e",borderRadius:"6px",padding:"6px 10px",color:"#f0f0f0",fontSize:"13px",outline:"none",fontFamily:"var(--font-sans)"};
+                          const inpE = {background:"var(--surface)",border:"1px solid var(--line-strong)",borderRadius:"6px",padding:"6px 10px",color:"var(--text)",fontSize:"13px",outline:"none",fontFamily:"var(--font-sans)"};
                           return (
-                            <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"rgba(46,230,160,0.04)",border:"1px solid #2ee6a033",marginBottom:"6px"}}>
+                            <div key={i} style={{padding:"12px 14px",borderRadius:"10px",background:"color-mix(in srgb, var(--accent) 4%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 20%, transparent)",marginBottom:"6px"}}>
                               <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center",marginBottom:"8px"}}>
-                                <Select value={ed.tipo} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,tipo:v}}))} style={{...inpE,width:"100px"}} options={[{value:"WIN",label:"WIN",cor:"#2ee6a0"},{value:"LOSS",label:"LOSS",cor:"#ff5470"}]}/>
-                                <Select value={ed.mercado} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,mercado:v}}))} style={{...inpE,width:"118px"}} popWidth={150} options={[{value:"B3",label:"B3",cor:"#2ee6a0"},{value:"Forex",label:"Forex",cor:"#f5b941"},{value:"Cripto",label:"Cripto",cor:"#a78bfa"},{value:"Americano",label:"Americano",cor:"#60a5fa"}]}/>
+                                <Select value={ed.tipo} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,tipo:v}}))} style={{...inpE,width:"100px"}} options={[{value:"WIN",label:"WIN",cor:"var(--accent)"},{value:"LOSS",label:"LOSS",cor:"var(--neg)"}]}/>
+                                <Select value={ed.mercado} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,mercado:v}}))} style={{...inpE,width:"118px"}} popWidth={150} options={[{value:"B3",label:"B3",cor:"var(--accent)"},{value:"Forex",label:"Forex",cor:"var(--warn)"},{value:"Cripto",label:"Cripto",cor:"#a78bfa"},{value:"Americano",label:"Americano",cor:"#60a5fa"}]}/>
                                 <input type="number" placeholder="Pontos" value={ed.pontos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,pontos:e.target.value}}))} style={{...inpE,width:"90px"}}/>
                                 <Select value={ed.ativo||""} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,ativo:v}}))} style={{...inpE,width:"118px"}} popWidth={190} placeholder="Ativo"
                                   options={[{value:"",label:"Sem ativo"}, ...[...new Set([...(ed.ativo?[ed.ativo]:[]), ...opcoesDeAtivo(entries, ed.mercado)])].map(a=>({value:a,label:a,hint:rotuloAtivo(ed.mercado,a)}))]}/>
@@ -911,48 +912,48 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               <input type="text" placeholder="Observação" value={ed.observacao} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,observacao:e.target.value}}))} style={{...inpE,width:"100%",boxSizing:"border-box",marginBottom:"8px"}}/>
                               <div style={{display:"flex",gap:"8px"}}>
                                 <button onClick={saveEditTrade} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"6px",padding:"7px 16px",fontWeight:"700",fontSize:"12px",cursor:"pointer"}}>Salvar</button>
-                                <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"#86978f",border:"1px solid #26352e",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
-                                {ed.descontar && !(parseInt(ed.contratos) > 0) && <span style={{alignSelf:"center",color:"#ff7a90",fontSize:"12px"}}>Informe os lotes para calcular os custos.</span>}
+                                <button onClick={()=>setEditingTrade(null)} style={{background:"transparent",color:"var(--text-mute)",border:"1px solid var(--line-strong)",borderRadius:"6px",padding:"7px 14px",fontSize:"12px",cursor:"pointer"}}>Cancelar</button>
+                                {ed.descontar && !(parseInt(ed.contratos) > 0) && <span style={{alignSelf:"center",color:"var(--neg-soft)",fontSize:"12px"}}>Informe os lotes para calcular os custos.</span>}
                               </div>
                             </div>
                           );
                         }
                         const temImagens = (t.imagens||[]).length > 0;
                         return (
-                          <div key={i} style={{borderRadius:"8px",background:"rgba(255,255,255,0.02)",marginBottom:"5px",overflow:"hidden"}}>
+                          <div key={i} style={{borderRadius:"8px",background:"color-mix(in srgb, var(--ink) 2%, transparent)",marginBottom:"5px",overflow:"hidden"}}>
                             {/* Info row */}
                             <div style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",flexWrap:"wrap"}}>
-                              <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
-                              <span style={{color:"#aaa",fontSize:"13px"}}>{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
-                              {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"#ccc",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
-                              {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"#2ee6a0":"#ff5470",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":"-"}{t.mercado==="B3"?"R$":"$"} {Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>}
-                              {t.contratos&&<span style={{color:"#a3b2ab",fontSize:"11px",background:"rgba(255,255,255,0.05)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
+                              <span style={{padding:"3px 8px",borderRadius:"4px",fontSize:"12px",fontWeight:"700",background:t.tipo==="WIN"?"color-mix(in srgb, var(--accent) 15%, transparent)":"color-mix(in srgb, var(--neg) 15%, transparent)",color:t.tipo==="WIN"?"var(--accent)":"var(--neg)"}}>{t.tipo}</span>
+                              <span style={{color:"var(--text-soft)",fontSize:"13px"}}>{t.mercado}{t.ativo && <b style={{marginLeft:"6px",fontFamily:"var(--font-mono)",color:"var(--text)"}}>{t.ativo}</b>}</span>
+                              {t.pontos!==null&&t.pontos!==undefined&&<span style={{color:"var(--text-2)",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.pontos>=0?"+":""}{Number((+t.pontos).toFixed(1))} pts</span>}
+                              {t.resultado!==null&&t.resultado!==undefined&&<span style={{color:t.resultado>=0?"var(--accent)":"var(--neg)",fontSize:"13px",fontFamily:"var(--font-mono)"}}>{t.resultado>=0?"+":"-"}{t.mercado==="B3"?"R$":"$"} {Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>}
+                              {t.contratos&&<span style={{color:"var(--text-soft)",fontSize:"11px",background:"color-mix(in srgb, var(--ink) 5%, transparent)",padding:"2px 7px",borderRadius:"4px",fontFamily:"var(--font-mono)"}}>{t.contratos}×</span>}
                               <TagCustos t={t}/>
                               {t.qualidade&&<EstrelasMini q={t.qualidade}/>}
-                              {t.estrategia&&<span style={{color:"#86978f",fontSize:"12px",background:"rgba(255,255,255,0.04)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
-                              {t.observacao&&<span style={{color:"#93a39c",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
+                              {t.estrategia&&<span style={{color:"var(--text-mute)",fontSize:"12px",background:"color-mix(in srgb, var(--ink) 4%, transparent)",padding:"2px 8px",borderRadius:"4px"}}>{t.estrategia}</span>}
+                              {t.observacao&&<span style={{color:"var(--text-mute)",fontSize:"12px",fontStyle:"italic"}}>"{t.observacao}"</span>}
                               <div style={{marginLeft:"auto",display:"flex",gap:"6px",alignItems:"center",flexShrink:0}}>
-                                {temImagens&&<span style={{color:"#7a8c84",fontSize:"11px",background:"rgba(255,255,255,0.04)",padding:"2px 7px",borderRadius:"4px",display:"flex",alignItems:"center",gap:"3px"}}>
+                                {temImagens&&<span style={{color:"var(--text-3)",fontSize:"11px",background:"color-mix(in srgb, var(--ink) 4%, transparent)",padding:"2px 7px",borderRadius:"4px",display:"flex",alignItems:"center",gap:"3px"}}>
                                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                                   {t.imagens.length}
                                 </span>}
-                                <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"4px 9px",borderRadius:"6px",border:"1px solid #26352e",color:"#7a8c84",fontSize:"11px",fontWeight:"600",background:"transparent",transition:"all 0.15s"}}
-                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#2ee6a044";e.currentTarget.style.color="#2ee6a0";}}
-                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#26352e";e.currentTarget.style.color="#555";}}>
+                                <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"4px",padding:"4px 9px",borderRadius:"6px",border:"1px solid var(--line-strong)",color:"var(--text-3)",fontSize:"11px",fontWeight:"600",background:"transparent",transition:"all 0.15s"}}
+                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="color-mix(in srgb, var(--accent) 26.7%, transparent)";e.currentTarget.style.color="var(--accent)";}}
+                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--line-strong)";e.currentTarget.style.color="var(--text-5)";}}>
                                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handleSavedImageUpload(e.target.files[0],ds,i);}}/>
                                   {uploadingIdx===i
                                     ?<span style={{fontSize:"10px"}}>⏳</span>
                                     :<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
                                   Foto
                                 </label>
-                                <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} style={{background:"none",border:"1px solid #26352e",borderRadius:"5px",color:"#7a8c84",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
-                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#2ee6a044";e.currentTarget.style.color="#2ee6a0";}}
-                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#26352e";e.currentTarget.style.color="#555";}}>
+                                <button onClick={e=>{e.stopPropagation();startEditTrade(ds,i,t);}} style={{background:"none",border:"1px solid var(--line-strong)",borderRadius:"5px",color:"var(--text-3)",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",transition:"all 0.15s"}}
+                                  onMouseEnter={e=>{e.currentTarget.style.borderColor="color-mix(in srgb, var(--accent) 26.7%, transparent)";e.currentTarget.style.color="var(--accent)";}}
+                                  onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--line-strong)";e.currentTarget.style.color="var(--text-5)";}}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                   Editar
                                 </button>
                                 <button title="Apagar esta operação" onClick={e=>{e.stopPropagation();setConfirmacao({titulo:"Apagar esta operação?",texto:(t.tipo||"")+" "+(t.mercado||"")+(t.ativo?" "+t.ativo:"")+(t.resultado!=null?" · "+(t.resultado>=0?"+":"-")+(t.mercado==="B3"?"R$ ":"$ ")+Math.abs(t.resultado).toLocaleString("pt-BR",{minimumFractionDigits:2}):"")+" — os totais do dia são recalculados. Não dá para desfazer.",botao:"Apagar",acao:()=>apagarOperacaoSalva(ds,i)});}}
-                                  style={{background:"none",border:"1px solid #ff547033",borderRadius:"5px",color:"#ff7a90",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px"}}>
+                                  style={{background:"none",border:"1px solid color-mix(in srgb, var(--neg) 20%, transparent)",borderRadius:"5px",color:"var(--neg-soft)",cursor:"pointer",fontSize:"11px",fontWeight:"600",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px"}}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                                   Apagar
                                 </button>
@@ -960,21 +961,21 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                             </div>
                             {/* Image gallery strip */}
                             {temImagens&&(
-                              <div style={{padding:"6px 12px 10px",display:"flex",gap:"8px",flexWrap:"wrap",borderTop:"1px solid #18241f"}}>
+                              <div style={{padding:"6px 12px 10px",display:"flex",gap:"8px",flexWrap:"wrap",borderTop:"1px solid var(--line)"}}>
                                 {t.imagens.map((url,ii)=>(
-                                  <div key={ii} style={{width:"100px",borderRadius:"8px",overflow:"hidden",border:"1px solid #26352e",boxShadow:"0 2px 8px rgba(0,0,0,0.35)"}}>
+                                  <div key={ii} style={{width:"100px",borderRadius:"8px",overflow:"hidden",border:"1px solid var(--line-strong)",boxShadow:"0 2px 8px color-mix(in srgb, var(--shade) 35%, transparent)"}}>
                                     <ImagemSegura url={url} style={{width:"100%",height:"70px",objectFit:"cover",display:"block",cursor:"pointer"}} onClick={()=>setViewerImg(url)}/>
-                                    <div style={{display:"flex",background:"#0b1210",borderTop:"1px solid #18241f"}}>
+                                    <div style={{display:"flex",background:"var(--surface)",borderTop:"1px solid var(--line)"}}>
                                       <button onClick={()=>setEditorImg({...fonteDoEditor(t,url),saved:true,dateKey:ds,tradeIdx:i,url})}
-                                        style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid #18241f",color:"#a3b2ab",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
-                                        onMouseEnter={e=>e.currentTarget.style.color="#2ee6a0"}
-                                        onMouseLeave={e=>e.currentTarget.style.color="#888"}>
+                                        style={{flex:1,background:"transparent",border:"none",borderRight:"1px solid var(--line)",color:"var(--text-soft)",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
+                                        onMouseEnter={e=>e.currentTarget.style.color="var(--accent)"}
+                                        onMouseLeave={e=>e.currentTarget.style.color="var(--text-mute)"}>
                                         Editar
                                       </button>
                                       <button onClick={()=>handleDeleteImage(ds,i,url)}
-                                        style={{flex:1,background:"transparent",border:"none",color:"#ff547088",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
-                                        onMouseEnter={e=>e.currentTarget.style.color="#ff5470"}
-                                        onMouseLeave={e=>e.currentTarget.style.color="#ff547088"}>
+                                        style={{flex:1,background:"transparent",border:"none",color:"color-mix(in srgb, var(--neg) 53.3%, transparent)",cursor:"pointer",padding:"5px 0",fontSize:"10px",fontWeight:"600",fontFamily:"var(--font-sans)",transition:"color 0.15s"}}
+                                        onMouseEnter={e=>e.currentTarget.style.color="var(--neg)"}
+                                        onMouseLeave={e=>e.currentTarget.style.color="color-mix(in srgb, var(--neg) 53.3%, transparent)"}>
                                         Excluir
                                       </button>
                                     </div>
@@ -989,8 +990,8 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                   )}
                   {entry.observacao&&(
                     <div>
-                      <p style={{margin:"0 0 6px",color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Observações</p>
-                      <p style={{margin:0,color:"#aaa",fontSize:"14px",lineHeight:"1.6",fontStyle:"italic"}}>{entry.observacao}</p>
+                      <p style={{margin:"0 0 6px",color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Observações</p>
+                      <p style={{margin:0,color:"var(--text-soft)",fontSize:"14px",lineHeight:"1.6",fontStyle:"italic"}}>{entry.observacao}</p>
                     </div>
                   )}
                 </div>
@@ -1060,12 +1061,12 @@ function CustosDoDia({ cart, entry, config, varias, onSalvar }) {
   async function salvar(campos) { setSalvando(true); try { await onSalvar(campos); } finally { setSalvando(false); } }
 
   return (
-    <div className="mtp-op-card" style={{ "--op":"#f5b941", marginBottom:"20px", display:"flex", flexDirection:"column", gap:"12px" }}>
+    <div className="mtp-op-card" style={{ "--op":"var(--warn)", marginBottom:"20px", display:"flex", flexDirection:"column", gap:"12px" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", flexWrap:"wrap" }}>
         <span style={{ color:"var(--text)", fontSize:"13.5px", fontWeight:"800" }}>Custos do dia{varias && <span style={{ color:"var(--text-3)", fontWeight:"600" }}> · {cart.label}</span>}</span>
         {res.n > 0 && (
           <span style={{ fontFamily:"var(--font-mono)", fontSize:"12.5px", color:"var(--text-3)" }}>
-            bruto {sinal(res.bruto)} · custos <span style={{ color:"#f5b941" }}>−R$ {fmtR(res.custos)}</span> · líquido <b style={{ color:res.liquido >= 0 ? "#2ee6a0" : "#ff5470" }}>{sinal(res.liquido)}</b>
+            bruto {sinal(res.bruto)} · custos <span style={{ color:"var(--warn)" }}>−R$ {fmtR(res.custos)}</span> · líquido <b style={{ color:res.liquido >= 0 ? "var(--accent)" : "var(--neg)" }}>{sinal(res.liquido)}</b>
           </span>
         )}
       </div>
@@ -1081,9 +1082,9 @@ function CustosDoDia({ cart, entry, config, varias, onSalvar }) {
       <div style={{ display:"flex", alignItems:"center", gap:"10px", flexWrap:"wrap" }}>
         <span style={{ color:"var(--text-2)", fontSize:"13px" }}>Total líquido da nota</span>
         <input value={nota} onChange={e => setNota(e.target.value)} inputMode="decimal" placeholder="0,00"
-          style={{ background:"#18241f", border:"1px solid #26352e", borderRadius:"8px", padding:"7px 11px", color:"#f0f0f0", fontSize:"13.5px", outline:"none", fontFamily:"var(--font-mono)", width:"120px" }}/>
+          style={{ background:"var(--line)", border:"1px solid var(--line-strong)", borderRadius:"8px", padding:"7px 11px", color:"var(--text)", fontSize:"13.5px", outline:"none", fontFamily:"var(--font-mono)", width:"120px" }}/>
         <div className="mtp-seg">
-          {[["D","#ff5470"],["C","#2ee6a0"]].map(([k, c]) => (
+          {[["D","var(--neg)"],["C","var(--accent)"]].map(([k, c]) => (
             <button key={k} type="button" onClick={() => setDc(k)} className={dc === k ? "on" : ""} style={{ "--seg":c }} title={k === "D" ? "Débito (saiu da conta)" : "Crédito (entrou na conta)"}>{k}</button>
           ))}
         </div>
@@ -1092,7 +1093,7 @@ function CustosDoDia({ cart, entry, config, varias, onSalvar }) {
         {temNota && <button type="button" className="mtp-btn-sec" disabled={salvando} onClick={() => { setNota(""); salvar({ liquidoNota: null }); }} style={{ minHeight:"32px" }}>Remover</button>}
       </div>
 
-      <p style={{ margin:0, color:custosNota !== null && custosNota < 0 ? "#ff7a90" : "var(--text-3)", fontSize:"12px", lineHeight:1.6 }}>
+      <p style={{ margin:0, color:custosNota !== null && custosNota < 0 ? "var(--neg-soft)" : "var(--text-3)", fontSize:"12px", lineHeight:1.6 }}>
         {temNota && liquido === dia.liquidoNota
           ? <>✓ Conferido pela nota: custos reais de R$ {fmtR(res.custos)} divididos entre as {res.n} operações.</>
           : custosNota !== null
@@ -1156,7 +1157,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
   }
 
   const rotulo = { color:"var(--text-3)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1.2px", fontWeight:"700", display:"block", marginBottom:"10px" };
-  const campo = { background:"#18241f", border:"1px solid #26352e", borderRadius:"8px", padding:"8px 12px", color:"#f0f0f0", fontSize:"13px", outline:"none", fontFamily:"var(--font-sans)", boxSizing:"border-box" };
+  const campo = { background:"var(--line)", border:"1px solid var(--line-strong)", borderRadius:"8px", padding:"8px 12px", color:"var(--text)", fontSize:"13px", outline:"none", fontFamily:"var(--font-sans)", boxSizing:"border-box" };
 
   return (
     <Modal onClose={fechar} width={920}>
@@ -1166,7 +1167,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
             <p style={{ margin:0, color:"var(--text)", fontSize:"17px", fontWeight:"800" }}>Importar operações</p>
             <p style={{ margin:"6px 0 0", color:"var(--text-3)", fontSize:"12.5px", lineHeight:1.6, wordBreak:"break-word" }}>
               {importacao.nome}{importacao.conta && <> · conta {importacao.conta}</>} · {ops.length} {ops.length === 1 ? "operação" : "operações"}
-              {duplicadas > 0 && <> · <span style={{ color:"#f5b941" }}>{duplicadas} já {duplicadas === 1 ? "registrada" : "registradas"}</span></>}
+              {duplicadas > 0 && <> · <span style={{ color:"var(--warn)" }}>{duplicadas} já {duplicadas === 1 ? "registrada" : "registradas"}</span></>}
             </p>
           </div>
           {contas.length > 1 && (
@@ -1188,7 +1189,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
             <div key={dia} style={{ display:"flex", flexDirection:"column", gap:"16px", paddingTop:dias.length > 1 ? "6px" : 0 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"10px" }}>
                 <span style={{ color:"var(--text)", fontSize:"14px", fontWeight:"800" }}>{formatDateLong(dia)}</span>
-                <span style={{ fontFamily:"var(--font-mono)", fontSize:"13px", color:tot - custoDia >= 0 ? "#2ee6a0" : "#ff5470", fontWeight:"700" }}>
+                <span style={{ fontFamily:"var(--font-mono)", fontSize:"13px", color:tot - custoDia >= 0 ? "var(--accent)" : "var(--neg)", fontWeight:"700" }}>
                   {custoDia > 0 && <span style={{ color:"var(--text-3)", fontWeight:"500" }}>bruto {brl(tot)} · custos −R$ {fmtR(custoDia)} · </span>}{brl(tot - custoDia)}
                 </span>
               </div>
@@ -1199,9 +1200,9 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
                 <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
                   {EMOCOES.map(em => {
                     const on = info.emocoes.includes(em);
-                    const cor = EMOCAO_COLORS[em] || "#888";
+                    const cor = EMOCAO_COLORS[em] || "var(--text-mute)";
                     return <button key={em} type="button" onClick={() => mudarDia(dia, { emocoes: on ? info.emocoes.filter(e => e !== em) : [...info.emocoes, em] })}
-                      style={{ padding:"6px 11px", borderRadius:"20px", border:"1px solid " + (on ? cor + "66" : "#26352e"), background:on ? cor + "1a" : "transparent", color:on ? cor : "#aaa", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>{em}</button>;
+                      style={{ padding:"6px 11px", borderRadius:"20px", border:"1px solid " + (on ? cor + "66" : "var(--line-strong)"), background:on ? cor + "1a" : "transparent", color:on ? cor : "var(--text-soft)", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>{em}</button>;
                   })}
                 </div>
               </div>
@@ -1220,13 +1221,13 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                   {doDia.map(o => {
-                    const cor = o.tipo === "WIN" ? "#2ee6a0" : "#ff5470";
+                    const cor = o.tipo === "WIN" ? "var(--accent)" : "var(--neg)";
                     return (
                       <div key={o.id} className="mtp-op-card" style={{ "--op":cor, opacity:o.incluir ? 1 : 0.45, display:"flex", flexDirection:"column", gap:"12px" }}
                         onPaste={e => { if (o.incluir && e.clipboardData?.files?.length) { e.preventDefault(); addFotos(o.id, e.clipboardData.files); } }}>
                         <div style={{ display:"flex", alignItems:"center", gap:"12px", flexWrap:"wrap" }}>
                           <input type="checkbox" checked={o.incluir} onChange={e => mudar(o.id, x => ({ ...x, incluir:e.target.checked }))}
-                            aria-label="Importar esta operação" style={{ width:"16px", height:"16px", accentColor:"#2ee6a0", cursor:"pointer" }}/>
+                            aria-label="Importar esta operação" style={{ width:"16px", height:"16px", accentColor:"var(--accent)", cursor:"pointer" }}/>
                           <span style={{ color:"var(--text-3)", fontSize:"12.5px", fontFamily:"var(--font-mono)" }}>{o.horario}</span>
                           <span style={{ padding:"3px 9px", borderRadius:"6px", fontSize:"11.5px", fontWeight:"800", background:cor + "1f", color:cor }}>{o.tipo}</span>
                           <span style={{ color:cor, fontSize:"14.5px", fontWeight:"700", fontFamily:"var(--font-mono)", minWidth:"96px" }}>{brl(o.resultado)}</span>
@@ -1234,7 +1235,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
                           <span className="mtp-tag"><b style={{ fontFamily:"var(--font-mono)", color:"var(--text)" }}>{o.ativo}</b></span>
                           {o.lado && <span className="mtp-tag">{o.lado}</span>}
                           {o.contratos && <span className="mtp-tag" style={{ fontFamily:"var(--font-mono)" }}>{o.contratos}{mt5 ? (o.contratos <= 1 ? " lote" : " lotes") : "×"}</span>}
-                          {o.dup && <span className="mtp-tag" style={{ color:"#f5b941" }}>já registrada</span>}
+                          {o.dup && <span className="mtp-tag" style={{ color:"var(--warn)" }}>já registrada</span>}
                           <div style={{ display:"flex", alignItems:"center", gap:"10px", marginLeft:"auto", flexWrap:"wrap" }}>
                             {estNomes.length > 0 && (
                               <Select value={o.estrategia} onChange={n => mudar(o.id, x => comEstrategia(x, n))} placeholder="Estratégia" popWidth={220} align="right"
@@ -1300,7 +1301,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
         <div style={{ display:"flex", gap:"10px", justifyContent:"flex-end", flexWrap:"wrap" }}>
           <button onClick={fechar} disabled={salvando} style={{ background:"transparent", color:"var(--text-2)", border:"1px solid var(--line)", borderRadius:"10px", padding:"10px 16px", fontSize:"13px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Cancelar</button>
           <button onClick={salvar} disabled={salvando || !selecionadas.length}
-            style={{ background:selecionadas.length ? "linear-gradient(135deg,#2ee6a0,#1fc98a)" : "rgba(255,255,255,0.05)", color:selecionadas.length ? "#000" : "var(--text-3)", border:"none", borderRadius:"10px", padding:"10px 18px", fontSize:"13px", fontWeight:"800", cursor:salvando ? "wait" : selecionadas.length ? "pointer" : "not-allowed", fontFamily:"var(--font-sans)" }}>
+            style={{ background:selecionadas.length ? "linear-gradient(135deg,#2ee6a0,#1fc98a)" : "color-mix(in srgb, var(--ink) 5%, transparent)", color:selecionadas.length ? "#000" : "var(--text-3)", border:"none", borderRadius:"10px", padding:"10px 18px", fontSize:"13px", fontWeight:"800", cursor:salvando ? "wait" : selecionadas.length ? "pointer" : "not-allowed", fontFamily:"var(--font-sans)" }}>
             {salvando ? "Importando..." : "Importar " + selecionadas.length + (selecionadas.length === 1 ? " operação" : " operações")}
           </button>
         </div>

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabase";
 import { CountUp, Modal } from "../components/ui";
 import { gerarSenha, validarSenha, REGRA_SENHA } from "../lib/senha";
+import { alfa } from "../lib/cor.js";
 
 // Chamada à Edge Function admin-usuarios (a chave secreta fica só no servidor)
 async function chamarAdmin(body) {
@@ -22,7 +23,7 @@ const PLANOS = {
   cortesia: { label:"Cortesia",        status:"ativa", dias:null },
 };
 
-const STATUS_COR = { ativa:"#2ee6a0", teste:"#7fd8ff", suspensa:"#f5b941", cancelada:"#ff5470", vencida:"#ff5470" };
+const STATUS_COR = { ativa:"var(--accent)", teste:"var(--info)", suspensa:"var(--warn)", cancelada:"var(--neg)", vencida:"var(--neg)" };
 const STATUS_TXT = { ativa:"Ativa", teste:"Teste", suspensa:"Suspensa", cancelada:"Cancelada", vencida:"Vencida" };
 
 function hojeISO() {
@@ -44,8 +45,8 @@ function statusEfetivo(u) {
 }
 
 const kpiLabel = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
-const inp = {width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid var(--line-strong)",borderRadius:"10px",padding:"11px 13px",color:"#f0f0f0",fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"var(--font-sans)"};
-const btnSec = {background:"rgba(255,255,255,0.04)",border:"1px solid var(--line)",borderRadius:"8px",padding:"6px 11px",color:"var(--text-2)",fontSize:"11.5px",fontWeight:"600",cursor:"pointer",fontFamily:"var(--font-sans)",whiteSpace:"nowrap"};
+const inp = {width:"100%",background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line-strong)",borderRadius:"10px",padding:"11px 13px",color:"var(--text)",fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"var(--font-sans)"};
+const btnSec = {background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",borderRadius:"8px",padding:"6px 11px",color:"var(--text-2)",fontSize:"11.5px",fontWeight:"600",cursor:"pointer",fontFamily:"var(--font-sans)",whiteSpace:"nowrap"};
 
 export default function Usuarios({ onVoltar, api = chamarAdmin }) {
   const [lista,    setLista]    = useState([]);
@@ -83,8 +84,8 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
         <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
           {onVoltar && <button onClick={onVoltar} style={{...btnSec,padding:"8px 12px"}}>← Voltar</button>}
           <div>
-            <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Usuários</h1>
-            <p style={{margin:"4px 0 0",color:"#86978f",fontSize:"13px"}}>Crie acessos e controle as assinaturas dos seus clientes</p>
+            <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"var(--text)",letterSpacing:"-0.8px"}}>Usuários</h1>
+            <p style={{margin:"4px 0 0",color:"var(--text-mute)",fontSize:"13px"}}>Crie acessos e controle as assinaturas dos seus clientes</p>
           </div>
         </div>
         <button onClick={()=>{ setNovoAberto(true); setCriado(null); }} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
@@ -96,9 +97,9 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:"14px",marginBottom:"24px"}}>
         {[
           {l:"Clientes",          v:clientes,          c:"var(--text)"},
-          {l:"Ativos",            v:conta("ativa"),    c:"#2ee6a0"},
-          {l:"Em teste",          v:conta("teste"),    c:"#7fd8ff"},
-          {l:"Vencidos/suspensos",v:conta("vencida")+conta("suspensa")+conta("cancelada"), c:"#ff5470"},
+          {l:"Ativos",            v:conta("ativa"),    c:"var(--accent)"},
+          {l:"Em teste",          v:conta("teste"),    c:"var(--info)"},
+          {l:"Vencidos/suspensos",v:conta("vencida")+conta("suspensa")+conta("cancelada"), c:"var(--neg)"},
         ].map(k=>(
           <div key={k.l} style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"16px 20px",display:"flex",flexDirection:"column",gap:"8px"}}>
             <p style={kpiLabel}>{k.l}</p>
@@ -107,7 +108,7 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
         ))}
       </div>
 
-      {erro && <div style={{padding:"12px 16px",borderRadius:"12px",background:"rgba(255,84,112,0.08)",border:"1px solid #ff547033",color:"#ff7a90",fontSize:"13px",marginBottom:"16px"}}>{erro}</div>}
+      {erro && <div style={{padding:"12px 16px",borderRadius:"12px",background:"color-mix(in srgb, var(--neg) 8%, transparent)",border:"1px solid color-mix(in srgb, var(--neg) 20%, transparent)",color:"var(--neg-soft)",fontSize:"13px",marginBottom:"16px"}}>{erro}</div>}
 
       {/* Lista */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",marginBottom:"14px",flexWrap:"wrap"}}>
@@ -121,27 +122,27 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
         ) : filtrados.length===0 ? (
           <p style={{margin:0,padding:"28px",color:"var(--text-3)",fontSize:"13px",textAlign:"center"}}>{busca?"Nenhum usuário encontrado.":"Nenhum usuário ainda. Clique em \"Novo usuário\"."}</p>
         ) : filtrados.map((u,i)=>{
-          const cor = STATUS_COR[u.efetivo] || "#888";
+          const cor = STATUS_COR[u.efetivo] || "var(--text-mute)";
           const dias = diasAte(u.assinatura_ate);
           const admin = u.papel==="admin";
           return (
             <div key={u.id} style={{display:"grid",gridTemplateColumns:"minmax(0,2fr) 130px 210px 250px",alignItems:"center",gap:"16px",padding:"14px 20px",borderBottom:i<filtrados.length-1?"1px solid var(--line)":"none"}}>
               <div style={{display:"flex",alignItems:"center",gap:"12px",minWidth:0}}>
-                <div style={{width:"36px",height:"36px",borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,"+cor+"33,"+cor+"0d)",border:"1px solid "+cor+"55",display:"flex",alignItems:"center",justifyContent:"center",color:cor,fontWeight:"800",fontSize:"14px"}}>{(u.nome||u.email||"?")[0].toUpperCase()}</div>
+                <div style={{width:"36px",height:"36px",borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,"+cor+"33,"+cor+"0d)",border:"1px solid "+alfa(cor,"55"),display:"flex",alignItems:"center",justifyContent:"center",color:cor,fontWeight:"800",fontSize:"14px"}}>{(u.nome||u.email||"?")[0].toUpperCase()}</div>
                 <div style={{minWidth:0}}>
                   <p style={{margin:0,color:"var(--text)",fontSize:"14px",fontWeight:"700",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                    {u.nome||"Sem nome"} {admin && <span style={{marginLeft:"6px",fontSize:"10px",fontWeight:"800",letterSpacing:"0.8px",color:"#f5b941",border:"1px solid #f5b94144",background:"#f5b94112",borderRadius:"20px",padding:"1px 7px",verticalAlign:"middle"}}>ADMIN</span>}
+                    {u.nome||"Sem nome"} {admin && <span style={{marginLeft:"6px",fontSize:"10px",fontWeight:"800",letterSpacing:"0.8px",color:"var(--warn)",border:"1px solid color-mix(in srgb, var(--warn) 26.7%, transparent)",background:"color-mix(in srgb, var(--warn) 7.1%, transparent)",borderRadius:"20px",padding:"1px 7px",verticalAlign:"middle"}}>ADMIN</span>}
                   </p>
                   <p style={{margin:"2px 0 0",color:"var(--text-3)",fontSize:"12px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.email}</p>
                 </div>
               </div>
               <div>
-                <span style={{fontSize:"10.5px",fontWeight:"700",letterSpacing:"0.6px",textTransform:"uppercase",padding:"3px 9px",borderRadius:"20px",color:cor,border:"1px solid "+cor+"44",background:cor+"12"}}>{STATUS_TXT[u.efetivo]||u.efetivo}</span>
+                <span style={{fontSize:"10.5px",fontWeight:"700",letterSpacing:"0.6px",textTransform:"uppercase",padding:"3px 9px",borderRadius:"20px",color:cor,border:"1px solid "+alfa(cor,"44"),background:alfa(cor,"12")}}>{STATUS_TXT[u.efetivo]||u.efetivo}</span>
                 <p style={{margin:"6px 0 0",color:"var(--text-3)",fontSize:"11.5px"}}>{admin ? "dono" : (PLANOS[u.plano]?.label || u.plano)}</p>
               </div>
               <div style={{fontFamily:"var(--font-mono)",fontSize:"12px"}}>
                 <p style={{margin:0,color:"var(--text-2)"}}>{admin ? "sem vencimento" : u.assinatura_ate ? "até "+fmtData(u.assinatura_ate) : "sem vencimento"}</p>
-                <p style={{margin:"3px 0 0",color: dias!==null && dias<0 ? "#ff7a90" : dias!==null && dias<=5 ? "#f5b941" : "var(--text-3)",fontSize:"11px"}}>
+                <p style={{margin:"3px 0 0",color: dias!==null && dias<0 ? "var(--neg-soft)" : dias!==null && dias<=5 ? "var(--warn)" : "var(--text-3)",fontSize:"11px"}}>
                   {admin ? "" : dias===null ? "" : dias<0 ? "venceu há "+Math.abs(dias)+"d" : dias===0 ? "vence hoje" : "faltam "+dias+"d"}
                   {u.ultimo_acesso && <span style={{color:"var(--text-3)"}}>{dias!==null && !admin ? " · " : ""}acesso {fmtData(u.ultimo_acesso)}</span>}
                 </p>
@@ -150,9 +151,9 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
                 {!admin && <>
                   <button style={btnSec} disabled={!!ocupado} onClick={()=>acao(u.id,{ status_assinatura:"ativa", assinatura_ate: maisDias(u.assinatura_ate,30) },"+30")}>{ocupado===u.id+"+30"?"...":"+30 dias"}</button>
                   {u.status_assinatura==="suspensa" || u.status_assinatura==="cancelada" ? (
-                    <button style={{...btnSec,color:"#2ee6a0",borderColor:"#2ee6a033"}} disabled={!!ocupado} onClick={()=>acao(u.id,{ status_assinatura:"ativa" },"reativar")}>Reativar</button>
+                    <button style={{...btnSec,color:"var(--accent)",borderColor:"color-mix(in srgb, var(--accent) 20%, transparent)"}} disabled={!!ocupado} onClick={()=>acao(u.id,{ status_assinatura:"ativa" },"reativar")}>Reativar</button>
                   ) : (
-                    <button style={{...btnSec,color:"#f5b941",borderColor:"#f5b94133"}} disabled={!!ocupado} onClick={()=>{ if(window.confirm("Suspender o acesso de "+(u.nome||u.email)+"?")) acao(u.id,{ status_assinatura:"suspensa" },"suspender"); }}>Suspender</button>
+                    <button style={{...btnSec,color:"var(--warn)",borderColor:"color-mix(in srgb, var(--warn) 20%, transparent)"}} disabled={!!ocupado} onClick={()=>{ if(window.confirm("Suspender o acesso de "+(u.nome||u.email)+"?")) acao(u.id,{ status_assinatura:"suspensa" },"suspender"); }}>Suspender</button>
                   )}
                 </>}
                 <button style={btnSec} onClick={()=>setSenhaDe(u)}>Senha</button>
@@ -228,7 +229,7 @@ function NovoUsuario({ api, onClose, onCriado }) {
           <input type="date" style={{...inp,colorScheme:"dark"}} value={f.ate} min={hojeISO()} onChange={e=>setF(x=>({...x,ate:e.target.value}))}/>
           <p style={{margin:"6px 0 0",color:"var(--text-3)",fontSize:"11.5px"}}>{f.ate ? "Depois dessa data o acesso é bloqueado até renovar." : "Sem vencimento."}</p>
         </Campo>
-        {erro && <p style={{margin:0,color:"#ff7a90",fontSize:"12.5px"}}>{erro}</p>}
+        {erro && <p style={{margin:0,color:"var(--neg-soft)",fontSize:"12.5px"}}>{erro}</p>}
         <div style={{display:"flex",gap:"10px",marginTop:"4px"}}>
           <button onClick={criar} disabled={salvando} style={{flex:1,background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:salvando?"wait":"pointer"}}>{salvando?"Criando...":"Criar usuário"}</button>
           <button onClick={onClose} style={{...btnSec,padding:"12px 16px",fontSize:"13px"}}>Cancelar</button>
@@ -248,8 +249,8 @@ function Credenciais({ dados, onClose }) {
     <Modal onClose={onClose} width={480}>
       <div style={{padding:"24px 26px",display:"flex",flexDirection:"column",gap:"14px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-          <div style={{width:"40px",height:"40px",borderRadius:"12px",background:"rgba(46,230,160,0.12)",border:"1px solid #2ee6a044",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <div style={{width:"40px",height:"40px",borderRadius:"12px",background:"color-mix(in srgb, var(--accent) 12%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 26.7%, transparent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div>
             <p style={{margin:0,color:"var(--text)",fontSize:"17px",fontWeight:"800"}}>Usuário criado</p>
@@ -288,8 +289,8 @@ function TrocarSenha({ api, usuario, onClose }) {
           <input style={{...inp,fontFamily:"var(--font-mono)"}} value={senha} onChange={e=>setSenha(e.target.value)} disabled={ok}/>
           {!ok && <button onClick={()=>setSenha(gerarSenha())} style={{...btnSec,padding:"0 14px"}}>Gerar</button>}
         </div>
-        {erro && <p style={{margin:0,color:"#ff7a90",fontSize:"12.5px"}}>{erro}</p>}
-        {ok && <p style={{margin:0,color:"#2ee6a0",fontSize:"12.5px"}}>✓ Senha alterada. Envie a nova senha ao cliente.</p>}
+        {erro && <p style={{margin:0,color:"var(--neg-soft)",fontSize:"12.5px"}}>{erro}</p>}
+        {ok && <p style={{margin:0,color:"var(--accent)",fontSize:"12.5px"}}>✓ Senha alterada. Envie a nova senha ao cliente.</p>}
         <div style={{display:"flex",gap:"10px"}}>
           {!ok && <button onClick={salvar} style={{flex:1,background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:"pointer"}}>Salvar nova senha</button>}
           <button onClick={onClose} style={{...btnSec,padding:"12px 16px",fontSize:"13px",flex:ok?1:"none"}}>{ok?"Fechar":"Cancelar"}</button>

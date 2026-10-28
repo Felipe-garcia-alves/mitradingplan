@@ -6,8 +6,8 @@ import { listaContas, TIPOS_CONTA } from "../lib/contas";
 
 const MERCADOS = [
   { value:"todos",     label:"Todos" },
-  { value:"B3",        label:"B3",        cor:"#2ee6a0" },
-  { value:"Forex",     label:"Forex",     cor:"#f5b941" },
+  { value:"B3",        label:"B3",        cor:"var(--accent)" },
+  { value:"Forex",     label:"Forex",     cor:"var(--warn)" },
   { value:"Cripto",    label:"Cripto",    cor:"#a78bfa" },
   { value:"Americano", label:"Americano", cor:"#60a5fa" },
 ];
@@ -44,7 +44,7 @@ export default function FiltrosBarra({ config, saveConfig, conta, setConta, merc
         {/* Conta */}
         <button ref={refConta} className={"mtp-ctx-btn"+(popConta?" on":"")} onClick={() => setPopConta(popConta ? null : refConta.current.getBoundingClientRect())}>
           {contaAtual
-            ? <><i className="mtp-dot" style={{ background:TIPOS_CONTA[contaAtual.tipo]?.cor || "#2ee6a0" }}/>{contaAtual.nome}{contaAtual.padrao && <span style={{ color:"var(--text-3)", fontWeight:500 }}>· padrão</span>}</>
+            ? <><i className="mtp-dot" style={{ background:TIPOS_CONTA[contaAtual.tipo]?.cor || "var(--accent)" }}/>{contaAtual.nome}{contaAtual.padrao && <span style={{ color:"var(--text-3)", fontWeight:500 }}>· padrão</span>}</>
             : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Todas as contas</>}
           <Chevron aberto={!!popConta}/>
         </button>
@@ -79,7 +79,7 @@ export default function FiltrosBarra({ config, saveConfig, conta, setConta, merc
         <Popover rect={popConta} onClose={() => setPopConta(null)} width={270} anchorRef={refConta}>
           {[{ id:"todas", nome:"Todas as contas" }, ...contas].map(c => (
             <div key={c.id} className={"mtp-option"+(conta === c.id ? " sel" : "")} onMouseDown={e => { e.preventDefault(); setConta(c.id); setPopConta(null); }}>
-              <i className="mtp-dot" style={{ background: c.id === "todas" ? "var(--text-3)" : (TIPOS_CONTA[c.tipo]?.cor || "#2ee6a0") }}/>
+              <i className="mtp-dot" style={{ background: c.id === "todas" ? "var(--text-3)" : (TIPOS_CONTA[c.tipo]?.cor || "var(--accent)") }}/>
               <span style={{ flex:1 }}>{c.nome}</span>
               {c.padrao && <span className="mtp-option-hint">padrão</span>}
               {c.tipo && !c.padrao && <span className="mtp-option-hint">{TIPOS_CONTA[c.tipo]?.label}</span>}
@@ -121,7 +121,7 @@ export default function FiltrosBarra({ config, saveConfig, conta, setConta, merc
           {nFiltros > 0 && (
             <>
               <div style={{ height:"1px", background:"var(--line)", margin:"6px 4px" }}/>
-              <div className="mtp-option" style={{ color:"#ff7a90" }} onMouseDown={e => { e.preventDefault(); limparTudo(); }}>Limpar filtros</div>
+              <div className="mtp-option" style={{ color:"var(--neg-soft)" }} onMouseDown={e => { e.preventDefault(); limparTudo(); }}>Limpar filtros</div>
             </>
           )}
         </Popover>

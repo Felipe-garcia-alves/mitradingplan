@@ -6,7 +6,7 @@ import { MERCADOS } from "../lib/banca";
 import { custosDaConta, valorZeragem } from "../lib/custos";
 
 const rotulo = { margin:"0 0 8px", color:"var(--text-3)", fontSize:"10.5px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1.3px" };
-const inp = { width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid var(--line-strong)", borderRadius:"10px", padding:"11px 13px", color:"#f0f0f0", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)" };
+const inp = { width:"100%", background:"color-mix(in srgb, var(--ink) 4%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"10px", padding:"11px 13px", color:"var(--text)", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)" };
 
 export function Check({ marcado }) {
   return (
@@ -123,7 +123,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
         <div>
           <p style={rotulo}>Limites diários (% da banca)</p>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px" }}>
-            {[["risco","Risco / op","#2ee6a0"],["meta","Meta","#2ee6a0"],["stop","Stop","#ff5470"]].map(([k, l, c]) => (
+            {[["risco","Risco / op","var(--accent)"],["meta","Meta","var(--accent)"],["stop","Stop","var(--neg)"]].map(([k, l, c]) => (
               <div key={k} style={{ position:"relative" }}>
                 <input style={{ ...inp, fontFamily:"var(--font-mono)", paddingTop:"22px", paddingBottom:"8px", paddingRight:"30px" }} type="number" min="0.1" step="0.1" value={f[k]} onChange={e => set(k, e.target.value)}/>
                 <span style={{ position:"absolute", left:"13px", top:"7px", fontSize:"10px", fontWeight:"700", color:c, letterSpacing:"0.6px", textTransform:"uppercase" }}>{l}</span>
@@ -136,7 +136,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
 
         <div>
           <p style={rotulo}>Custos operacionais</p>
-          <div style={{ display:"flex", flexDirection:"column", gap:"12px", padding:"14px", borderRadius:"12px", border:"1px solid var(--line)", background:"rgba(255,255,255,0.02)" }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:"12px", padding:"14px", borderRadius:"12px", border:"1px solid var(--line)", background:"color-mix(in srgb, var(--ink) 2%, transparent)" }}>
             <div onClick={() => setC("automatico", !custos.automatico)} style={{ display:"flex", alignItems:"center", gap:"10px", cursor:"pointer", userSelect:"none" }}>
               <Check marcado={custos.automatico}/>
               <span style={{ color:"var(--text-2)", fontSize:"13px" }}>Descontar custos automaticamente no Diário</span>
@@ -186,7 +186,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
           <span style={{ color:"var(--text-2)", fontSize:"13px" }}>Conta padrão ao registrar no Diário</span>
         </div>
 
-        {erro && <p style={{ margin:0, color:"#ff7a90", fontSize:"12.5px" }}>{erro}</p>}
+        {erro && <p style={{ margin:0, color:"var(--neg-soft)", fontSize:"12.5px" }}>{erro}</p>}
         <div style={{ display:"flex", gap:"10px" }}>
           <button onClick={salvar} disabled={salvando} style={{ flex:1, background:"linear-gradient(135deg,#2ee6a0,#1fc98a)", color:"#000", border:"none", borderRadius:"10px", padding:"12px", fontWeight:"800", fontSize:"13px", cursor:"pointer" }}>{salvando ? "Salvando..." : conta ? "Salvar alterações" : "Criar conta"}</button>
           <button onClick={onClose} style={{ background:"transparent", color:"var(--text-2)", border:"1px solid var(--line)", borderRadius:"10px", padding:"12px 16px", fontSize:"13px", cursor:"pointer", fontFamily:"var(--font-sans)" }}>Cancelar</button>

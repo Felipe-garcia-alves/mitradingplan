@@ -6,9 +6,10 @@ import { VEREDITOS, VEREDITO, vereditosDo, vereditoDo, perguntaDo, FASES_ERRO, r
 import { hojeLocal } from "../lib/datas";
 import { fonteDoEditor, trocarFotoAnotada, apagarArquivos } from "../lib/fotos";
 import ImageEditor, { uploadTradeImage, ImageViewer, ImagemSegura } from "../components/ImageEditor";
+import { alfa } from "../lib/cor.js";
 
 const PERIODOS = [{ value:7, label:"Últimos 7 dias" }, { value:30, label:"Últimos 30 dias" }, { value:90, label:"Últimos 90 dias" }, { value:0, label:"Todo o período" }];
-const EMOCAO_COLORS = {"Focado":"#2ee6a0","Confiante":"#0099ff","Neutro":"#888","Atento":"#a78bfa","Cauteloso":"#f59e0b","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
+const EMOCAO_COLORS = {"Focado":"var(--accent)","Confiante":"#0099ff","Neutro":"var(--text-mute)","Atento":"#a78bfa","Cauteloso":"var(--warn-2)","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
 
 function dataCurta(dia) {
   return new Date(dia + "T12:00:00").toLocaleDateString("pt-BR", { weekday:"short", day:"numeric", month:"short" }).replace(/\./g, "");
@@ -16,16 +17,16 @@ function dataCurta(dia) {
 const rotulo = { margin:"0 0 10px", color:"var(--text-3)", fontSize:"11px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" };
 
 function Chip({ cor, children, style }) {
-  return <span style={{padding:"3px 9px",borderRadius:"20px",fontSize:"11.5px",fontWeight:"700",whiteSpace:"nowrap",color:cor,background:cor+"17",border:"1px solid "+cor+"40",...style}}>{children}</span>;
+  return <span style={{padding:"3px 9px",borderRadius:"20px",fontSize:"11.5px",fontWeight:"700",whiteSpace:"nowrap",color:cor,background:alfa(cor,"17"),border:"1px solid "+alfa(cor,"40"),...style}}>{children}</span>;
 }
 function Estrelas({ q }) {
   const n = estrelasDe(q);
   if (!n) return null;
-  return <span title="Execução" style={{color:"#f5b941",fontSize:"12px",letterSpacing:"1px"}}>{"★".repeat(n)}<span style={{opacity:0.25}}>{"★".repeat(3 - n)}</span></span>;
+  return <span title="Execução" style={{color:"var(--warn)",fontSize:"12px",letterSpacing:"1px"}}>{"★".repeat(n)}<span style={{opacity:0.25}}>{"★".repeat(3 - n)}</span></span>;
 }
 function Resultado({ t, size = 14 }) {
-  if (typeof t.resultado !== "number") return t.pontos != null ? <span style={{fontFamily:"var(--font-mono)",fontWeight:800,fontSize:size,color:t.pontos>=0?"#2ee6a0":"#ff5470"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span> : null;
-  return <span style={{fontFamily:"var(--font-mono)",fontWeight:800,fontSize:size,color:t.resultado>=0?"#2ee6a0":"#ff5470"}}>{fmtMoeda(t.resultado, moedaDoMercado(t.mercado))}</span>;
+  if (typeof t.resultado !== "number") return t.pontos != null ? <span style={{fontFamily:"var(--font-mono)",fontWeight:800,fontSize:size,color:t.pontos>=0?"var(--accent)":"var(--neg)"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span> : null;
+  return <span style={{fontFamily:"var(--font-mono)",fontWeight:800,fontSize:size,color:t.resultado>=0?"var(--accent)":"var(--neg)"}}>{fmtMoeda(t.resultado, moedaDoMercado(t.mercado))}</span>;
 }
 function Kpi({ titulo, children, sub }) {
   return (
@@ -115,19 +116,19 @@ export default function Revisao({ entries, saveEntry, estrategias, uid, config, 
       {(fecharPassada || focoAtual) && (
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,320px),1fr))",gap:"12px",marginBottom:"14px"}}>
           {fecharPassada && (
-            <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"14px 16px",borderRadius:"14px",background:"rgba(245,185,65,0.07)",border:"1px solid #f5b94144",flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"14px 16px",borderRadius:"14px",background:"color-mix(in srgb, var(--warn) 7%, transparent)",border:"1px solid color-mix(in srgb, var(--warn) 26.7%, transparent)",flexWrap:"wrap"}}>
               <div style={{flex:1,minWidth:"200px"}}>
-                <p style={{margin:0,color:"#f5b941",fontSize:"13.5px",fontWeight:"800"}}>Feche a semana de {rotuloSemana(segPassada)}</p>
+                <p style={{margin:0,color:"var(--warn)",fontSize:"13.5px",fontWeight:"800"}}>Feche a semana de {rotuloSemana(segPassada)}</p>
                 <p style={{margin:"2px 0 0",color:"var(--text-3)",fontSize:"12.5px"}}>2 minutos: o que custou caro, o que você aprendeu e um foco para esta semana.</p>
               </div>
-              <button onClick={()=>setSemanaAberta(segPassada)} style={{background:"#f5b941",color:"#000",border:"none",borderRadius:"9px",padding:"0 14px",minHeight:"36px",fontWeight:"800",fontSize:"12.5px",cursor:"pointer",fontFamily:"var(--font-sans)",flexShrink:0}}>Fechar semana</button>
+              <button onClick={()=>setSemanaAberta(segPassada)} style={{background:"var(--warn)",color:"#000",border:"none",borderRadius:"9px",padding:"0 14px",minHeight:"36px",fontWeight:"800",fontSize:"12.5px",cursor:"pointer",fontFamily:"var(--font-sans)",flexShrink:0}}>Fechar semana</button>
             </div>
           )}
           {focoAtual && (
-            <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 16px",borderRadius:"14px",background:"rgba(46,230,160,0.06)",border:"1px solid #2ee6a033"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 16px",borderRadius:"14px",background:"color-mix(in srgb, var(--accent) 6%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 20%, transparent)"}}>
               <span style={{fontSize:"20px"}}>🎯</span>
               <div style={{minWidth:0}}>
-                <p style={{...rotulo,margin:"0 0 2px",color:"#2ee6a0"}}>Foco desta semana</p>
+                <p style={{...rotulo,margin:"0 0 2px",color:"var(--accent)"}}>Foco desta semana</p>
                 <p style={{margin:0,color:"var(--text)",fontSize:"14px",fontWeight:"700"}}>{focoAtual}</p>
               </div>
             </div>
@@ -137,7 +138,7 @@ export default function Revisao({ entries, saveEntry, estrategias, uid, config, 
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"12px",marginBottom:"20px"}}>
         <Kpi titulo="Para revisar" sub={todos ? "todos os trades do período" : "trades com alerta no período"}>
-          <span style={{color:pendentes.length?"#f5b941":"#2ee6a0"}}>{pendentes.length}</span>
+          <span style={{color:pendentes.length?"var(--warn)":"var(--accent)"}}>{pendentes.length}</span>
         </Kpi>
         <Kpi titulo="Revisados" sub={comErro.length + " com erro · " + (revisados.length - comErro.length) + " dentro do plano"}>{revisados.length}</Kpi>
         <Kpi titulo="Custo dos erros" sub="soma dos losses em que houve erro">
@@ -151,7 +152,7 @@ export default function Revisao({ entries, saveEntry, estrategias, uid, config, 
       <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center",marginBottom:"16px"}}>
         <div style={{display:"flex",gap:"4px",background:"var(--card)",border:"1px solid var(--line)",borderRadius:"12px",padding:"4px"}}>
           {abas.map(([id, rot, n]) => (
-            <button key={id} onClick={()=>setAba(id)} style={{padding:"7px 14px",borderRadius:"9px",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:"700",fontFamily:"var(--font-sans)",background:aba===id?"rgba(46,230,160,0.12)":"transparent",color:aba===id?"#2ee6a0":"var(--text-3)",display:"flex",alignItems:"center",gap:"7px"}}>
+            <button key={id} onClick={()=>setAba(id)} style={{padding:"7px 14px",borderRadius:"9px",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:"700",fontFamily:"var(--font-sans)",background:aba===id?"color-mix(in srgb, var(--accent) 12%, transparent)":"transparent",color:aba===id?"var(--accent)":"var(--text-3)",display:"flex",alignItems:"center",gap:"7px"}}>
               {rot}{n !== null && <span style={{fontSize:"11px",fontFamily:"var(--font-mono)",opacity:0.8}}>{n}</span>}
             </button>
           ))}
@@ -161,7 +162,7 @@ export default function Revisao({ entries, saveEntry, estrategias, uid, config, 
         {usaPeriodo && <Select value={periodo} onChange={setPeriodo} options={PERIODOS} popWidth={190}
           style={{padding:"6px 12px",minHeight:"34px",borderRadius:"20px",fontSize:"12px"}}/>}
         {aba !== "treino" && <Select value={filtroEst} onChange={setFiltroEst} popWidth={220}
-          style={{padding:"6px 12px",minHeight:"34px",borderRadius:"20px",fontSize:"12px",color:filtroEst==="todas"?"var(--text-3)":"#2ee6a0"}}
+          style={{padding:"6px 12px",minHeight:"34px",borderRadius:"20px",fontSize:"12px",color:filtroEst==="todas"?"var(--text-3)":"var(--accent)"}}
           options={[{value:"todas",label:"Todas estratégias"}, ...(estrategias||[]).map(e=>({value:e.nome,label:e.nome}))]}/>}
       </div>
 
@@ -172,7 +173,7 @@ export default function Revisao({ entries, saveEntry, estrategias, uid, config, 
           <>
             {aba === "fila" && (
               <label style={{display:"inline-flex",alignItems:"center",gap:"8px",color:"var(--text-3)",fontSize:"12.5px",marginBottom:"12px",cursor:"pointer",userSelect:"none"}}>
-                <input type="checkbox" checked={todos} onChange={e=>setTodos(e.target.checked)} style={{accentColor:"#2ee6a0"}}/>
+                <input type="checkbox" checked={todos} onChange={e=>setTodos(e.target.checked)} style={{accentColor:"var(--accent)"}}/>
                 Incluir trades sem alerta (estudar também os acertos)
               </label>
             )}
@@ -211,10 +212,10 @@ export default function Revisao({ entries, saveEntry, estrategias, uid, config, 
 // Foto com a parte da direita (depois do ponto de decisão) escondida
 function FotoCortada({ url, corte, revelar }) {
   return (
-    <div style={{position:"relative",borderRadius:"10px",overflow:"hidden",border:"1px solid var(--line-strong)",background:"#050907"}}>
+    <div style={{position:"relative",borderRadius:"10px",overflow:"hidden",border:"1px solid var(--line-strong)",background:"var(--bg)"}}>
       <ImagemSegura url={url} style={{width:"100%",display:"block",minHeight:"120px"}}/>
       {!revelar && (
-        <div style={{position:"absolute",top:0,bottom:0,right:0,left:(corte * 100) + "%",background:"repeating-linear-gradient(135deg,#0a100d 0 10px,#0d1612 10px 20px)",borderLeft:"2px dashed #f5b941",display:"flex",alignItems:"center",justifyContent:"center",color:"#f5b941",fontSize:"30px",fontWeight:"800"}}>?</div>
+        <div style={{position:"absolute",top:0,bottom:0,right:0,left:(corte * 100) + "%",background:"repeating-linear-gradient(135deg,var(--surface) 0 10px,var(--surface) 10px 20px)",borderLeft:"2px dashed var(--warn)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--warn)",fontSize:"30px",fontWeight:"800"}}>?</div>
       )}
     </div>
   );
@@ -226,8 +227,8 @@ function LinhaTrade({ it, onAbrir }) {
   const motivos = rev ? [] : motivosRevisao(t, entry);
   const foto = (t.imagens || [])[0];
   return (
-    <button onClick={onAbrir} className="mtp-op-card" style={{"--op":t.tipo==="WIN"?"#2ee6a0":"#ff5470",display:"flex",alignItems:"center",gap:"14px",textAlign:"left",cursor:"pointer",width:"100%",fontFamily:"var(--font-sans)",color:"inherit"}}>
-      <div style={{width:"72px",height:"48px",borderRadius:"8px",overflow:"hidden",flexShrink:0,border:"1px solid var(--line-strong)",background:"rgba(255,255,255,0.03)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-3)"}}>
+    <button onClick={onAbrir} className="mtp-op-card" style={{"--op":t.tipo==="WIN"?"var(--accent)":"var(--neg)",display:"flex",alignItems:"center",gap:"14px",textAlign:"left",cursor:"pointer",width:"100%",fontFamily:"var(--font-sans)",color:"inherit"}}>
+      <div style={{width:"72px",height:"48px",borderRadius:"8px",overflow:"hidden",flexShrink:0,border:"1px solid var(--line-strong)",background:"color-mix(in srgb, var(--ink) 3%, transparent)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-3)"}}>
         {foto
           ? <ImagemSegura url={foto} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
           : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
@@ -235,20 +236,20 @@ function LinhaTrade({ it, onAbrir }) {
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:"6px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
           <span style={{color:"var(--text-2)",fontSize:"12.5px",fontWeight:"600",minWidth:"92px"}}>{dataCurta(dia)}{t.horario && <span style={{color:"var(--text-3)",fontFamily:"var(--font-mono)",marginLeft:"6px"}}>{t.horario}</span>}</span>
-          <span style={{padding:"2px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"800",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
+          <span style={{padding:"2px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"800",background:t.tipo==="WIN"?"color-mix(in srgb, var(--accent) 15%, transparent)":"color-mix(in srgb, var(--neg) 15%, transparent)",color:t.tipo==="WIN"?"var(--accent)":"var(--neg)"}}>{t.tipo}</span>
           <Resultado t={t}/>
           {(t.ativo || t.estrategia) && <span style={{color:"var(--text-3)",fontSize:"12px"}}>{[t.ativo, t.estrategia].filter(Boolean).join(" · ")}</span>}
           <Estrelas q={t.qualidade}/>
         </div>
         <div style={{display:"flex",gap:"6px",flexWrap:"wrap",alignItems:"center"}}>
           {motivos.map(m => <Chip key={m.rot} cor={m.cor}>{m.rot}</Chip>)}
-          {rev && <Chip cor={vereditoDo(t, rev.veredito)?.cor || "#888"}>{vereditoDo(t, rev.veredito)?.rot || rev.veredito}</Chip>}
-          {rev?.erros?.map(e => <Chip key={e} cor="#a3b2ab">{rotuloErro(e)}</Chip>)}
+          {rev && <Chip cor={vereditoDo(t, rev.veredito)?.cor || "var(--text-mute)"}>{vereditoDo(t, rev.veredito)?.rot || rev.veredito}</Chip>}
+          {rev?.erros?.map(e => <Chip key={e} cor="var(--text-soft)">{rotuloErro(e)}</Chip>)}
           {rev?.marca && MARCAS[rev.marca] && <Chip cor={MARCAS[rev.marca].cor}>★ {MARCAS[rev.marca].rot}</Chip>}
           {rev?.licao && <span style={{color:"var(--text-3)",fontSize:"12px",fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>“{rev.licao}”</span>}
         </div>
       </div>
-      <span style={{color:rev?"var(--text-3)":"#2ee6a0",fontSize:"12.5px",fontWeight:"700",flexShrink:0}}>{rev ? "Abrir" : "Revisar →"}</span>
+      <span style={{color:rev?"var(--text-3)":"var(--accent)",fontSize:"12.5px",fontWeight:"700",flexShrink:0}}>{rev ? "Abrir" : "Revisar →"}</span>
     </button>
   );
 }
@@ -330,7 +331,7 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
           <div style={{flex:1,minWidth:"240px"}}>
             <p style={{...rotulo,margin:"0 0 6px"}}>{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}{t.horario ? " · " + t.horario : ""}</p>
             <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-              <span style={{padding:"3px 10px",borderRadius:"6px",fontSize:"12px",fontWeight:"800",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
+              <span style={{padding:"3px 10px",borderRadius:"6px",fontSize:"12px",fontWeight:"800",background:t.tipo==="WIN"?"color-mix(in srgb, var(--accent) 15%, transparent)":"color-mix(in srgb, var(--neg) 15%, transparent)",color:t.tipo==="WIN"?"var(--accent)":"var(--neg)"}}>{t.tipo}</span>
               <Resultado t={t} size={20}/>
               {t.pontos != null && typeof t.resultado === "number" && <span style={{color:"var(--text-2)",fontFamily:"var(--font-mono)",fontSize:"13px"}}>{t.pontos>=0?"+":""}{t.pontos} pts</span>}
               <span style={{color:"var(--text-2)",fontSize:"13px"}}>{[t.mercado, t.ativo, t.estrategia, t.contratos ? t.contratos + "×" : null].filter(Boolean).join(" · ")}</span>
@@ -350,17 +351,17 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
           <div style={{minWidth:0}}>
             {foto ? (
               <>
-                <div style={{borderRadius:"12px",overflow:"hidden",border:"1px solid var(--line-strong)",background:"#050907",display:"flex",justifyContent:"center"}}>
+                <div style={{borderRadius:"12px",overflow:"hidden",border:"1px solid var(--line-strong)",background:"var(--bg)",display:"flex",justifyContent:"center"}}>
                   <ImagemSegura url={foto} onClick={()=>setViewer(foto)} style={{maxWidth:"100%",maxHeight:"440px",objectFit:"contain",display:"block",cursor:"zoom-in"}}/>
                 </div>
                 <div style={{display:"flex",gap:"8px",alignItems:"center",marginTop:"10px",flexWrap:"wrap"}}>
                   {fotos.length > 1 && fotos.map((u, i) => (
-                    <button key={u} onClick={()=>setFotoSel(i)} style={{width:"58px",height:"40px",padding:0,borderRadius:"7px",overflow:"hidden",cursor:"pointer",border:"2px solid "+(u===foto?"#2ee6a0":"var(--line-strong)"),background:"none"}}>
+                    <button key={u} onClick={()=>setFotoSel(i)} style={{width:"58px",height:"40px",padding:0,borderRadius:"7px",overflow:"hidden",cursor:"pointer",border:"2px solid "+(u===foto?"var(--accent)":"var(--line-strong)"),background:"none"}}>
                       <ImagemSegura url={u} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
                     </button>
                   ))}
                   <div style={{flex:1}}/>
-                  <button onClick={()=>setEditor({ url: foto, ...fonteDoEditor(t, foto) })} className="mtp-btn-sec" style={{minHeight:"34px",color:"#f5b941",borderColor:"#f5b94155"}}>
+                  <button onClick={()=>setEditor({ url: foto, ...fonteDoEditor(t, foto) })} className="mtp-btn-sec" style={{minHeight:"34px",color:"var(--warn)",borderColor:"color-mix(in srgb, var(--warn) 33.3%, transparent)"}}>
                     ✏️ Anotar na revisão
                   </button>
                   <label className="mtp-btn-sec" style={{minHeight:"34px",cursor:"pointer"}}>
@@ -368,7 +369,7 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
                     {enviando ? "enviando…" : "+ Foto"}
                   </label>
                 </div>
-                {t.camadas?.[foto] && <p style={{margin:"8px 0 0",color:"var(--text-3)",fontSize:"11.5px"}}>Os desenhos desta foto continuam editáveis: a camada <b style={{color:"#2ee6a0"}}>Na hora</b> e a de <b style={{color:"#f5b941"}}>Revisão</b>.</p>}
+                {t.camadas?.[foto] && <p style={{margin:"8px 0 0",color:"var(--text-3)",fontSize:"11.5px"}}>Os desenhos desta foto continuam editáveis: a camada <b style={{color:"var(--accent)"}}>Na hora</b> e a de <b style={{color:"var(--warn)"}}>Revisão</b>.</p>}
               </>
             ) : (
               <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"8px",minHeight:"220px",borderRadius:"12px",border:"1px dashed var(--line-strong)",color:"var(--text-3)",cursor:"pointer",textAlign:"center",padding:"20px"}}>
@@ -385,7 +386,7 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
                 {(entry.emocoes || []).length > 0 && (
                   <div>
                     <p style={rotulo}>Emoções do dia</p>
-                    <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>{entry.emocoes.map(em => <Chip key={em} cor={EMOCAO_COLORS[em] || "#888"}>{em}</Chip>)}</div>
+                    <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>{entry.emocoes.map(em => <Chip key={em} cor={EMOCAO_COLORS[em] || "var(--text-mute)"}>{em}</Chip>)}</div>
                   </div>
                 )}
                 {entry.observacao && <div><p style={rotulo}>Observação do dia</p><p style={{margin:0,color:"var(--text-2)",fontSize:"13px",lineHeight:1.6,fontStyle:"italic",whiteSpace:"pre-wrap"}}>{entry.observacao}</p></div>}
@@ -401,7 +402,7 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
                 {vereditosDo(t).map(v => {
                   const on = veredito === v.id;
                   return (
-                    <button key={v.id} onClick={()=>setVeredito(v.id)} style={{textAlign:"left",padding:"10px 12px",borderRadius:"11px",cursor:"pointer",fontFamily:"var(--font-sans)",border:"1px solid "+(on?v.cor+"88":"var(--line-strong)"),background:on?v.cor+"16":"transparent",transition:"all .15s"}}>
+                    <button key={v.id} onClick={()=>setVeredito(v.id)} style={{textAlign:"left",padding:"10px 12px",borderRadius:"11px",cursor:"pointer",fontFamily:"var(--font-sans)",border:"1px solid "+(on?alfa(v.cor,"88"):"var(--line-strong)"),background:on?alfa(v.cor,"16"):"transparent",transition:"all .15s"}}>
                       <span style={{display:"block",color:on?v.cor:"var(--text)",fontSize:"13.5px",fontWeight:"800"}}>{v.rot}</span>
                       <span style={{display:"block",color:"var(--text-3)",fontSize:"11.5px",marginTop:"2px",lineHeight:1.35}}>{v.desc}</span>
                     </button>
@@ -420,7 +421,7 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
                       <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
                         {f.erros.map(([id, rot]) => {
                           const on = erros.includes(id);
-                          return <button key={id} onClick={()=>alternarErro(id)} style={{padding:"5px 11px",borderRadius:"20px",cursor:"pointer",fontSize:"12px",fontWeight:"600",fontFamily:"var(--font-sans)",border:"1px solid "+(on?"#ff547088":"var(--line-strong)"),background:on?"rgba(255,84,112,0.12)":"transparent",color:on?"#ff7a90":"var(--text-2)"}}>{rot}</button>;
+                          return <button key={id} onClick={()=>alternarErro(id)} style={{padding:"5px 11px",borderRadius:"20px",cursor:"pointer",fontSize:"12px",fontWeight:"600",fontFamily:"var(--font-sans)",border:"1px solid "+(on?"color-mix(in srgb, var(--neg) 53.3%, transparent)":"var(--line-strong)"),background:on?"color-mix(in srgb, var(--neg) 12%, transparent)":"transparent",color:on?"var(--neg-soft)":"var(--text-2)"}}>{rot}</button>;
                         })}
                       </div>
                     </div>
@@ -441,7 +442,7 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
               <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
                 {Object.entries(MARCAS).map(([id, m]) => {
                   const on = marca === id;
-                  return <button key={id} onClick={()=>setMarca(on ? "" : id)} style={{padding:"6px 12px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?m.cor+"88":"var(--line-strong)"),background:on?m.cor+"16":"transparent",color:on?m.cor:"var(--text-3)"}}>★ {m.rot}</button>;
+                  return <button key={id} onClick={()=>setMarca(on ? "" : id)} style={{padding:"6px 12px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?alfa(m.cor,"88"):"var(--line-strong)"),background:on?alfa(m.cor,"16"):"transparent",color:on?m.cor:"var(--text-3)"}}>★ {m.rot}</button>;
                 })}
               </div>
             </div>
@@ -450,19 +451,19 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
               <div>
                 <p style={rotulo}>Treino “Você entraria?”</p>
                 <label style={{display:"inline-flex",alignItems:"center",gap:"8px",color:"var(--text-2)",fontSize:"13px",cursor:"pointer",userSelect:"none"}}>
-                  <input type="checkbox" checked={treinoOn} onChange={e=>setTreinoOn(e.target.checked)} style={{accentColor:"#2ee6a0"}}/>
+                  <input type="checkbox" checked={treinoOn} onChange={e=>setTreinoOn(e.target.checked)} style={{accentColor:"var(--accent)"}}/>
                   Usar a foto selecionada no treino
                 </label>
                 {treinoOn && (
                   <div style={{marginTop:"10px",display:"flex",flexDirection:"column",gap:"10px"}}>
                     <FotoCortada url={fonteDoEditor(t, foto).src} corte={corte}/>
-                    <input type="range" min={0.15} max={0.95} step={0.01} value={corte} onChange={e=>setCorte(+e.target.value)} aria-label="Ponto de corte da foto" style={{width:"100%",accentColor:"#f5b941"}}/>
+                    <input type="range" min={0.15} max={0.95} step={0.01} value={corte} onChange={e=>setCorte(+e.target.value)} aria-label="Ponto de corte da foto" style={{width:"100%",accentColor:"var(--warn)"}}/>
                     <p style={{margin:0,color:"var(--text-3)",fontSize:"12px"}}>Arraste até o momento da decisão, antes da entrada. A parte da direita fica escondida no treino{t.camadas?.[foto] ? " (o treino usa a foto sem desenhos)" : ""}.</p>
                     <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
                       <span style={{color:"var(--text-3)",fontSize:"12.5px"}}>Resposta certa:</span>
-                      {[["entrar","Entrar","#2ee6a0"],["nao_entrar","Não entrar","#ff5470"]].map(([id, rot, cor]) => {
+                      {[["entrar","Entrar","var(--accent)"],["nao_entrar","Não entrar","var(--neg)"]].map(([id, rot, cor]) => {
                         const on = respEfetiva === id;
-                        return <button key={id} onClick={()=>setRespTreino(id)} style={{padding:"5px 12px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?cor+"88":"var(--line-strong)"),background:on?cor+"16":"transparent",color:on?cor:"var(--text-3)"}}>{rot}</button>;
+                        return <button key={id} onClick={()=>setRespTreino(id)} style={{padding:"5px 12px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?alfa(cor,"88"):"var(--line-strong)"),background:on?alfa(cor,"16"):"transparent",color:on?cor:"var(--text-3)"}}>{rot}</button>;
                       })}
                       {!respTreino && respEfetiva && <span style={{color:"var(--text-3)",fontSize:"11.5px"}}>sugerida pela revisão</span>}
                     </div>
@@ -477,7 +478,7 @@ function Ficha({ it, entries, saveEntry, uid, anterior, proximo, onIr, onFechar,
               </button>
               {proximo && <button onClick={()=>salvar(false)} className="mtp-btn-sec" style={{minHeight:"40px"}}>Salvar</button>}
               {t.revisao && <button onClick={()=>onSalvar(it, null, null)} className="mtp-btn-sec" style={{minHeight:"40px",color:"var(--text-3)"}} title="Volta o trade para a fila">Desfazer revisão</button>}
-              {msg && <span role="alert" style={{color:"#ff7a90",fontSize:"12.5px"}}>{msg}</span>}
+              {msg && <span role="alert" style={{color:"var(--neg-soft)",fontSize:"12.5px"}}>{msg}</span>}
             </div>
           </div>
         </div>
@@ -538,7 +539,7 @@ function Padroes({ revisados, onAbrir }) {
     <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
       <div style={card}>
         <p style={rotulo}>Erro ou mercado? · {revisados.length} trades revisados</p>
-        <div style={{display:"flex",height:"12px",borderRadius:"6px",overflow:"hidden",background:"rgba(255,255,255,0.04)",marginBottom:"12px"}}>
+        <div style={{display:"flex",height:"12px",borderRadius:"6px",overflow:"hidden",background:"color-mix(in srgb, var(--ink) 4%, transparent)",marginBottom:"12px"}}>
           {porVeredito.filter(v => v.n).map(v => <div key={v.id} title={v.rot + ": " + v.n} style={{width:(v.n / revisados.length * 100) + "%",background:v.cor}}/>)}
         </div>
         <div style={{display:"flex",gap:"18px",flexWrap:"wrap"}}>
@@ -564,8 +565,8 @@ function Padroes({ revisados, onAbrir }) {
                   {rotuloErro(r.id)} <span style={{color:"var(--text-3)",fontWeight:500,fontSize:"12px"}}>· {r.n} {r.n === 1 ? "vez" : "vezes"}</span>
                 </span>
                 <Valores partes={r.custo} vazio="sem custo" style={{fontSize:"13.5px",textAlign:"right"}}/>
-                <div style={{gridColumn:"1 / -1",height:"6px",borderRadius:"3px",background:"rgba(255,255,255,0.04)",overflow:"hidden"}}>
-                  <div style={{width:(r.n / maxN * 100) + "%",height:"100%",background:i===0?"#ff5470":"#ff547077",borderRadius:"3px"}}/>
+                <div style={{gridColumn:"1 / -1",height:"6px",borderRadius:"3px",background:"color-mix(in srgb, var(--ink) 4%, transparent)",overflow:"hidden"}}>
+                  <div style={{width:(r.n / maxN * 100) + "%",height:"100%",background:i===0?"var(--neg)":"color-mix(in srgb, var(--neg) 46.7%, transparent)",borderRadius:"3px"}}/>
                 </div>
               </div>
             ))}
@@ -583,12 +584,12 @@ function Padroes({ revisados, onAbrir }) {
                 <p style={{margin:"0 0 8px",color:"var(--text-2)",fontSize:"12.5px",fontWeight:"700"}}>{titulo}</p>
                 <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
                   {linhas.slice(0, 6).map(l => {
-                    const cor = l.taxa >= 0.6 ? "#ff5470" : l.taxa >= 0.3 ? "#f5b941" : "#2ee6a0";
+                    const cor = l.taxa >= 0.6 ? "var(--neg)" : l.taxa >= 0.3 ? "var(--warn)" : "var(--accent)";
                     return (
                       <div key={l.k} title={l.erro + " com erro em " + l.n + " revisados"} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 44px",gap:"3px 10px",alignItems:"center"}}>
                         <span style={{color:"var(--text)",fontSize:"12.5px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.k} <span style={{color:"var(--text-3)"}}>· {l.n}</span></span>
                         <span style={{color:cor,fontSize:"12.5px",fontWeight:"800",fontFamily:"var(--font-mono)",textAlign:"right"}}>{Math.round(l.taxa * 100)}%</span>
-                        <div style={{gridColumn:"1 / -1",height:"4px",borderRadius:"2px",background:"rgba(255,255,255,0.04)"}}>
+                        <div style={{gridColumn:"1 / -1",height:"4px",borderRadius:"2px",background:"color-mix(in srgb, var(--ink) 4%, transparent)"}}>
                           <div style={{width:(l.taxa * 100) + "%",height:"100%",borderRadius:"2px",background:cor}}/>
                         </div>
                       </div>
@@ -609,7 +610,7 @@ function Padroes({ revisados, onAbrir }) {
             {meses.map(m => (
               <div key={m.ym} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",height:"100%",justifyContent:"flex-end"}}>
                 <span style={{color:"var(--text-2)",fontSize:"11.5px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>{Math.round(m.taxa * 100)}%</span>
-                <div title={m.n + " revisados"} style={{width:"100%",maxWidth:"46px",height:Math.max(4, m.taxa * 80) + "px",borderRadius:"6px 6px 2px 2px",background:m.taxa >= 0.6 ? "#ff5470" : m.taxa >= 0.3 ? "#f5b941" : "#2ee6a0"}}/>
+                <div title={m.n + " revisados"} style={{width:"100%",maxWidth:"46px",height:Math.max(4, m.taxa * 80) + "px",borderRadius:"6px 6px 2px 2px",background:m.taxa >= 0.6 ? "var(--neg)" : m.taxa >= 0.3 ? "var(--warn)" : "var(--accent)"}}/>
                 <span style={{color:"var(--text-3)",fontSize:"11px"}}>{new Date(m.ym + "-15T12:00:00").toLocaleDateString("pt-BR",{month:"short"}).replace(".", "")}</span>
               </div>
             ))}
@@ -643,7 +644,7 @@ function Biblioteca({ itens, onAbrir }) {
     return (
       <div style={{background:"var(--card)",border:"1px dashed var(--line-strong)",borderRadius:"16px",padding:"36px 20px",textAlign:"center"}}>
         <p style={{margin:"0 0 6px",color:"var(--text)",fontSize:"15px",fontWeight:"700"}}>Sua biblioteca está vazia</p>
-        <p style={{margin:0,color:"var(--text-3)",fontSize:"13px"}}>Na ficha de revisão, marque um trade como <b style={{color:"#2ee6a0"}}>Exemplo A+</b> ou <b style={{color:"#ff5470"}}>Erro clássico</b>. Aqui vira o seu playbook visual: o que repetir e o que nunca mais fazer.</p>
+        <p style={{margin:0,color:"var(--text-3)",fontSize:"13px"}}>Na ficha de revisão, marque um trade como <b style={{color:"var(--accent)"}}>Exemplo A+</b> ou <b style={{color:"var(--neg)"}}>Erro clássico</b>. Aqui vira o seu playbook visual: o que repetir e o que nunca mais fazer.</p>
       </div>
     );
   }
@@ -652,10 +653,10 @@ function Biblioteca({ itens, onAbrir }) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"22px"}}>
       <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-        {[["todos","Todos","#a3b2ab"], ...Object.entries(MARCAS).map(([id, m]) => [id, m.rot, m.cor])].map(([id, rot, cor]) => {
+        {[["todos","Todos","var(--text-soft)"], ...Object.entries(MARCAS).map(([id, m]) => [id, m.rot, m.cor])].map(([id, rot, cor]) => {
           const on = tipo === id;
           const n = id === "todos" ? itens.length : itens.filter(it => it.t.revisao.marca === id).length;
-          return <button key={id} onClick={()=>setTipo(id)} style={{padding:"6px 13px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?cor+"88":"var(--line-strong)"),background:on?cor+"16":"transparent",color:on?cor:"var(--text-3)"}}>{rot} <span style={{opacity:0.7,fontFamily:"var(--font-mono)"}}>{n}</span></button>;
+          return <button key={id} onClick={()=>setTipo(id)} style={{padding:"6px 13px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?alfa(cor,"88"):"var(--line-strong)"),background:on?alfa(cor,"16"):"transparent",color:on?cor:"var(--text-3)"}}>{rot} <span style={{opacity:0.7,fontFamily:"var(--font-mono)"}}>{n}</span></button>;
         })}
       </div>
       {Object.entries(grupos).map(([est, its]) => (
@@ -666,8 +667,8 @@ function Biblioteca({ itens, onAbrir }) {
               const m = MARCAS[it.t.revisao.marca];
               const foto = (it.t.imagens || [])[0];
               return (
-                <button key={it.chave} onClick={()=>onAbrir(it.chave)} style={{textAlign:"left",padding:0,borderRadius:"14px",overflow:"hidden",cursor:"pointer",background:"var(--card)",border:"1px solid "+m.cor+"33",fontFamily:"var(--font-sans)",display:"flex",flexDirection:"column"}}>
-                  <div style={{height:"140px",width:"100%",background:"#050907",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-3)",fontSize:"12px"}}>
+                <button key={it.chave} onClick={()=>onAbrir(it.chave)} style={{textAlign:"left",padding:0,borderRadius:"14px",overflow:"hidden",cursor:"pointer",background:"var(--card)",border:"1px solid "+alfa(m.cor,"33"),fontFamily:"var(--font-sans)",display:"flex",flexDirection:"column"}}>
+                  <div style={{height:"140px",width:"100%",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-3)",fontSize:"12px"}}>
                     {foto ? <ImagemSegura url={foto} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/> : "sem foto"}
                   </div>
                   <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px",width:"100%",boxSizing:"border-box"}}>
@@ -748,19 +749,19 @@ function Treino({ cartoes, cartoesHoje, onResponder, onAbrir }) {
         <div style={{textAlign:"center",marginTop:"18px"}}>
           <p style={{margin:"0 0 12px",color:"var(--text)",fontSize:"17px",fontWeight:"800"}}>Você entraria neste trade?</p>
           <div style={{display:"flex",gap:"10px",justifyContent:"center",flexWrap:"wrap"}}>
-            <button onClick={()=>responder("entrar")} style={{minWidth:"150px",minHeight:"46px",borderRadius:"12px",border:"1px solid #2ee6a088",background:"rgba(46,230,160,0.1)",color:"#2ee6a0",fontWeight:"800",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Entraria</button>
-            <button onClick={()=>responder("nao_entrar")} style={{minWidth:"150px",minHeight:"46px",borderRadius:"12px",border:"1px solid #ff547088",background:"rgba(255,84,112,0.1)",color:"#ff7a90",fontWeight:"800",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Não entraria</button>
+            <button onClick={()=>responder("entrar")} style={{minWidth:"150px",minHeight:"46px",borderRadius:"12px",border:"1px solid color-mix(in srgb, var(--accent) 53.3%, transparent)",background:"color-mix(in srgb, var(--accent) 10%, transparent)",color:"var(--accent)",fontWeight:"800",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Entraria</button>
+            <button onClick={()=>responder("nao_entrar")} style={{minWidth:"150px",minHeight:"46px",borderRadius:"12px",border:"1px solid color-mix(in srgb, var(--neg) 53.3%, transparent)",background:"color-mix(in srgb, var(--neg) 10%, transparent)",color:"var(--neg-soft)",fontWeight:"800",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Não entraria</button>
           </div>
         </div>
       ) : (
-        <div style={{marginTop:"16px",padding:"16px 18px",borderRadius:"14px",background:acertou?"rgba(46,230,160,0.07)":"rgba(255,84,112,0.07)",border:"1px solid "+(acertou?"#2ee6a044":"#ff547044")}}>
+        <div style={{marginTop:"16px",padding:"16px 18px",borderRadius:"14px",background:acertou?"color-mix(in srgb, var(--accent) 7%, transparent)":"color-mix(in srgb, var(--neg) 7%, transparent)",border:"1px solid "+(acertou?"color-mix(in srgb, var(--accent) 26.7%, transparent)":"color-mix(in srgb, var(--neg) 26.7%, transparent)")}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap",marginBottom:"10px"}}>
-            <span style={{color:acertou?"#2ee6a0":"#ff7a90",fontSize:"16px",fontWeight:"800"}}>{acertou ? "✓ Você acertou" : "✗ O certo era " + (tr.resposta === "entrar" ? "entrar" : "não entrar")}</span>
+            <span style={{color:acertou?"var(--accent)":"var(--neg-soft)",fontSize:"16px",fontWeight:"800"}}>{acertou ? "✓ Você acertou" : "✗ O certo era " + (tr.resposta === "entrar" ? "entrar" : "não entrar")}</span>
             <span style={{color:"var(--text-3)",fontSize:"12.5px"}}>{dataCurta(it.dia)}</span>
-            <span style={{padding:"2px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"800",background:t.tipo==="WIN"?"rgba(46,230,160,0.15)":"rgba(255,84,112,0.15)",color:t.tipo==="WIN"?"#2ee6a0":"#ff5470"}}>{t.tipo}</span>
+            <span style={{padding:"2px 8px",borderRadius:"5px",fontSize:"11px",fontWeight:"800",background:t.tipo==="WIN"?"color-mix(in srgb, var(--accent) 15%, transparent)":"color-mix(in srgb, var(--neg) 15%, transparent)",color:t.tipo==="WIN"?"var(--accent)":"var(--neg)"}}>{t.tipo}</span>
             <Resultado t={t}/>
             {vereditoDo(t, rev.veredito) && <Chip cor={vereditoDo(t, rev.veredito).cor}>{vereditoDo(t, rev.veredito).rot}</Chip>}
-            {(rev.erros || []).map(e => <Chip key={e} cor="#a3b2ab">{rotuloErro(e)}</Chip>)}
+            {(rev.erros || []).map(e => <Chip key={e} cor="var(--text-soft)">{rotuloErro(e)}</Chip>)}
           </div>
           {rev.licao && <p style={{margin:"0 0 12px",color:"var(--text)",fontSize:"14.5px",lineHeight:1.55,fontWeight:"600"}}>“{rev.licao}”</p>}
           <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
@@ -816,13 +817,13 @@ function FecharSemana({ seg, todosTrades, semana, focoProxima, onFechar, onSalva
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"10px"}}>
           <div style={bloco}><p style={{...rotulo,margin:"0 0 4px"}}>Resultado</p><Valores partes={somaPorMoeda(trades)} style={{fontSize:"17px"}}/></div>
           <div style={bloco}><p style={{...rotulo,margin:"0 0 4px"}}>Trades</p><span style={num}>{trades.length}</span>{trades.length > 0 && <span style={{color:"var(--text-3)",fontSize:"12.5px"}}> · {Math.round(wins / trades.length * 100)}% acerto</span>}</div>
-          <div style={bloco}><p style={{...rotulo,margin:"0 0 4px"}}>Revisados</p><span style={num}>{revisados.length}</span>{pend.length > 0 && <span style={{color:"#f5b941",fontSize:"12.5px"}}> · {pend.length} pendente{pend.length > 1 ? "s" : ""}</span>}</div>
+          <div style={bloco}><p style={{...rotulo,margin:"0 0 4px"}}>Revisados</p><span style={num}>{revisados.length}</span>{pend.length > 0 && <span style={{color:"var(--warn)",fontSize:"12.5px"}}> · {pend.length} pendente{pend.length > 1 ? "s" : ""}</span>}</div>
         </div>
 
         {pend.length > 0 && (
-          <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"12px 14px",borderRadius:"12px",background:"rgba(245,185,65,0.07)",border:"1px solid #f5b94144",flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"12px 14px",borderRadius:"12px",background:"color-mix(in srgb, var(--warn) 7%, transparent)",border:"1px solid color-mix(in srgb, var(--warn) 26.7%, transparent)",flexWrap:"wrap"}}>
             <span style={{flex:1,minWidth:"200px",color:"var(--text-2)",fontSize:"13px"}}>{pend.length} trade{pend.length > 1 ? "s" : ""} com alerta ainda sem revisão. O balanço fica mais honesto com eles revisados.</span>
-            <button onClick={onRevisar} className="mtp-btn-sec" style={{minHeight:"34px",color:"#f5b941",borderColor:"#f5b94155"}}>Revisar agora</button>
+            <button onClick={onRevisar} className="mtp-btn-sec" style={{minHeight:"34px",color:"var(--warn)",borderColor:"color-mix(in srgb, var(--warn) 33.3%, transparent)"}}>Revisar agora</button>
           </div>
         )}
 
@@ -831,7 +832,7 @@ function FecharSemana({ seg, todosTrades, semana, focoProxima, onFechar, onSalva
             <p style={rotulo}>Erros da semana</p>
             <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
               {ranking.map(r => (
-                <div key={r.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 12px",borderRadius:"10px",background:"rgba(255,84,112,0.05)",border:"1px solid #ff547022"}}>
+                <div key={r.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 12px",borderRadius:"10px",background:"color-mix(in srgb, var(--neg) 5%, transparent)",border:"1px solid color-mix(in srgb, var(--neg) 13.3%, transparent)"}}>
                   <span style={{flex:1,color:"var(--text)",fontSize:"13.5px",fontWeight:"600"}}>{rotuloErro(r.id)} <span style={{color:"var(--text-3)",fontWeight:500}}>· {r.n}×</span></span>
                   <Valores partes={r.custo} vazio="sem custo" style={{fontSize:"13px"}}/>
                 </div>
@@ -845,7 +846,7 @@ function FecharSemana({ seg, todosTrades, semana, focoProxima, onFechar, onSalva
             <p style={rotulo}>Lições da semana</p>
             <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
               {licoes.map(it => (
-                <button key={it.chave} onClick={()=>onAbrir(it.chave)} style={{textAlign:"left",background:"none",border:"none",borderLeft:"3px solid "+(VEREDITO[it.t.revisao.veredito]?.cor || "#888"),padding:"4px 0 4px 12px",cursor:"pointer",color:"var(--text)",fontSize:"13.5px",lineHeight:1.5,fontFamily:"var(--font-sans)"}}>{it.t.revisao.licao}</button>
+                <button key={it.chave} onClick={()=>onAbrir(it.chave)} style={{textAlign:"left",background:"none",border:"none",borderLeft:"3px solid "+(VEREDITO[it.t.revisao.veredito]?.cor || "var(--text-mute)"),padding:"4px 0 4px 12px",cursor:"pointer",color:"var(--text)",fontSize:"13.5px",lineHeight:1.5,fontFamily:"var(--font-sans)"}}>{it.t.revisao.licao}</button>
               ))}
             </div>
           </div>
@@ -856,9 +857,9 @@ function FecharSemana({ seg, todosTrades, semana, focoProxima, onFechar, onSalva
             <p style={rotulo}>O foco desta semana era</p>
             <p style={{margin:"0 0 10px",color:"var(--text)",fontSize:"14.5px",fontWeight:"700"}}>🎯 {semana.foco}</p>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-              {[["sim","Cumpri","#2ee6a0"],["parcial","Em parte","#f5b941"],["nao","Não cumpri","#ff5470"]].map(([id, rot, cor]) => {
+              {[["sim","Cumpri","var(--accent)"],["parcial","Em parte","var(--warn)"],["nao","Não cumpri","var(--neg)"]].map(([id, rot, cor]) => {
                 const on = cumpriu === id;
-                return <button key={id} onClick={()=>setCumpriu(on ? "" : id)} style={{padding:"6px 13px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?cor+"88":"var(--line-strong)"),background:on?cor+"16":"transparent",color:on?cor:"var(--text-3)"}}>{rot}</button>;
+                return <button key={id} onClick={()=>setCumpriu(on ? "" : id)} style={{padding:"6px 13px",borderRadius:"20px",cursor:"pointer",fontSize:"12.5px",fontWeight:"700",fontFamily:"var(--font-sans)",border:"1px solid "+(on?alfa(cor,"88"):"var(--line-strong)"),background:on?alfa(cor,"16"):"transparent",color:on?cor:"var(--text-3)"}}>{rot}</button>;
               })}
             </div>
           </div>

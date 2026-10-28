@@ -8,10 +8,10 @@
 import { chaveLocal } from "./datas";
 
 export const VEREDITOS = [
-  { id:"sem_erro",  rot:"Sem erro",  desc:"Segui o plano — o mercado não colaborou", cor:"#2ee6a0" },
+  { id:"sem_erro",  rot:"Sem erro",  desc:"Segui o plano — o mercado não colaborou", cor:"var(--accent)" },
   { id:"analise",   rot:"Análise",   desc:"Li errado o gráfico ou o contexto",       cor:"#0099ff" },
-  { id:"execucao",  rot:"Execução",  desc:"Li certo, mas executei errado",           cor:"#f5b941" },
-  { id:"emocional", rot:"Emocional", desc:"Agi por impulso, medo ou ganância",       cor:"#ff5470" },
+  { id:"execucao",  rot:"Execução",  desc:"Li certo, mas executei errado",           cor:"var(--warn)" },
+  { id:"emocional", rot:"Emocional", desc:"Agi por impulso, medo ou ganância",       cor:"var(--neg)" },
 ];
 export const VEREDITO = Object.fromEntries(VEREDITOS.map(v => [v.id, v]));
 
@@ -42,8 +42,8 @@ export const ROTULO_ERRO = Object.fromEntries(FASES_ERRO.flatMap(f => f.erros));
 export const rotuloErro = id => ROTULO_ERRO[id] || id;
 
 export const MARCAS = {
-  exemplo: { rot:"Exemplo A+",    cor:"#2ee6a0" },
-  classico: { rot:"Erro clássico", cor:"#ff5470" },
+  exemplo: { rot:"Exemplo A+",    cor:"var(--accent)" },
+  classico: { rot:"Erro clássico", cor:"var(--neg)" },
 };
 
 // Execução em estrelas (registros antigos guardavam A+/A/B/C)
@@ -59,10 +59,10 @@ const EMOCOES_ALERTA = ["Revanche", "Compulsivo", "Ansioso", "Eufórico", "Impac
 export function motivosRevisao(t, entry) {
   const m = [];
   const q = estrelasDe(t.qualidade);
-  if (t.tipo === "LOSS") m.push({ rot:"LOSS", cor:"#ff5470" });
+  if (t.tipo === "LOSS") m.push({ rot:"LOSS", cor:"var(--neg)" });
   if (q && q <= 2) m.push(t.tipo === "WIN"
-    ? { rot:"WIN com execução " + (q === 1 ? "ruim" : "regular"), cor:"#f5b941" }
-    : { rot:"Execução " + (q === 1 ? "ruim" : "regular"), cor:"#f5b941" });
+    ? { rot:"WIN com execução " + (q === 1 ? "ruim" : "regular"), cor:"var(--warn)" }
+    : { rot:"Execução " + (q === 1 ? "ruim" : "regular"), cor:"var(--warn)" });
   const emo = (entry?.emocoes || []).filter(e => EMOCOES_ALERTA.includes(e));
   if (emo.includes("Revanche") || emo.includes("Compulsivo") || m.length) emo.forEach(e => m.push({ rot:e, cor:"#a78bfa" }));
   return m;

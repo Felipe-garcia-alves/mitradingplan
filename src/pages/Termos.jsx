@@ -4,49 +4,49 @@ export default function Termos({ onVoltar }) {
   const [aba, setAba] = useState("termos");
 
   return (
-    <div style={{minHeight:"100vh",background:"#040806",fontFamily:"var(--font-sans)",padding:"40px 20px"}}>
+    <div style={{minHeight:"100vh",background:"var(--bg)",fontFamily:"var(--font-sans)",padding:"40px 20px"}}>
       <div style={{maxWidth:"720px",margin:"0 auto"}}>
 
         {/* Header */}
         <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"32px"}}>
           {onVoltar && (
-            <button onClick={onVoltar} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",padding:"8px 14px",color:"#a3b2ab",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>
+            <button onClick={onVoltar} style={{background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",borderRadius:"8px",padding:"8px 14px",color:"var(--text-soft)",cursor:"pointer",fontSize:"13px",fontFamily:"var(--font-sans)"}}>
               ← Voltar
             </button>
           )}
           <div>
-            <h1 style={{margin:0,fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Mi Trading Plan</h1>
-            <p style={{margin:0,color:"#7a8c84",fontSize:"12px"}}>Documentos legais</p>
+            <h1 style={{margin:0,fontSize:"22px",fontWeight:"800",color:"var(--text)"}}>Mi Trading Plan</h1>
+            <p style={{margin:0,color:"var(--text-3)",fontSize:"12px"}}>Documentos legais</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div style={{display:"flex",background:"rgba(255,255,255,0.03)",borderRadius:"10px",padding:"3px",marginBottom:"28px"}}>
+        <div style={{display:"flex",background:"color-mix(in srgb, var(--ink) 3%, transparent)",borderRadius:"10px",padding:"3px",marginBottom:"28px"}}>
           {[["termos","Termos de Uso"],["privacidade","Política de Privacidade"]].map(([id,label])=>(
             <button key={id} onClick={()=>setAba(id)}
-              style={{flex:1,padding:"10px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",transition:"all 0.2s",background:aba===id?"rgba(255,255,255,0.07)":"transparent",color:aba===id?"#f0f0f0":"#555",fontFamily:"var(--font-sans)"}}>
+              style={{flex:1,padding:"10px",borderRadius:"8px",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"13px",transition:"all 0.2s",background:aba===id?"color-mix(in srgb, var(--ink) 7%, transparent)":"transparent",color:aba===id?"var(--text)":"var(--text-5)",fontFamily:"var(--font-sans)"}}>
               {label}
             </button>
           ))}
         </div>
 
-        <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"36px 40px"}}>
+        <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"36px 40px"}}>
 
           {aba === "termos" && (
-            <div style={{color:"#a3b2ab",fontSize:"14px",lineHeight:"1.9"}}>
-              <h2 style={{margin:"0 0 8px",color:"#f0f0f0",fontSize:"18px",fontWeight:"800"}}>Termos de Uso</h2>
-              <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"12px"}}>Última atualização: março de 2026</p>
+            <div style={{color:"var(--text-soft)",fontSize:"14px",lineHeight:"1.9"}}>
+              <h2 style={{margin:"0 0 8px",color:"var(--text)",fontSize:"18px",fontWeight:"800"}}>Termos de Uso</h2>
+              <p style={{margin:"0 0 28px",color:"var(--text-3)",fontSize:"12px"}}>Última atualização: março de 2026</p>
 
               <Section titulo="1. Aceitação dos Termos">
-                Ao criar uma conta e utilizar o <strong style={{color:"#f0f0f0"}}>Mi Trading Plan</strong>, você concorda com estes Termos de Uso. Se não concordar, não utilize o serviço.
+                Ao criar uma conta e utilizar o <strong style={{color:"var(--text)"}}>Mi Trading Plan</strong>, você concorda com estes Termos de Uso. Se não concordar, não utilize o serviço.
               </Section>
 
               <Section titulo="2. Sobre o Serviço">
-                O Mi Trading Plan é uma plataforma digital de gestão e análise de operações financeiras, desenvolvida por <strong style={{color:"#f0f0f0"}}>Felipe Garcia Alves</strong>. O serviço oferece ferramentas para registro de trades, análise comportamental, métricas de performance e gestão de disciplina operacional.
+                O Mi Trading Plan é uma plataforma digital de gestão e análise de operações financeiras, desenvolvida por <strong style={{color:"var(--text)"}}>Felipe Garcia Alves</strong>. O serviço oferece ferramentas para registro de trades, análise comportamental, métricas de performance e gestão de disciplina operacional.
               </Section>
 
               <Section titulo="3. Natureza do Serviço">
-                O Mi Trading Plan é uma ferramenta de <strong style={{color:"#f0f0f0"}}>organização e análise pessoal</strong>. Não constitui assessoria de investimentos, recomendação de compra ou venda de ativos, nem qualquer forma de consultoria financeira regulada. Todas as decisões de investimento são de exclusiva responsabilidade do usuário.
+                O Mi Trading Plan é uma ferramenta de <strong style={{color:"var(--text)"}}>organização e análise pessoal</strong>. Não constitui assessoria de investimentos, recomendação de compra ou venda de ativos, nem qualquer forma de consultoria financeira regulada. Todas as decisões de investimento são de exclusiva responsabilidade do usuário.
               </Section>
 
               <Section titulo="4. Cadastro e Conta">
@@ -54,7 +54,7 @@ export default function Termos({ onVoltar }) {
               </Section>
 
               <Section titulo="5. Planos e Pagamento">
-                O Mi Trading Plan oferece um plano de assinatura mensal no valor de <strong style={{color:"#f0f0f0"}}>R$ 10,00/mês</strong>. O pagamento é recorrente e pode ser cancelado a qualquer momento. Não há reembolso de períodos já pagos. Novos usuários podem ter acesso a período de teste conforme condições vigentes.
+                O Mi Trading Plan oferece um plano de assinatura mensal no valor de <strong style={{color:"var(--text)"}}>R$ 10,00/mês</strong>. O pagamento é recorrente e pode ser cancelado a qualquer momento. Não há reembolso de períodos já pagos. Novos usuários podem ter acesso a período de teste conforme condições vigentes.
               </Section>
 
               <Section titulo="6. Propriedade Intelectual">
@@ -74,26 +74,26 @@ export default function Termos({ onVoltar }) {
               </Section>
 
               <Section titulo="10. Contato">
-                Dúvidas sobre estes termos: <span style={{color:"#2ee6a0"}}>contato@mitradingplan.com</span>
+                Dúvidas sobre estes termos: <span style={{color:"var(--accent)"}}>contato@mitradingplan.com</span>
               </Section>
             </div>
           )}
 
           {aba === "privacidade" && (
-            <div style={{color:"#a3b2ab",fontSize:"14px",lineHeight:"1.9"}}>
-              <h2 style={{margin:"0 0 8px",color:"#f0f0f0",fontSize:"18px",fontWeight:"800"}}>Política de Privacidade</h2>
-              <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"12px"}}>Última atualização: março de 2026</p>
+            <div style={{color:"var(--text-soft)",fontSize:"14px",lineHeight:"1.9"}}>
+              <h2 style={{margin:"0 0 8px",color:"var(--text)",fontSize:"18px",fontWeight:"800"}}>Política de Privacidade</h2>
+              <p style={{margin:"0 0 28px",color:"var(--text-3)",fontSize:"12px"}}>Última atualização: março de 2026</p>
 
               <Section titulo="1. Dados Coletados">
                 Coletamos apenas os dados necessários para o funcionamento do serviço: nome, endereço de email, dados de operações financeiras inseridos pelo usuário (trades, estratégias, anotações) e dados de uso da plataforma.
               </Section>
 
               <Section titulo="2. Como Usamos os Dados">
-                Seus dados são utilizados exclusivamente para: fornecer as funcionalidades da plataforma, enviar comunicações relacionadas ao serviço (confirmação de email, recuperação de senha) e melhorar a experiência do produto. <strong style={{color:"#f0f0f0"}}>Nunca vendemos seus dados a terceiros.</strong>
+                Seus dados são utilizados exclusivamente para: fornecer as funcionalidades da plataforma, enviar comunicações relacionadas ao serviço (confirmação de email, recuperação de senha) e melhorar a experiência do produto. <strong style={{color:"var(--text)"}}>Nunca vendemos seus dados a terceiros.</strong>
               </Section>
 
               <Section titulo="3. Armazenamento e Segurança">
-                Os dados são armazenados de forma segura utilizando infraestrutura da <strong style={{color:"#f0f0f0"}}>Supabase</strong> (banco de dados PostgreSQL com criptografia). Cada usuário acessa exclusivamente seus próprios dados — nenhum outro usuário tem acesso às suas informações.
+                Os dados são armazenados de forma segura utilizando infraestrutura da <strong style={{color:"var(--text)"}}>Supabase</strong> (banco de dados PostgreSQL com criptografia). Cada usuário acessa exclusivamente seus próprios dados — nenhum outro usuário tem acesso às suas informações.
               </Section>
 
               <Section titulo="4. Compartilhamento de Dados">
@@ -113,14 +113,14 @@ export default function Termos({ onVoltar }) {
               </Section>
 
               <Section titulo="8. Contato">
-                Para questões sobre privacidade e proteção de dados: <span style={{color:"#2ee6a0"}}>contato@mitradingplan.com</span>
+                Para questões sobre privacidade e proteção de dados: <span style={{color:"var(--accent)"}}>contato@mitradingplan.com</span>
               </Section>
             </div>
           )}
 
         </div>
 
-        <p style={{textAlign:"center",color:"#64766e",fontSize:"12px",marginTop:"24px"}}>
+        <p style={{textAlign:"center",color:"var(--text-4)",fontSize:"12px",marginTop:"24px"}}>
           Mi Trading Plan · Felipe Garcia Alves · mitradingplan.vercel.app
         </p>
       </div>
@@ -131,7 +131,7 @@ export default function Termos({ onVoltar }) {
 function Section({ titulo, children }) {
   return (
     <div style={{marginBottom:"24px"}}>
-      <h3 style={{margin:"0 0 8px",color:"#f0f0f0",fontSize:"14px",fontWeight:"700"}}>{titulo}</h3>
+      <h3 style={{margin:"0 0 8px",color:"var(--text)",fontSize:"14px",fontWeight:"700"}}>{titulo}</h3>
       <p style={{margin:0,lineHeight:"1.9"}}>{children}</p>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CountUp, Sparkline } from "../components/ui";
 import { listaCarteiras, bancaCarteira, totalSaques, listaSaques, totalDepositos, listaDepositos, resultadoDia, curvaCarteira } from "../lib/banca";
+import { alfa } from "../lib/cor.js";
 
 const rotulo = { margin:0, color:"var(--text-3)", fontSize:"10.5px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1.2px" };
 
@@ -50,14 +51,14 @@ function ContasResumo({ entries, config, carteiras, taxa, selecionada, onSelecio
           const bateu = l.metaMes>0 && l.resMes >= l.metaMes;
           return (
             <div key={l.c.key} onClick={()=>onSelecionar(l.c.key)}
-              style={{ background:"var(--card)", border:"1px solid "+(sel ? l.c.cor+"66" : "var(--line)"), borderRadius:"18px", padding:"22px 24px", cursor:"pointer", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", gap:"18px", minWidth:0 }}>
+              style={{ background:"var(--card)", border:"1px solid "+(sel ? alfa(l.c.cor,"66") : "var(--line)"), borderRadius:"18px", padding:"22px 24px", cursor:"pointer", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", gap:"18px", minWidth:0 }}>
               <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:"linear-gradient(90deg,"+l.c.cor+(sel?"":"88")+",transparent 70%)" }}/>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:"8px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"10px", minWidth:0 }}>
                   <i className="mtp-dot" style={{ background:l.c.cor, color:l.c.cor }}/>
                   <p style={{ margin:0, color:"var(--text)", fontSize:"15px", fontWeight:"700", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{l.c.label}</p>
                 </div>
-                {melhor === l && l.pct > 0 && <span style={{ fontSize:"10px", fontWeight:"700", letterSpacing:"0.8px", textTransform:"uppercase", padding:"3px 9px", borderRadius:"20px", color:"#f5b941", border:"1px solid #f5b94144", background:"#f5b94112", whiteSpace:"nowrap" }}>★ melhor</span>}
+                {melhor === l && l.pct > 0 && <span style={{ fontSize:"10px", fontWeight:"700", letterSpacing:"0.8px", textTransform:"uppercase", padding:"3px 9px", borderRadius:"20px", color:"var(--warn)", border:"1px solid color-mix(in srgb, var(--warn) 26.7%, transparent)", background:"color-mix(in srgb, var(--warn) 7.1%, transparent)", whiteSpace:"nowrap" }}>★ melhor</span>}
               </div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:"12px" }}>
                 <div style={{ minWidth:0 }}>
@@ -89,7 +90,7 @@ function ContasResumo({ entries, config, carteiras, taxa, selecionada, onSelecio
                   </span>
                 </div>
                 <div style={{ height:"5px", borderRadius:"5px", background:"var(--line)", overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:progresso+"%", borderRadius:"5px", background:l.c.cor, boxShadow:"0 0 8px "+l.c.cor+"88" }}/>
+                  <div style={{ height:"100%", width:progresso+"%", borderRadius:"5px", background:l.c.cor, boxShadow:"0 0 8px "+alfa(l.c.cor,"88") }}/>
                 </div>
               </div>
             </div>
@@ -164,18 +165,18 @@ export default function Crescimento({ entries, config }) {
   const kpiSub   = { margin:0, color:"var(--text-3)", fontSize:"12px", lineHeight:1.5 };
   const painel   = { background:"var(--card)", border:"1px solid var(--line)", borderRadius:"18px", padding:"8px 24px" };
   const maxProj  = Math.max(1, ...projecao.map(p => p.metaFinal), ...(projRitmo||[]).map(p => p.metaFinal));
-  const corRitmo = "#7fd8ff";
+  const corRitmo = "var(--info)";
 
   return (
     <div style={{ fontFamily:"var(--font-sans)" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:"16px", flexWrap:"wrap", marginBottom:"32px" }}>
         <div>
-          <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"#f0f0f0", letterSpacing:"-0.8px" }}>Crescimento</h1>
-          <p style={{ margin:"6px 0 0", color:"#86978f", fontSize:"13px" }}>Quanto cada conta cresceu e para onde vai, mantendo a taxa mensal</p>
+          <h1 style={{ margin:0, fontSize:"28px", fontWeight:"800", color:"var(--text)", letterSpacing:"-0.8px" }}>Crescimento</h1>
+          <p style={{ margin:"6px 0 0", color:"var(--text-mute)", fontSize:"13px" }}>Quanto cada conta cresceu e para onde vai, mantendo a taxa mensal</p>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:"8px", padding:"4px 6px 4px 14px", borderRadius:"20px", border:"1px solid var(--line)" }}>
           <label style={{ color:"var(--text-3)", fontSize:"12px" }}>Taxa mensal</label>
-          <input type="number" value={taxa} min="1" max="50" onChange={e=>setTaxa(Number(e.target.value))} style={{ width:"52px", background:"rgba(255,255,255,0.05)", border:"1px solid var(--line-strong)", borderRadius:"14px", padding:"4px 8px", color:"#f0f0f0", fontSize:"13px", fontWeight:"700", outline:"none", textAlign:"center", fontFamily:"var(--font-mono)" }}/>
+          <input type="number" value={taxa} min="1" max="50" onChange={e=>setTaxa(Number(e.target.value))} style={{ width:"52px", background:"color-mix(in srgb, var(--ink) 5%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"14px", padding:"4px 8px", color:"var(--text)", fontSize:"13px", fontWeight:"700", outline:"none", textAlign:"center", fontFamily:"var(--font-mono)" }}/>
           <span style={{ color:"var(--text-3)", fontSize:"12px", paddingRight:"6px" }}>%</span>
         </div>
       </div>
@@ -198,10 +199,10 @@ export default function Crescimento({ entries, config }) {
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:"18px", marginBottom:"18px" }}>
-        <div style={{ ...kpiCard, borderColor:color+"33" }}>
+        <div style={{ ...kpiCard, borderColor:alfa(color,"33") }}>
           <p style={rotulo}>Banca hoje</p>
-          <p style={{ ...kpiValue, color, textShadow:"0 0 22px "+color+"44" }}><CountUp value={bancaAt} format={fmtC}/></p>
-          <p style={kpiSub}>começou com {fmtC(bancaIn)}{depositado>0 && <span style={{ color:"#7fd8ff" }}> · +{fmtC(depositado)} depositado</span>}{sacado>0 && <span style={{ color:"#f5b941" }}> · −{fmtC(sacado)} sacado</span>}</p>
+          <p style={{ ...kpiValue, color, textShadow:"0 0 22px "+alfa(color,"44") }}><CountUp value={bancaAt} format={fmtC}/></p>
+          <p style={kpiSub}>começou com {fmtC(bancaIn)}{depositado>0 && <span style={{ color:"var(--info)" }}> · +{fmtC(depositado)} depositado</span>}{sacado>0 && <span style={{ color:"var(--warn)" }}> · −{fmtC(sacado)} sacado</span>}</p>
         </div>
         <div style={kpiCard}>
           <p style={rotulo}>Lucro em trades</p>
@@ -232,12 +233,12 @@ export default function Crescimento({ entries, config }) {
         <div style={painel}>
           {[...ultimos].reverse().map((r, i, arr) => {
             const pct = r.metaLucro>0 ? Math.max(0, Math.min(100, (r.res/r.metaLucro)*100)) : 0;
-            const cor = r.emAndamento ? "#7fd8ff" : r.bateu ? "#2ee6a0" : "#ff5470";
+            const cor = r.emAndamento ? "var(--info)" : r.bateu ? "var(--accent)" : "var(--neg)";
             return (
               <div key={r.mk} className="mtp-linha-mes" style={{ borderBottom: i<arr.length-1 ? "1px solid var(--line)" : "none" }}>
                 <div style={{ minWidth:0 }}>
                   <p style={{ margin:0, color:"var(--text)", fontSize:"14px", fontWeight:"700" }}>{formatMonthLabel(r.mk)}</p>
-                  <span style={{ display:"inline-block", marginTop:"6px", fontSize:"10px", fontWeight:"700", letterSpacing:"0.8px", textTransform:"uppercase", padding:"2px 8px", borderRadius:"20px", color:cor, border:"1px solid "+cor+"44", background:cor+"12" }}>
+                  <span style={{ display:"inline-block", marginTop:"6px", fontSize:"10px", fontWeight:"700", letterSpacing:"0.8px", textTransform:"uppercase", padding:"2px 8px", borderRadius:"20px", color:cor, border:"1px solid "+alfa(cor,"44"), background:alfa(cor,"12") }}>
                     {r.emAndamento ? "em andamento" : r.bateu ? "✓ meta batida" : "abaixo da meta"}
                   </span>
                 </div>
@@ -251,11 +252,11 @@ export default function Crescimento({ entries, config }) {
                 </div>
                 <div style={{ minWidth:0 }}>
                   <div style={{ height:"6px", borderRadius:"6px", background:"var(--line)", overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:pct+"%", borderRadius:"6px", background:"linear-gradient(90deg,"+cor+"55,"+cor+")", boxShadow:"0 0 8px "+cor+"88" }}/>
+                    <div style={{ height:"100%", width:pct+"%", borderRadius:"6px", background:"linear-gradient(90deg,"+cor+"55,"+cor+")", boxShadow:"0 0 8px "+alfa(cor,"88") }}/>
                   </div>
                   <p style={{ margin:"8px 0 0", color:"var(--text-3)", fontSize:"11.5px", fontFamily:"var(--font-mono)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                     {fmtC(r.inicio)} → {fmtC(r.fim)}
-                    {r.dep>0 && <span style={{ color:"#7fd8ff" }}> · +{fmtC(r.dep)}</span>}{r.saq>0 && <span style={{ color:"#f5b941" }}> · −{fmtC(r.saq)}</span>}
+                    {r.dep>0 && <span style={{ color:"var(--info)" }}> · +{fmtC(r.dep)}</span>}{r.saq>0 && <span style={{ color:"var(--warn)" }}> · −{fmtC(r.saq)}</span>}
                   </p>
                 </div>
               </div>

@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { CountUp, Ring, Sparkline, CapitalChart, Modal, Select } from "../components/ui";
+import { alfa } from "../lib/cor.js";
 
-const CORES = ["#2ee6a0","#f5b941","#a78bfa","#f472b6","#60a5fa","#34d399","#fb923c"];
+const CORES = ["var(--accent)","var(--warn)","#a78bfa","#f472b6","#60a5fa","var(--accent)","#fb923c"];
 
 const kpiLabel    = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
 const kpiSub      = {margin:0,color:"var(--text-3)",fontSize:"11.5px"};
 const resumoCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px 22px",minWidth:0,display:"flex",flexDirection:"column",gap:"10px"};
 const resumoValor = {margin:0,fontSize:"22px",fontWeight:"700",fontFamily:"var(--font-mono)",whiteSpace:"nowrap"};
-const chip        = {padding:"3px 9px",borderRadius:"6px",background:"rgba(255,255,255,0.04)",border:"1px solid var(--line)",color:"var(--text-2)",fontSize:"10.5px",fontWeight:"600",fontFamily:"var(--font-mono)"};
+const chip        = {padding:"3px 9px",borderRadius:"6px",background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",color:"var(--text-2)",fontSize:"10.5px",fontWeight:"600",fontFamily:"var(--font-mono)"};
 
 function fmtBRL(v) {
   const a = Math.abs(v);
@@ -57,47 +58,47 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
     setModo("lista");
   }
 
-  const inp = {width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"10px",padding:"11px 13px",color:"#f0f0f0",fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"var(--font-sans)"};
+  const inp = {width:"100%",background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",borderRadius:"10px",padding:"11px 13px",color:"var(--text)",fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"var(--font-sans)"};
 
   if (modo === "form") {
     return (
       <div style={{fontFamily:"var(--font-sans)"}}>
         <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px"}}>
-          <button onClick={()=>setModo("lista")} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"8px",padding:"8px 14px",color:"#93a39c",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
-          <h1 style={{margin:0,fontSize:"20px",fontWeight:"800",color:"#f0f0f0"}}>{editId?"Editar Estratégia":"Nova Estratégia"}</h1>
+          <button onClick={()=>setModo("lista")} style={{background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",borderRadius:"8px",padding:"8px 14px",color:"var(--text-mute)",fontSize:"12px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
+          <h1 style={{margin:0,fontSize:"20px",fontWeight:"800",color:"var(--text)"}}>{editId?"Editar Estratégia":"Nova Estratégia"}</h1>
         </div>
-        <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"14px",padding:"24px"}}>
+        <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"14px",padding:"24px"}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:"14px"}}>
             <div>
-              <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Nome da estratégia *</label>
+              <label style={{color:"var(--text-4)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Nome da estratégia *</label>
               <input style={inp} placeholder="Ex: Rompimento de Máxima" value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))}/>
             </div>
             <div>
-              <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Mercado</label>
+              <label style={{color:"var(--text-4)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Mercado</label>
               <Select style={{...inp,width:"100%"}} value={form.mercado} onChange={v=>setForm(p=>({...p,mercado:v}))}
-                options={[{value:"B3",label:"Mini Índice B3",cor:"#2ee6a0"},{value:"Forex",label:"Forex",cor:"#f5b941"},{value:"Cripto",label:"Cripto",cor:"#a78bfa"},{value:"Americano",label:"Ações Americanas",cor:"#60a5fa"},{value:"Ambos",label:"Vários mercados"}]}/>
+                options={[{value:"B3",label:"Mini Índice B3",cor:"var(--accent)"},{value:"Forex",label:"Forex",cor:"var(--warn)"},{value:"Cripto",label:"Cripto",cor:"#a78bfa"},{value:"Americano",label:"Ações Americanas",cor:"#60a5fa"},{value:"Ambos",label:"Vários mercados"}]}/>
             </div>
           </div>
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Timeframe</label>
+            <label style={{color:"var(--text-4)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Timeframe</label>
             <input style={{...inp}} placeholder="Ex: M5, M15, H1..." value={form.timeframe} onChange={e=>setForm(p=>({...p,timeframe:e.target.value}))}/>
           </div>
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Descrição geral</label>
+            <label style={{color:"var(--text-4)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Descrição geral</label>
             <textarea style={{...inp,resize:"vertical",lineHeight:"1.6",minHeight:"70px"}} placeholder="Descreva a lógica da estratégia..." value={form.descricao} onChange={e=>setForm(p=>({...p,descricao:e.target.value}))} rows={3}/>
           </div>
           <div style={{marginBottom:"14px"}}>
-            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de entrada</label>
+            <label style={{color:"var(--text-4)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de entrada</label>
             <textarea style={{...inp,resize:"vertical",lineHeight:"1.6",minHeight:"80px"}} placeholder="Quais condições precisam ser atendidas para entrar?" value={form.regrasEntrada} onChange={e=>setForm(p=>({...p,regrasEntrada:e.target.value}))} rows={4}/>
           </div>
           <div style={{marginBottom:"20px"}}>
-            <label style={{color:"#6f8179",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de saída / Stop / Alvo</label>
+            <label style={{color:"var(--text-4)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Regras de saída / Stop / Alvo</label>
             <textarea style={{...inp,resize:"vertical",lineHeight:"1.6",minHeight:"80px"}} placeholder="Onde colocar o stop? Qual o alvo? Quando sair?" value={form.regrasesSaida} onChange={e=>setForm(p=>({...p,regrasesSaida:e.target.value}))} rows={4}/>
           </div>
           <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
             <button onClick={salvar} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"11px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>Salvar estratégia</button>
-            <button onClick={()=>setModo("lista")} style={{background:"rgba(255,255,255,0.04)",border:"1px solid #1b2823",borderRadius:"10px",padding:"11px 18px",color:"#93a39c",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Cancelar</button>
-            {msg && <span style={{color:msg.includes("✓")?"#2ee6a0":"#ff7a90",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
+            <button onClick={()=>setModo("lista")} style={{background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",borderRadius:"10px",padding:"11px 18px",color:"var(--text-mute)",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Cancelar</button>
+            {msg && <span style={{color:msg.includes("✓")?"var(--accent)":"var(--neg-soft)",fontSize:"13px",fontWeight:"600"}}>{msg}</span>}
           </div>
         </div>
       </div>
@@ -116,8 +117,8 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
     <div style={{fontFamily:"var(--font-sans)"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"24px",flexWrap:"wrap",gap:"10px"}}>
         <div>
-          <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.8px"}}>Estratégias</h1>
-          <p style={{margin:"4px 0 0",color:"#86978f",fontSize:"13px"}}>Documente e organize seus setups operacionais</p>
+          <h1 style={{margin:0,fontSize:"28px",fontWeight:"800",color:"var(--text)",letterSpacing:"-0.8px"}}>Estratégias</h1>
+          <p style={{margin:"4px 0 0",color:"var(--text-mute)",fontSize:"13px"}}>Documente e organize seus setups operacionais</p>
         </div>
         <button onClick={novaForm} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>
           + Nova estratégia
@@ -125,10 +126,10 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
       </div>
 
       {lista.length === 0 ? (
-        <div style={{textAlign:"center",padding:"60px 20px",background:"var(--card)",border:"1px solid #18241f",borderRadius:"14px"}}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#26352e" strokeWidth="1.5" style={{margin:"0 auto 14px",display:"block"}}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          <p style={{color:"#6f8179",fontSize:"14px",margin:"0 0 6px"}}>Nenhuma estratégia cadastrada.</p>
-          <p style={{color:"#26352e",fontSize:"12px",margin:0}}>Clique em "Nova estratégia" para começar.</p>
+        <div style={{textAlign:"center",padding:"60px 20px",background:"var(--card)",border:"1px solid var(--line)",borderRadius:"14px"}}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--line-strong)" strokeWidth="1.5" style={{margin:"0 auto 14px",display:"block"}}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <p style={{color:"var(--text-4)",fontSize:"14px",margin:"0 0 6px"}}>Nenhuma estratégia cadastrada.</p>
+          <p style={{color:"var(--line-strong)",fontSize:"12px",margin:0}}>Clique em "Nova estratégia" para começar.</p>
         </div>
       ) : (
         <>
@@ -146,7 +147,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
             </div>
             <div style={resumoCard}>
               <p style={kpiLabel}>Mais operada</p>
-              <p style={{...resumoValor,color:"#7fd8ff"}}>{maisOp ? stats[maisOp.id].total+" ops" : "—"}</p>
+              <p style={{...resumoValor,color:"var(--info)"}}>{maisOp ? stats[maisOp.id].total+" ops" : "—"}</p>
               <p style={{...kpiSub,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{maisOp ? maisOp.nome : "sem operações ainda"}</p>
             </div>
           </div>
@@ -163,12 +164,12 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                   <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+cor+",transparent 70%)"}}/>
                   {st.curva.length>2 && (
                     <div style={{position:"absolute",left:0,right:0,bottom:0,height:"64px",opacity:0.35,pointerEvents:"none"}}>
-                      <Sparkline values={st.curva} color={st.resultado>=0?cor:"#ff5470"} width="100%" height="100%"/>
+                      <Sparkline values={st.curva} color={st.resultado>=0?cor:"var(--neg)"} width="100%" height="100%"/>
                     </div>
                   )}
 
                   <div style={{display:"flex",alignItems:"center",gap:"14px",position:"relative"}}>
-                    <div className="mtp-est-badge" style={{width:"46px",height:"46px",borderRadius:"12px",background:cor+"18",border:"1px solid "+cor+"44",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 0 20px -8px "+cor}}>
+                    <div className="mtp-est-badge" style={{width:"46px",height:"46px",borderRadius:"12px",background:alfa(cor,"18"),border:"1px solid "+alfa(cor,"44"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 0 20px -8px "+cor}}>
                       <span style={{color:cor,fontSize:"12px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{sigla(est.nome)}</span>
                     </div>
                     <div style={{minWidth:0}}>
@@ -186,7 +187,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                   </p>
 
                   <div style={{display:"flex",alignItems:"center",gap:"16px",position:"relative",marginTop:"auto",paddingTop:"18px",borderTop:"1px solid var(--line)"}}>
-                    <Ring pct={ass} color={ass===null?"var(--line)":ass>=60?"#2ee6a0":ass>=40?"#f59e0b":"#ff5470"} size={46} stroke={4}/>
+                    <Ring pct={ass} color={ass===null?"var(--line)":ass>=60?"var(--accent)":ass>=40?"var(--warn-2)":"var(--neg)"} size={46} stroke={4}/>
                     <div style={{flex:1,minWidth:0}}>
                       <p style={{margin:0,color:st.total===0?"var(--text-3)":st.resultado>=0?"var(--pos)":"var(--neg)",fontSize:"18px",fontWeight:"700",fontFamily:"var(--font-mono)",whiteSpace:"nowrap"}}>
                         {st.total>0 ? fmtBRL(st.resultado) : "—"}
@@ -217,7 +218,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
             <div style={{position:"relative",padding:"24px 26px 20px",borderBottom:"1px solid var(--line)"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,"+cor+",transparent 70%)"}}/>
               <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
-                <div style={{width:"52px",height:"52px",borderRadius:"14px",background:cor+"18",border:"1px solid "+cor+"55",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 0 28px -8px "+cor}}>
+                <div style={{width:"52px",height:"52px",borderRadius:"14px",background:alfa(cor,"18"),border:"1px solid "+alfa(cor,"55"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 0 28px -8px "+cor}}>
                   <span style={{color:cor,fontSize:"14px",fontWeight:"800",fontFamily:"var(--font-mono)"}}>{sigla(aberta.nome)}</span>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
@@ -226,7 +227,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                     {[aberta.mercado, aberta.timeframe].filter(Boolean).map(t=>(<span key={t} style={chip}>{t}</span>))}
                   </div>
                 </div>
-                <button onClick={()=>setAbertaId(null)} aria-label="Fechar" style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--line)",borderRadius:"10px",width:"36px",height:"36px",color:"var(--text-2)",cursor:"pointer",fontSize:"18px",lineHeight:1,flexShrink:0}}>×</button>
+                <button onClick={()=>setAbertaId(null)} aria-label="Fechar" style={{background:"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid var(--line)",borderRadius:"10px",width:"36px",height:"36px",color:"var(--text-2)",cursor:"pointer",fontSize:"18px",lineHeight:1,flexShrink:0}}>×</button>
               </div>
             </div>
 
@@ -235,11 +236,11 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:"10px"}}>
                 {[
                   {l:"Resultado",  v:st.total>0?fmtBRL(st.resultado):"—", c:st.resultado>=0?"var(--pos)":"var(--neg)"},
-                  {l:"Assertividade", v:ass!==null?ass+"%":"—", c:ass===null?"var(--text-3)":ass>=60?"#2ee6a0":ass>=40?"#f59e0b":"#ff5470"},
+                  {l:"Assertividade", v:ass!==null?ass+"%":"—", c:ass===null?"var(--text-3)":ass>=60?"var(--accent)":ass>=40?"var(--warn-2)":"var(--neg)"},
                   {l:"Operações",  v:st.total, c:"var(--text)"},
-                  {l:"Média / op", v:st.total>0?(st.pontos/st.total>=0?"+":"")+(st.pontos/st.total).toFixed(1)+" pts":"—", c:"#7fd8ff"},
+                  {l:"Média / op", v:st.total>0?(st.pontos/st.total>=0?"+":"")+(st.pontos/st.total).toFixed(1)+" pts":"—", c:"var(--info)"},
                 ].map(k=>(
-                  <div key={k.l} style={{background:"rgba(255,255,255,0.025)",border:"1px solid var(--line)",borderRadius:"12px",padding:"12px 14px",minWidth:0}}>
+                  <div key={k.l} style={{background:"color-mix(in srgb, var(--ink) 2.5%, transparent)",border:"1px solid var(--line)",borderRadius:"12px",padding:"12px 14px",minWidth:0}}>
                     <p style={{...kpiLabel,fontSize:"10px"}}>{k.l}</p>
                     <p style={{margin:"6px 0 0",color:k.c,fontSize:"16px",fontWeight:"700",fontFamily:"var(--font-mono)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{k.v}</p>
                   </div>
@@ -247,7 +248,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
               </div>
 
               {st.pontosCurva.length>2 && (
-                <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid var(--line)",borderRadius:"14px",padding:"14px 16px 8px"}}>
+                <div style={{background:"color-mix(in srgb, var(--ink) 2%, transparent)",border:"1px solid var(--line)",borderRadius:"14px",padding:"14px 16px 8px"}}>
                   <p className="mtp-card-title" style={{marginBottom:"10px"}}>Curva da estratégia</p>
                   <CapitalChart points={st.pontosCurva} height={170}/>
                 </div>
@@ -263,21 +264,21 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
               {(aberta.regrasEntrada||aberta.regrasesSaida) && (
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"12px"}}>
                   {aberta.regrasEntrada && (
-                    <div style={{background:"rgba(46,230,160,0.05)",border:"1px solid rgba(46,230,160,0.18)",borderRadius:"14px",padding:"16px"}}>
+                    <div style={{background:"color-mix(in srgb, var(--accent) 5%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 18%, transparent)",borderRadius:"14px",padding:"16px"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/><line x1="4" y1="12" x2="15" y2="12"/></svg>
-                        <p style={{margin:0,color:"#2ee6a0",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"}}>Regras de entrada</p>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/><line x1="4" y1="12" x2="15" y2="12"/></svg>
+                        <p style={{margin:0,color:"var(--accent)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"}}>Regras de entrada</p>
                       </div>
-                      <p style={{margin:0,color:"#e2ebe6",fontSize:"13.5px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasEntrada}</p>
+                      <p style={{margin:0,color:"var(--text)",fontSize:"13.5px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasEntrada}</p>
                     </div>
                   )}
                   {aberta.regrasesSaida && (
-                    <div style={{background:"rgba(255,84,112,0.05)",border:"1px solid rgba(255,84,112,0.18)",borderRadius:"14px",padding:"16px"}}>
+                    <div style={{background:"color-mix(in srgb, var(--neg) 5%, transparent)",border:"1px solid color-mix(in srgb, var(--neg) 18%, transparent)",borderRadius:"14px",padding:"16px"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff7a90" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
-                        <p style={{margin:0,color:"#ff7a90",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"}}>Saída / Stop / Alvo</p>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--neg-soft)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+                        <p style={{margin:0,color:"var(--neg-soft)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"}}>Saída / Stop / Alvo</p>
                       </div>
-                      <p style={{margin:0,color:"#e2ebe6",fontSize:"13.5px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasesSaida}</p>
+                      <p style={{margin:0,color:"var(--text)",fontSize:"13.5px",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{aberta.regrasesSaida}</p>
                     </div>
                   )}
                 </div>
@@ -289,7 +290,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
 
               <div style={{display:"flex",justifyContent:"space-between",gap:"10px",paddingTop:"4px"}}>
                 <button onClick={async()=>{ const id=aberta.id; if(window.confirm("Excluir esta estratégia?")){ setAbertaId(null); await deleteEstrategia(id); } }}
-                  style={{background:"rgba(255,84,112,0.06)",border:"1px solid #ff547033",borderRadius:"10px",padding:"10px 16px",color:"#ff7a90",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Excluir</button>
+                  style={{background:"color-mix(in srgb, var(--neg) 6%, transparent)",border:"1px solid color-mix(in srgb, var(--neg) 20%, transparent)",borderRadius:"10px",padding:"10px 16px",color:"var(--neg-soft)",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"var(--font-sans)"}}>Excluir</button>
                 <button onClick={()=>{ setAbertaId(null); editarForm(aberta); }}
                   style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 22px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}}>Editar estratégia</button>
               </div>

@@ -1,18 +1,19 @@
 import { useState } from "react";
+import { alfa } from "../lib/cor.js";
 
 const MERCADOS = [
-  { id:"bancaB3",        label:"B3",         desc:"Mini Índice, Mini Dólar",   cor:"#2ee6a0", cur:"R$" },
-  { id:"bancaForex",     label:"Forex",       desc:"Pares de moedas",           cor:"#f59e0b", cur:"$"  },
+  { id:"bancaB3",        label:"B3",         desc:"Mini Índice, Mini Dólar",   cor:"var(--accent)", cur:"R$" },
+  { id:"bancaForex",     label:"Forex",       desc:"Pares de moedas",           cor:"var(--warn-2)", cur:"$"  },
   { id:"bancaCripto",    label:"Cripto",      desc:"Bitcoin, Ethereum...",      cor:"#a78bfa", cur:"$"  },
-  { id:"bancaAmericano", label:"Americano",   desc:"NYSE, NASDAQ",              cor:"#34d399", cur:"$"  },
+  { id:"bancaAmericano", label:"Americano",   desc:"NYSE, NASDAQ",              cor:"var(--accent)", cur:"$"  },
 ];
 
 const FEATURES = [
-  { icon:<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2ee6a0" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  { icon:<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
     titulo:"Diário de Operações", desc:"Registre cada trade com emoção, estratégia e horário. O histórico que transforma comportamento." },
   { icon:<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     titulo:"Disciplina & Regras", desc:"Checklist diário de regras. Veja a % de disciplina correlacionada com seu resultado." },
-  { icon:<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+  { icon:<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warn-2)" strokeWidth="1.5" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
     titulo:"Evolução & Alertas", desc:"Análise comportamental, correlação emoção×resultado e alertas inteligentes baseados em protocolos profissionais." },
 ];
 
@@ -39,24 +40,24 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
     await saveConfig(cfg);
     // Cria estratégia se digitou nome
     if (nomeEst.trim()) {
-      await saveEstrategia(null, { nome: nomeEst.trim(), descricao:"", cor:"#2ee6a0" });
+      await saveEstrategia(null, { nome: nomeEst.trim(), descricao:"", cor:"var(--accent)" });
     }
     setSalvando(false);
     onComplete();
   }
 
-  const inp = { width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid #26352e",
-    borderRadius:"10px", padding:"12px 14px", color:"#f0f0f0", fontSize:"16px",
+  const inp = { width:"100%", background:"color-mix(in srgb, var(--ink) 4%, transparent)", border:"1px solid var(--line-strong)",
+    borderRadius:"10px", padding:"12px 14px", color:"var(--text)", fontSize:"16px",
     outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)" };
 
   return (
-    <div style={{minHeight:"100vh",background:"#040806",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)",padding:"20px"}}>
+    <div style={{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-sans)",padding:"20px"}}>
       <div style={{width:"100%",maxWidth:"480px"}}>
 
         {/* Progress dots */}
         <div style={{display:"flex",justifyContent:"center",gap:"8px",marginBottom:"40px"}}>
           {[0,1,2,3].map(i=>(
-            <div key={i} style={{width:i===step?24:8,height:"8px",borderRadius:"4px",background:i<=step?"#2ee6a0":"#18241f",transition:"all 0.3s"}}/>
+            <div key={i} style={{width:i===step?24:8,height:"8px",borderRadius:"4px",background:i<=step?"var(--accent)":"var(--line)",transition:"all 0.3s"}}/>
           ))}
         </div>
 
@@ -66,15 +67,15 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
             <div style={{width:"72px",height:"72px",borderRadius:"20px",background:"linear-gradient(135deg,#2ee6a0,#0099ff)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px"}}>
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
-            <h1 style={{margin:"0 0 12px",fontSize:"28px",fontWeight:"800",color:"#f0f0f0",letterSpacing:"-0.5px"}}>
+            <h1 style={{margin:"0 0 12px",fontSize:"28px",fontWeight:"800",color:"var(--text)",letterSpacing:"-0.5px"}}>
               Bem-vindo, {nome}! 👋
             </h1>
-            <p style={{margin:"0 0 32px",color:"#86978f",fontSize:"15px",lineHeight:"1.7"}}>
-              O <strong style={{color:"#f0f0f0"}}>Mi Trading Plan</strong> é a sua plataforma profissional para transformar disciplina em resultados consistentes.
+            <p style={{margin:"0 0 32px",color:"var(--text-mute)",fontSize:"15px",lineHeight:"1.7"}}>
+              O <strong style={{color:"var(--text)"}}>Mi Trading Plan</strong> é a sua plataforma profissional para transformar disciplina em resultados consistentes.
             </p>
-            <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"16px",padding:"20px",marginBottom:"32px",textAlign:"left"}}>
-              <p style={{margin:"0 0 4px",color:"#7a8c84",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Sua configuração leva</p>
-              <p style={{margin:0,color:"#f0f0f0",fontSize:"16px",fontWeight:"700"}}>menos de 2 minutos ⚡</p>
+            <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px",marginBottom:"32px",textAlign:"left"}}>
+              <p style={{margin:"0 0 4px",color:"var(--text-3)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px"}}>Sua configuração leva</p>
+              <p style={{margin:0,color:"var(--text)",fontSize:"16px",fontWeight:"700"}}>menos de 2 minutos ⚡</p>
             </div>
             <button onClick={()=>setStep(1)} style={{width:"100%",padding:"15px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"15px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
               Começar configuração →
@@ -85,26 +86,26 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
         {/* STEP 1 — Mercados e bancas */}
         {step===1 && (
           <div style={{animation:"fadeIn 0.4s ease"}}>
-            <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Em quais mercados você opera?</h2>
-            <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"14px"}}>Selecione e informe sua banca inicial em cada mercado.</p>
+            <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"var(--text)"}}>Em quais mercados você opera?</h2>
+            <p style={{margin:"0 0 28px",color:"var(--text-3)",fontSize:"14px"}}>Selecione e informe sua banca inicial em cada mercado.</p>
             <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"32px"}}>
               {MERCADOS.map(m=>{
                 const ativo = mercadosAtivos.includes(m.id);
                 return (
                   <div key={m.id} onClick={()=>toggleMercado(m.id)}
-                    style={{background:ativo?"rgba(255,255,255,0.04)":"#0b1210",border:"1.5px solid "+(ativo?m.cor+"55":"#18241f"),borderRadius:"14px",padding:"16px",cursor:"pointer",transition:"all 0.2s"}}>
+                    style={{background:ativo?"color-mix(in srgb, var(--ink) 4%, transparent)":"var(--surface)",border:"1.5px solid "+(ativo?alfa(m.cor,"55"):"var(--line)"),borderRadius:"14px",padding:"16px",cursor:"pointer",transition:"all 0.2s"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:ativo?"12px":"0"}}>
-                      <div style={{width:"20px",height:"20px",borderRadius:"50%",border:"2px solid "+(ativo?m.cor:"#333"),background:ativo?m.cor:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+                      <div style={{width:"20px",height:"20px",borderRadius:"50%",border:"2px solid "+(ativo?m.cor:"var(--text-5)"),background:ativo?m.cor:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
                         {ativo&&<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                       </div>
                       <div style={{flex:1}}>
-                        <p style={{margin:0,color:ativo?m.cor:"#aaa",fontWeight:"700",fontSize:"14px"}}>{m.label}</p>
-                        <p style={{margin:0,color:"#7a8c84",fontSize:"12px"}}>{m.desc}</p>
+                        <p style={{margin:0,color:ativo?m.cor:"var(--text-soft)",fontWeight:"700",fontSize:"14px"}}>{m.label}</p>
+                        <p style={{margin:0,color:"var(--text-3)",fontSize:"12px"}}>{m.desc}</p>
                       </div>
                     </div>
                     {ativo && (
                       <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                        <span style={{color:"#86978f",fontSize:"13px",flexShrink:0}}>Banca inicial:</span>
+                        <span style={{color:"var(--text-mute)",fontSize:"13px",flexShrink:0}}>Banca inicial:</span>
                         <div style={{display:"flex",alignItems:"center",gap:"6px",flex:1}}>
                           <span style={{color:m.cor,fontSize:"13px",fontWeight:"700"}}>{m.cur}</span>
                           <input type="number" value={bancas[m.id]} onChange={e=>setBancas(p=>({...p,[m.id]:e.target.value}))}
@@ -117,9 +118,9 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
               })}
             </div>
             <div style={{display:"flex",gap:"10px"}}>
-              <button onClick={()=>setStep(0)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid #26352e",background:"transparent",color:"#86978f",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
+              <button onClick={()=>setStep(0)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid var(--line-strong)",background:"transparent",color:"var(--text-mute)",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
               <button onClick={()=>setStep(2)} disabled={mercadosAtivos.length===0}
-                style={{flex:2,padding:"14px",borderRadius:"12px",border:"none",background:mercadosAtivos.length>0?"linear-gradient(135deg,#2ee6a0,#1fc98a)":"#18241f",color:mercadosAtivos.length>0?"#000":"#444",fontWeight:"700",fontSize:"14px",cursor:mercadosAtivos.length>0?"pointer":"not-allowed",fontFamily:"var(--font-sans)"}}>
+                style={{flex:2,padding:"14px",borderRadius:"12px",border:"none",background:mercadosAtivos.length>0?"linear-gradient(135deg,#2ee6a0,#1fc98a)":"var(--line)",color:mercadosAtivos.length>0?"#000":"var(--text-5)",fontWeight:"700",fontSize:"14px",cursor:mercadosAtivos.length>0?"pointer":"not-allowed",fontFamily:"var(--font-sans)"}}>
                 Próximo →
               </button>
             </div>
@@ -129,18 +130,18 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
         {/* STEP 2 — Primeira estratégia */}
         {step===2 && (
           <div style={{animation:"fadeIn 0.4s ease"}}>
-            <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Qual seu principal setup?</h2>
-            <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"14px"}}>Crie sua primeira estratégia. Você pode adicionar mais depois.</p>
+            <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"var(--text)"}}>Qual seu principal setup?</h2>
+            <p style={{margin:"0 0 28px",color:"var(--text-3)",fontSize:"14px"}}>Crie sua primeira estratégia. Você pode adicionar mais depois.</p>
             <div style={{marginBottom:"16px"}}>
-              <label style={{color:"#86978f",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"8px"}}>Nome da estratégia</label>
+              <label style={{color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"8px"}}>Nome da estratégia</label>
               <input style={inp} placeholder="Ex: Price Action, CF, Tape Reading..." value={nomeEst} onChange={e=>setNomeEst(e.target.value)}
                 onKeyDown={e=>e.key==="Enter"&&setStep(3)}/>
             </div>
-            <div style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"12px",padding:"14px 16px",marginBottom:"28px"}}>
-              <p style={{margin:0,color:"#7a8c84",fontSize:"12px",lineHeight:"1.6"}}>💡 <span style={{color:"#a3b2ab"}}>Traders profissionais operam no máximo 2-3 estratégias. Foco é a chave.</span></p>
+            <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"12px",padding:"14px 16px",marginBottom:"28px"}}>
+              <p style={{margin:0,color:"var(--text-3)",fontSize:"12px",lineHeight:"1.6"}}>💡 <span style={{color:"var(--text-soft)"}}>Traders profissionais operam no máximo 2-3 estratégias. Foco é a chave.</span></p>
             </div>
             <div style={{display:"flex",gap:"10px"}}>
-              <button onClick={()=>setStep(1)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid #26352e",background:"transparent",color:"#86978f",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
+              <button onClick={()=>setStep(1)} style={{flex:1,padding:"14px",borderRadius:"12px",border:"1px solid var(--line-strong)",background:"transparent",color:"var(--text-mute)",fontWeight:"600",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>← Voltar</button>
               <button onClick={()=>setStep(3)}
                 style={{flex:2,padding:"14px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"14px",cursor:"pointer",fontFamily:"var(--font-sans)"}}>
                 {nomeEst.trim() ? "Próximo →" : "Pular →"}
@@ -152,15 +153,15 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
         {/* STEP 3 — Features */}
         {step===3 && (
           <div style={{animation:"fadeIn 0.4s ease"}}>
-            <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"#f0f0f0"}}>Tudo pronto! 🎯</h2>
-            <p style={{margin:"0 0 28px",color:"#7a8c84",fontSize:"14px"}}>Explore os 3 recursos que vão transformar seu trading:</p>
+            <h2 style={{margin:"0 0 8px",fontSize:"22px",fontWeight:"800",color:"var(--text)"}}>Tudo pronto! 🎯</h2>
+            <p style={{margin:"0 0 28px",color:"var(--text-3)",fontSize:"14px"}}>Explore os 3 recursos que vão transformar seu trading:</p>
             <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"32px"}}>
               {FEATURES.map((f,i)=>(
-                <div key={i} style={{background:"var(--panel)",border:"1px solid #18241f",borderRadius:"14px",padding:"16px 20px",display:"flex",gap:"16px",alignItems:"flex-start"}}>
+                <div key={i} style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"14px",padding:"16px 20px",display:"flex",gap:"16px",alignItems:"flex-start"}}>
                   <div style={{flexShrink:0,marginTop:"2px"}}>{f.icon}</div>
                   <div>
-                    <p style={{margin:"0 0 4px",color:"#f0f0f0",fontWeight:"700",fontSize:"14px"}}>{f.titulo}</p>
-                    <p style={{margin:0,color:"#86978f",fontSize:"13px",lineHeight:"1.5"}}>{f.desc}</p>
+                    <p style={{margin:"0 0 4px",color:"var(--text)",fontWeight:"700",fontSize:"14px"}}>{f.titulo}</p>
+                    <p style={{margin:0,color:"var(--text-mute)",fontSize:"13px",lineHeight:"1.5"}}>{f.desc}</p>
                   </div>
                 </div>
               ))}
