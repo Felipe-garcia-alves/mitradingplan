@@ -249,6 +249,10 @@ function AppInterno() {
   const [loading,     setLoading]     = useState(true);
   const [onboarding,  setOnboarding]  = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Sidebar fixa aberta (preferência deste navegador)
+  const [sidebarFixa, setSidebarFixaState] = useState(() => { try { return localStorage.getItem("mtp-sidebar-fixa") === "1"; } catch { return false; } });
+  const setSidebarFixa = v => { setSidebarFixaState(v); try { localStorage.setItem("mtp-sidebar-fixa", v ? "1" : "0"); } catch { /* sem storage */ } };
+  const [focarNovoTrade, setFocarNovoTrade] = useState(false);
   const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768);
   const uid = user.id;
   const pendentesRevisao = useMemo(() => contarPendentes(entries), [entries]);
@@ -438,7 +442,7 @@ function AppInterno() {
     switch(pagina){
       case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina} config={config} saveConfig={saveConfig}/>;
       case "macro":       return <Macro isAdmin={perfil.papel==="admin"}/>;
-      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid} config={config} setPagina={setPagina}/>;
+      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid} config={config} setPagina={setPagina} focarNovoTrade={focarNovoTrade} onFocouNovoTrade={()=>setFocarNovoTrade(false)}/>;
       case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} config={config}/>;
       case "revisao":     return <Suspense fallback={<Spinner/>}><Revisao entries={entries} saveEntry={saveEntry} estrategias={estrategias} uid={uid} config={config} saveConfig={saveConfig}/></Suspense>;
       case "estrategias": return <Estrategias estrategias={estrategias} entries={entries} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
@@ -483,8 +487,9 @@ function AppInterno() {
 
   return (
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"var(--font-sans)"}}>
-      {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance} pendentesRevisao={pendentesRevisao}/>}
-      <main style={{marginLeft:isMobile?"0":"240px",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}
+      {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance} pendentesRevisao={pendentesRevisao}
+        entries={entries} fixa={sidebarFixa} setFixa={setSidebarFixa} onNovoTrade={()=>{setPagina("diario");setSidebarOpen(false);setFocarNovoTrade(true);}}/>}
+      <main style={{marginLeft:isMobile?"0":sidebarFixa?"272px":"104px",transition:"margin-left .28s cubic-bezier(.2,.8,.2,1)",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}
         onTouchStart={e=>{if(isMobile)window._swipeX=e.touches[0].clientX;}}
         onTouchEnd={e=>{if(isMobile&&window._swipeX&&(window._swipeX-e.changedTouches[0].clientX)>60){setSidebarOpen(false);window._swipeX=null;}}}>
         <div className="mtp-topbar" style={{position:"sticky",top:0,zIndex:100,padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
@@ -495,7 +500,12 @@ function AppInterno() {
             </div>
             <h2 className="mtp-page-title">{TITLES[pagina]||pagina}</h2>
           </div>
-          <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <UserHeader nomeUsuario={nomeUsuario} entries={entries}/>
+            <button className={"mtp-topbar-btn"+(pagina==="config"?" active":"")} onClick={()=>setPagina("config")} title="Configurações da conta" aria-label="Configurações da conta">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
         </div>
         <div style={{flex:1,padding:isMobile?"16px 12px":"28px 24px",maxWidth:"1248px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
           <AvisoVencimento perfil={perfil} hoje={hoje}/>

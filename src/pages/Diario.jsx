@@ -92,7 +92,7 @@ function EstrelasInput({ value, onChange }) {
   );
 }
 
-export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid, config, setPagina }) {
+export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid, config, setPagina, focarNovoTrade, onFocouNovoTrade }) {
   const contas = listaContas(config);
   const today    = todayKey();
   const [selectedDate, setSelectedDate] = useState(today);
@@ -112,6 +112,19 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const [importacao, setImportacao] = useState(null);   // { nome, conta, operacoes } — prévia do .csv
   const [avisoImport, setAvisoImport] = useState("");
   const importInputRef = useRef(null);
+
+  // Botão "Novo trade" da sidebar: volta para hoje e leva o cursor ao resultado
+  const composerRef = useRef(null);
+  useEffect(() => {
+    if (!focarNovoTrade) return;
+    setSelectedDate(today);
+    const el = composerRef.current;
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.querySelector("input[type=number]")?.focus({ preventScroll: true });
+    }
+    onFocouNovoTrade?.();
+  }, [focarNovoTrade, today, onFocouNovoTrade]);
 
   // Operações adicionadas e ainda não salvas: avisa antes de fechar/recarregar a aba
   useEffect(() => {
@@ -512,7 +525,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
         </div>
 
         {/* Nova operação */}
-        <div className="mtp-composer" onKeyDown={e=>{ if(e.key==="Enter" && e.target.tagName==="INPUT"){ e.preventDefault(); addTrade(); } }}>
+        <div ref={composerRef} className="mtp-composer" onKeyDown={e=>{ if(e.key==="Enter" && e.target.tagName==="INPUT"){ e.preventDefault(); addTrade(); } }}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap",marginBottom:"24px"}}>
             <p className="mtp-section-title" style={{fontSize:"15px"}}>Nova operação</p>
             <TimePicker value={novoTrade.horario} onChange={v=>setNovoTrade(p=>({...p,horario:v}))} style={{minHeight:"34px",padding:"6px 12px",borderRadius:"20px",fontSize:"13px"}}/>
