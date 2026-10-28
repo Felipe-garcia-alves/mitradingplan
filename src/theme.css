@@ -414,6 +414,7 @@ button:not(:disabled):active { transform: scale(0.97); }
 .mtp-rail.fixa:hover { transition-delay: 0s; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent), 0 18px 50px -20px color-mix(in srgb, var(--shade) 80%, transparent); }
 
 .mtp-rail .mtp-nav-item { padding-left: 15px; white-space: nowrap; }
+
 .mtp-rail .mtp-nav-label,
 .mtp-rail .mtp-nav-badge,
 .mtp-rail .mtp-brand-text { opacity: 0; transition: opacity .18s var(--ease); }
@@ -1013,3 +1014,49 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
 .mtp-linha-unica { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
 .mtp-linha-unica::-webkit-scrollbar { height: 4px; }
 .mtp-linha-unica::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+
+/* ── Sidebar: altura ─────────────────────────────────────────────
+   O menu tem que caber sem rolar. Três degraus pela altura da tela:
+   alta (padrão), média (até 960px) e notebook (até 790px). */
+.mtp-rail .mtp-brand { padding: 32px 16px 0; margin-bottom: 36px; }
+.mtp-acoes { padding: 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.mtp-sidebar .mtp-nav { padding: 20px 12px; }
+.mtp-nav-secoes { margin: auto 0; display: flex; flex-direction: column; gap: 24px; }
+.mtp-sidebar .mtp-nav-item { line-height: 18px; padding-top: 9px; padding-bottom: 9px; margin-bottom: 4px; }
+.mtp-sidebar .mtp-section-label,
+.mtp-rail:is(:hover, :has(:focus-visible), .fixa) .mtp-section-label { margin-bottom: 10px; }
+.mtp-sidebar .mtp-nav-item.mtp-novo-trade { font-size: 13.5px; }
+.mtp-sidebar .mtp-nav-item.mtp-hoje { padding-top: 7px; padding-bottom: 7px; min-height: 0; }
+
+/* rodapé: ações secundárias, mais baixas e discretas */
+.mtp-rodape { padding: 10px 12px; border-top: 1px solid var(--line); }
+.mtp-rodape .mtp-nav-item { padding-top: 7px; padding-bottom: 7px; margin-bottom: 1px; font-size: 13px; }
+.mtp-rodape .mtp-nav-icon svg { width: 16px; height: 16px; margin: 0 1px; }
+
+@media (max-height: 960px) {
+  .mtp-rail .mtp-brand { padding-top: 24px; margin-bottom: 24px; }
+  .mtp-sidebar .mtp-nav { padding: 12px; }
+  .mtp-nav-secoes { gap: 16px; }
+  .mtp-sidebar .mtp-nav-item { padding-top: 6px; padding-bottom: 6px; margin-bottom: 2px; }
+  .mtp-sidebar .mtp-section-label,
+  .mtp-rail:is(:hover, :has(:focus-visible), .fixa) .mtp-section-label { margin-bottom: 6px; }
+  .mtp-sidebar .mtp-nav-item.mtp-hoje { padding-top: 5px; padding-bottom: 5px; }
+  .mtp-rodape { padding: 6px 12px; }
+  .mtp-rodape .mtp-nav-item { padding-top: 5px; padding-bottom: 5px; }
+}
+
+@media (max-height: 790px) {
+  .mtp-rail .mtp-brand { padding-top: 14px; margin-bottom: 14px; }
+  .mtp-acoes { gap: 5px; }
+  .mtp-sidebar .mtp-nav { padding: 4px 12px; }
+  .mtp-nav-secoes { gap: 8px; }
+  .mtp-sidebar .mtp-nav-item { padding-top: 5px; padding-bottom: 5px; margin-bottom: 1px; }
+  /* nomes das seções saem; fica só a linha divisória */
+  .mtp-sidebar .mtp-section-label span { display: none; }
+  .mtp-sidebar .mtp-section-label,
+  .mtp-rail:is(:hover, :has(:focus-visible), .fixa) .mtp-section-label { margin-bottom: 4px; gap: 0; }
+  /* "Hoje" numa linha só */
+  .mtp-sidebar .mtp-nav-item.mtp-hoje .mtp-nav-label { flex-direction: row !important; align-items: baseline; gap: 8px !important; }
+  .mtp-rodape { padding: 4px 12px; }
+  .mtp-rodape .mtp-nav-item { padding-top: 4px; padding-bottom: 4px; }
+}
