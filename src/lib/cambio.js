@@ -3,6 +3,7 @@
 // Busca USD/BRL ao vivo (AwesomeAPI, sem chave) e guarda no navegador como reserva.
 // O usuário pode fixar uma cotação manual, que tem prioridade.
 import { useEffect, useState } from "react";
+import { numDigitado } from "./numeros";
 
 const CHAVE_CACHE  = "mtp:usdbrl";
 const CHAVE_MANUAL = "mtp:usdbrl-manual";
@@ -38,7 +39,7 @@ export function useCotacaoUSD() {
   }, []);
 
   const setManual = v => {
-    const n = parseFloat(String(v).replace(",", "."));
+    const n = numDigitado(v) ?? NaN;
     const novo = n > 0 ? n : null;
     gravar(CHAVE_MANUAL, novo);
     setManualState(novo);

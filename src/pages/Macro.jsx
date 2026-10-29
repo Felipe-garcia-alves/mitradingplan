@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../supabase";
+import { numDigitado, soNumero } from "../lib/numeros";
 
 /* Viés da Abertura — WIN e WDO, leitura dos 15 primeiros minutos (09:00 → 09:15).
    O cálculo e a classificação aqui são idênticos aos da Edge Function coleta-macro:
@@ -109,7 +110,7 @@ function calcular(vies, fef2) {
   if (!vies) return null;
   const pernas = (vies.pernas || []).map((p) => {
     if (p.entrada !== "manual") return p;
-    const pct = fef2 === "" || fef2 == null || Number.isNaN(Number(fef2)) ? null : Number(fef2);
+    const pct = numDigitado(fef2);
     return { ...p, pct, contribuicao: pct == null ? null : Number((p.sinal * pct).toFixed(2)), ausente: pct == null };
   });
   return fechar(pernas);
@@ -294,7 +295,7 @@ export default function Macro({ isAdmin = false }) {
       const c = calcular(vies, txt);
       if (!vies || !c) return;
       setSalvando("salvando");
-      const pct = txt === "" ? null : Number(String(txt).replace(",", "."));
+      const pct = numDigitado(txt);
       const { error } = await supabase.from("macro_vies").update({
         fef2_manual: Number.isNaN(pct) ? null : pct,
         pernas: c.pernas, resultado: c.resultado, direcao: c.direcao,
@@ -506,8 +507,8 @@ export default function Macro({ isAdmin = false }) {
                 </span>
                 <span className="pv">
                   {manual && isAdmin
-                    ? <input type="number" step="0.01" inputMode="decimal" value={fef2} placeholder="0,00"
-                             onChange={(e) => digitar(e.target.value)} aria-label={`${p.rotulo} — variação em %`} />
+                    ? <input type="text" inputMode="decimal" value={fef2} placeholder="0,00"
+                             onChange={(e) => digitar(soNumero(e.target.value))} aria-label={`${p.rotulo} — variação em %`} />
                     : <span style={{ color: v > 0 ? "var(--accent)" : v < 0 ? "var(--neg)" : "var(--text-4)" }}>
                         {p.contribuicao == null ? "—" : sg(v)}
                       </span>}

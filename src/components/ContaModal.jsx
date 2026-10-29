@@ -4,6 +4,7 @@ import { Modal } from "./ui";
 import { listaContas, salvarContas, TIPOS_CONTA, LIMITES_PADRAO, ID_PRINCIPAL } from "../lib/contas";
 import { MERCADOS } from "../lib/banca";
 import { custosDaConta, valorZeragem } from "../lib/custos";
+import { numDigitado, soNumero, paraCampo } from "../lib/numeros";
 
 const rotulo = { margin:"0 0 8px", color:"var(--text-3)", fontSize:"10.5px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1.3px" };
 const inp = { width:"100%", background:"color-mix(in srgb, var(--ink) 4%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"10px", padding:"11px 13px", color:"var(--text)", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)" };
@@ -25,23 +26,23 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
     nome: conta?.nome || "",
     tipo: conta?.tipo || "real",
     mercado: conta?.mercado || "B3",
-    banca: conta?.bancaInicial != null ? String(conta.bancaInicial) : "",
-    risco: String(lim0.risco), meta: String(lim0.meta), stop: String(lim0.stop),
+    banca: conta?.bancaInicial != null ? paraCampo(conta.bancaInicial) : "",
+    risco: paraCampo(lim0.risco), meta: paraCampo(lim0.meta), stop: paraCampo(lim0.stop),
     padrao: !!conta?.padrao,
   });
   // Custos operacionais da conta (ver lib/custos.js)
   const c0 = custosDaConta(config, conta?.id || "");
   const [custos, setCustos] = useState({
     automatico: c0.automatico, irrf: c0.irrf,
-    ativos: Object.entries(c0.porAtivo).map(([ativo, v]) => ({ ativo, valor: String(v) })),
-    corretagem: c0.corretagem ? String(c0.corretagem) : "", impostos: String(c0.impostos), zeragem: c0.zeragem ? String(c0.zeragem) : "",
+    ativos: Object.entries(c0.porAtivo).map(([ativo, v]) => ({ ativo, valor: paraCampo(v) })),
+    corretagem: c0.corretagem ? paraCampo(c0.corretagem) : "", impostos: paraCampo(c0.impostos), zeragem: c0.zeragem ? paraCampo(c0.zeragem) : "",
   });
   const setC = (k, v) => setCustos(x => ({ ...x, [k]: v }));
   const setAtivo = (i, k, v) => setCustos(x => ({ ...x, ativos: x.ativos.map((a, j) => j === i ? { ...a, [k]: v } : a) }));
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
-  const num = v => parseFloat(String(v).replace(",", "."));
+  const num = v => numDigitado(v) ?? NaN;
 
   async function salvar() {
     const nome = f.nome.trim();
@@ -115,7 +116,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
             </div>
             <div>
               <p style={rotulo}>Banca inicial ({MERCADOS[f.mercado].moeda})</p>
-              <input style={{ ...inp, fontFamily:"var(--font-mono)" }} type="number" min="0" step="0.01" value={f.banca} onChange={e => set("banca", e.target.value)} placeholder="0,00"/>
+              <input style={{ ...inp, fontFamily:"var(--font-mono)" }} type="text" inputMode="decimal" value={f.banca} onChange={e => set("banca", soNumero(e.target.value, { negativo:false }))} placeholder="0,00"/>
             </div>
           </div>
         )}
@@ -125,7 +126,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px" }}>
             {[["risco","Risco / op","var(--accent)"],["meta","Meta","var(--accent)"],["stop","Stop","var(--neg)"]].map(([k, l, c]) => (
               <div key={k} style={{ position:"relative" }}>
-                <input style={{ ...inp, fontFamily:"var(--font-mono)", paddingTop:"22px", paddingBottom:"8px", paddingRight:"30px" }} type="number" min="0.1" step="0.1" value={f[k]} onChange={e => set(k, e.target.value)}/>
+                <input style={{ ...inp, fontFamily:"var(--font-mono)", paddingTop:"22px", paddingBottom:"8px", paddingRight:"30px" }} type="text" inputMode="decimal" value={f[k]} onChange={e => set(k, soNumero(e.target.value, { negativo:false }))}/>
                 <span style={{ position:"absolute", left:"13px", top:"7px", fontSize:"10px", fontWeight:"700", color:c, letterSpacing:"0.6px", textTransform:"uppercase" }}>{l}</span>
                 <span style={{ position:"absolute", right:"12px", bottom:"10px", color:"var(--text-3)", fontSize:"13px" }}>%</span>
               </div>
@@ -148,7 +149,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
                 {custos.ativos.map((a, i) => (
                   <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:"8px" }}>
                     <input style={{ ...inp, padding:"8px 11px", fontFamily:"var(--font-mono)", textTransform:"uppercase" }} value={a.ativo} onChange={e => setAtivo(i, "ativo", e.target.value)} placeholder="Ativo (ex: WDO)"/>
-                    <input style={{ ...inp, padding:"8px 11px", fontFamily:"var(--font-mono)" }} type="number" min="0" step="0.01" value={a.valor} onChange={e => setAtivo(i, "valor", e.target.value)} placeholder="0,00"/>
+                    <input style={{ ...inp, padding:"8px 11px", fontFamily:"var(--font-mono)" }} type="text" inputMode="decimal" value={a.valor} onChange={e => setAtivo(i, "valor", soNumero(e.target.value, { negativo:false }))} placeholder="0,00"/>
                     <button type="button" onClick={() => setCustos(x => ({ ...x, ativos: x.ativos.filter((_, j) => j !== i) }))} aria-label="Remover ativo"
                       style={{ background:"transparent", border:"1px solid var(--line)", borderRadius:"10px", color:"var(--text-3)", cursor:"pointer", padding:"0 12px" }}>✕</button>
                   </div>
@@ -162,7 +163,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
               {[["corretagem","Corretagem / contrato","0,00"],["impostos","Impostos (%)","9,65"],["zeragem","Zeragem (eventual)","0,00"]].map(([k, l, ph]) => (
                 <label key={k} style={{ display:"flex", flexDirection:"column", gap:"5px" }}>
                   <span style={{ color:"var(--text-3)", fontSize:"11px" }}>{l}</span>
-                  <input style={{ ...inp, padding:"8px 11px", fontFamily:"var(--font-mono)" }} type="number" min="0" step="0.01" value={custos[k]} onChange={e => setC(k, e.target.value)} placeholder={ph}/>
+                  <input style={{ ...inp, padding:"8px 11px", fontFamily:"var(--font-mono)" }} type="text" inputMode="decimal" value={custos[k]} onChange={e => setC(k, soNumero(e.target.value, { negativo:false }))} placeholder={ph}/>
                 </label>
               ))}
             </div>
@@ -175,7 +176,7 @@ export default function ContaModal({ config, saveConfig, conta, onClose, onSalva
             <p style={{ margin:0, color:"var(--text-3)", fontSize:"11.5px", lineHeight:1.6 }}>
               Os valores estão na sua nota de corretagem: some "Taxa registro" + "Taxas BM&F" e divida pelo total de contratos comprados e vendidos, depois multiplique por 2 (ida e volta). Exemplo: WIN ≈ R$ 0,50.
               Impostos (ISS + PIS/COFINS) entram sobre corretagem e zeragem.
-              A zeragem só é cobrada nos dias em que você marcar "Teve zeragem automática" no Diário{custos.zeragem && Number(custos.zeragem) > 0 ? <> (R$ {valorZeragem({ zeragem:num(custos.zeragem), impostos:num(custos.impostos)||0 }).toLocaleString("pt-BR",{minimumFractionDigits:2})} com impostos)</> : ""}.
+              A zeragem só é cobrada nos dias em que você marcar "Teve zeragem automática" no Diário{num(custos.zeragem) > 0 ? <> (R$ {valorZeragem({ zeragem:num(custos.zeragem), impostos:num(custos.impostos)||0 }).toLocaleString("pt-BR",{minimumFractionDigits:2})} com impostos)</> : ""}.
               O IR de 20% é pago por DARF e não entra aqui.
             </p>
           </div>

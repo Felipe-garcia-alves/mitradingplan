@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { alfa } from "../lib/cor.js";
+import { numDigitado, soNumero } from "../lib/numeros";
 
 const MERCADOS = [
   { id:"bancaB3",        label:"B3",         desc:"Mini Índice, Mini Dólar",   cor:"var(--accent)", cur:"R$" },
@@ -36,7 +37,7 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
     setSalvando(true);
     // Salva config com bancas dos mercados ativos
     const cfg = {};
-    mercadosAtivos.forEach(id => { cfg[id] = Number(bancas[id]) || 0; });
+    mercadosAtivos.forEach(id => { cfg[id] = numDigitado(bancas[id]) || 0; });
     await saveConfig(cfg);
     // Cria estratégia se digitou nome
     if (nomeEst.trim()) {
@@ -108,7 +109,7 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
                         <span style={{color:"var(--text-mute)",fontSize:"13px",flexShrink:0}}>Banca inicial:</span>
                         <div style={{display:"flex",alignItems:"center",gap:"6px",flex:1}}>
                           <span style={{color:m.cor,fontSize:"13px",fontWeight:"700"}}>{m.cur}</span>
-                          <input type="number" value={bancas[m.id]} onChange={e=>setBancas(p=>({...p,[m.id]:e.target.value}))}
+                          <input type="text" inputMode="decimal" value={bancas[m.id]} onChange={e=>setBancas(p=>({...p,[m.id]:soNumero(e.target.value, { negativo:false })}))}
                             style={{...inp,padding:"8px 12px",fontSize:"14px",flex:1}} placeholder="0"/>
                         </div>
                       </div>

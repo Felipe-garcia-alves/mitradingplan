@@ -3,6 +3,7 @@ import { CountUp, ProjectionChart } from "../components/ui";
 import { listaCarteiras, bancaCarteira, totalSaques, totalDepositos, curvaCarteira, resultadoDia } from "../lib/banca";
 import { useCotacaoUSD, paraBRL } from "../lib/cambio";
 import { alfa } from "../lib/cor.js";
+import { soNumero } from "../lib/numeros";
 
 function gerarProjecao(base, meses, taxa) {
   const rows=[]; let b=base;
@@ -46,7 +47,7 @@ function Cotacao({ cot }) {
     return (
       <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
         <span style={{ color:"var(--text-3)", fontSize:"12px" }}>US$ 1 = R$</span>
-        <input autoFocus type="number" step="0.01" value={txt} onChange={e=>setTxt(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter") salvar(); if(e.key==="Escape") setEditando(false); }}
+        <input autoFocus type="text" inputMode="decimal" value={txt} onChange={e=>setTxt(soNumero(e.target.value, { negativo:false }))} onKeyDown={e=>{ if(e.key==="Enter") salvar(); if(e.key==="Escape") setEditando(false); }}
           style={{ width:"70px", background:"color-mix(in srgb, var(--ink) 5%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"8px", padding:"5px 8px", color:"var(--text)", fontSize:"13px", fontFamily:"var(--font-mono)", outline:"none" }}/>
         <button onClick={salvar} className="mtp-ctx-ghost" style={{ padding:"4px 8px" }}>ok</button>
         {cot.origem==="manual" && <button onClick={()=>{ cot.setManual(null); setEditando(false); }} className="mtp-ctx-ghost" style={{ padding:"4px 8px" }}>usar ao vivo</button>}
@@ -54,7 +55,7 @@ function Cotacao({ cot }) {
     );
   }
   return (
-    <button onClick={()=>{ setTxt(cot.valor ? cot.valor.toFixed(2) : ""); setEditando(true); }} title="Clique para usar outra cotação"
+    <button onClick={()=>{ setTxt(cot.valor ? cot.valor.toFixed(2).replace(".", ",") : ""); setEditando(true); }} title="Clique para usar outra cotação"
       style={{ display:"flex", alignItems:"center", gap:"8px", background:"color-mix(in srgb, var(--ink) 3%, transparent)", border:"1px solid var(--line)", borderRadius:"20px", padding:"6px 12px", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
       <i className="mtp-dot" style={{ background: cot.origem==="ao vivo" ? "var(--accent)" : cot.origem ? "var(--warn)" : "var(--neg)", color: cot.origem==="ao vivo" ? "var(--accent)" : "var(--warn)" }}/>
       <span style={{ color:"var(--text-2)", fontSize:"12px", fontFamily:"var(--font-mono)" }}>{cot.valor ? "US$ 1 = R$ "+cot.valor.toFixed(2).replace(".",",") : "informe a cotação do dólar"}</span>

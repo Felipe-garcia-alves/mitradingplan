@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Confirmar, CountUp, Ring, Sparkline } from "../components/ui";
 import { semanasUteis, temFimDeSemana, DIAS_UTEIS, DIAS_SEMANA_SEG } from "../lib/datas";
 import { alfa } from "../lib/cor.js";
@@ -10,10 +10,8 @@ const kSub   = {margin:0,color:"var(--text-3)",fontSize:"11.5px"};
 
 const MONTH_NAMES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-function todayKey() {
-  const d = new Date();
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-}
+const chaveDia = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function todayKey() { return chaveDia(new Date()); }
 function monthKey(s) { return s.slice(0,7); }
 function formatDateFull(s) { const p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
 
@@ -78,8 +76,19 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
   const mediaCal = valsCal.length ? Math.round(valsCal.reduce((a,b)=>a+b,0)/valsCal.length) : null;
   const NOMES_MES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-  // recarrega o que já foi marcado e salvo hoje
+  // Dia do checklist (hoje por padrão; dá para voltar e registrar dias anteriores)
+  const [dia,       setDia]       = useState(today);
+  // recarrega o que já foi marcado e salvo no dia
   const [checked,   setChecked]   = useState(() => ({ ...((compliance||{})._detalhes?.[today] || {}) }));
+  const checklistRef = useRef(null);
+  function irParaDia(k, rolar) {
+    if (k > today) return;
+    setDia(k);
+    setChecked({ ...((compliance||{})._detalhes?.[k] || {}) });
+    if (rolar) checklistRef.current?.scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+  const mudarDia = delta => { const d = new Date(dia+"T12:00:00"); d.setDate(d.getDate()+delta); irParaDia(chaveDia(d)); };
+  const ehHoje = dia === today;
   const [editando,  setEditando]  = useState(false);
   const [editId,    setEditId]    = useState(null);
   const [form,      setForm]      = useState({ icon:"🎯", title:"", desc:"", personal:false });
@@ -227,15 +236,16 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
 
   async function salvarProgresso() {
     const updated = {...compliance};
-    updated[today] = pct;
+    updated[dia] = pct;
     const det = {...(compliance._detalhes||{})};
-    det[today] = regrasList.reduce((acc,r)=>({...acc,[r.id]:!!checked[r.id]}),{});
+    det[dia] = regrasList.reduce((acc,r)=>({...acc,[r.id]:!!checked[r.id]}),{});
     updated._detalhes = det;
     await saveCompliance(updated);
-    setMsg("✓ Disciplina de hoje salva"); setTimeout(()=>setMsg(""),2500);
+    setMsg(ehHoje ? "✓ Disciplina de hoje salva" : "✓ Disciplina de "+formatDateFull(dia)+" salva"); setTimeout(()=>setMsg(""),2500);
   }
-  const salvoHoje = valorDia(today);
-  const mudouDesdeSalvo = salvoHoje !== pct;
+  const salvoDia = valorDia(dia);
+  const mudouDesdeSalvo = salvoDia !== pct;
+  const rotuloDia = ehHoje ? "hoje" : "de " + formatDateFull(dia).slice(0,5);
   const isMobile = window.innerWidth < 768;
   const inp = { width:"100%", background:"color-mix(in srgb, var(--ink) 5%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"10px", padding:"11px 13px", color:"var(--text)", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"var(--font-sans)" };
 
@@ -308,12 +318,12 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
       {/* ── 4 cards ── */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:"14px",marginBottom:"28px"}}>
         <div style={kCard}>
-          <p style={kLabel}>Hoje</p>
+          <p style={kLabel}>{ehHoje ? "Hoje" : formatDateFull(dia)}</p>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
             <p style={{...kValor,color:corPct(pct)}}><CountUp value={pct||0} format={v=>Math.round(v)+"%"}/></p>
             <Ring pct={pct} color={corPct(pct)} size={50}/>
           </div>
-          <p style={kSub}>{checkedCount} de {totalRegras} regras · {salvoHoje===null ? <span style={{color:"var(--warn)"}}>não salvo</span> : mudouDesdeSalvo ? <span style={{color:"var(--warn)"}}>alterado, salve de novo</span> : <span style={{color:"var(--accent)"}}>salvo</span>}</p>
+          <p style={kSub}>{checkedCount} de {totalRegras} regras · {salvoDia===null ? <span style={{color:"var(--warn)"}}>não salvo</span> : mudouDesdeSalvo ? <span style={{color:"var(--warn)"}}>alterado, salve de novo</span> : <span style={{color:"var(--accent)"}}>salvo</span>}</p>
         </div>
         <div style={{...kCard,position:"relative",overflow:"hidden"}}>
           {serieMes.length > 1 && (
@@ -345,18 +355,30 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
       {/* ── Checklist + regras mais quebradas ── */}
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1.7fr) minmax(0,1fr)",gap:"14px",alignItems:"stretch",marginBottom:"28px"}}>
         {/* ── Checklist ── */}
-        <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px"}}>
+        <div ref={checklistRef} style={{background:"var(--panel)",border:"1px solid "+(ehHoje?"var(--line)":"color-mix(in srgb, var(--warn) 30%, transparent)"),borderRadius:"16px",padding:"20px",scrollMarginTop:"16px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"14px",flexWrap:"wrap",marginBottom:"16px"}}>
             <div>
-              <p className="mtp-section-title">Checklist de hoje</p>
-              <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12px"}}>Depois de operar, marque as regras que você respeitou e salve</p>
+              <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                <button onClick={()=>mudarDia(-1)} aria-label="Dia anterior" title="Dia anterior" style={navBtn}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <p className="mtp-section-title">{ehHoje ? "Checklist de hoje" : "Checklist de "+formatDateFull(dia)}</p>
+                <button onClick={()=>mudarDia(1)} disabled={ehHoje} aria-label="Próximo dia" title="Próximo dia" style={{...navBtn,opacity:ehHoje?0.35:1,cursor:ehHoje?"default":"pointer"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                {!ehHoje && <button onClick={()=>irParaDia(today)} className="mtp-ctx-ghost" style={{padding:"4px 10px"}}>Hoje</button>}
+              </div>
+              <p style={{margin:"6px 0 0",color:"var(--text-3)",fontSize:"12px"}}>
+                {ehHoje ? "Depois de operar, marque as regras que você respeitou e salve" : "Registrando um dia anterior — use as setas ou clique no calendário para trocar"}
+                {salvoDia!==null && <> · <button onClick={()=>pedirApagarDia(dia)} className="mtp-ctx-ghost" style={{padding:"0 4px",color:"var(--neg-soft)",fontSize:"11.5px"}}>apagar registro</button></>}
+              </p>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
               {allChecked && <span className="mtp-pronto">✓ Dia 100% disciplinado</span>}
               {msg && <span style={{color:"var(--accent)",fontSize:"12.5px",fontWeight:"600"}}>{msg}</span>}
               <button onClick={salvarProgresso} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"10px 18px",fontWeight:"800",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><polyline points="20 6 9 17 4 12"/></svg>
-                {salvoHoje===null ? "Salvar disciplina de hoje" : "Atualizar disciplina de hoje"}
+                {(salvoDia===null ? "Salvar disciplina " : "Atualizar disciplina ") + rotuloDia}
               </button>
             </div>
           </div>
@@ -510,8 +532,9 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
               const quebradas = v!==null && detalhes[k] ? regrasList.filter(r=>!detalhes[k][r.id]).map(r=>r.title) : [];
               return (
                 <div key={d} className={"mtp-cal-dia"+(v!==null?" tem":"")+(isToday?" hoje":"")}
-                  style={{background:bg,border:isToday?"1.5px solid color-mix(in srgb, var(--accent) 53.3%, transparent)":"1px solid "+(v!==null?alfa(cor,"33"):"var(--line)"),opacity:future?0.35:1}}
-                  onClick={()=>pedirApagarDia(k)}>
+                  title={!future && v===null ? "Registrar a disciplina de "+formatDateFull(k) : undefined}
+                  style={{background:bg,border:k===dia&&!isToday?"1.5px solid var(--warn)":isToday?"1.5px solid color-mix(in srgb, var(--accent) 53.3%, transparent)":"1px solid "+(v!==null?alfa(cor,"33"):"var(--line)"),opacity:future?0.35:1,cursor:future?"default":"pointer"}}
+                  onClick={()=>irParaDia(k, true)}>
                   <span className="mtp-cal-num">{d}</span>
                   {v!==null && <span className="mtp-cal-valor" style={{color:cor}}>{v}%</span>}
                   {res!==null && res!==0 && <span className="mtp-cal-sub" style={{fontFamily:"var(--font-mono)",color:res>=0?"var(--accent)":"var(--neg-soft)"}}>{res>=0?"+":"-"}{Math.abs(res)>=1000?(Math.abs(res)/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+"k":Math.round(Math.abs(res))}</span>}
@@ -522,7 +545,7 @@ export default function Regras({ regras, saveRegras, compliance, saveCompliance,
                       {quebradas.length > 0
                         ? <div style={{marginTop:"4px"}}><span style={{color:"var(--text-3)"}}>Quebrou:</span>{quebradas.slice(0,4).map(t=><div key={t} style={{color:"#ffb3c0"}}>• {t}</div>)}{quebradas.length>4 && <div style={{color:"var(--text-3)"}}>+{quebradas.length-4}</div>}</div>
                         : detalhes[k] ? <div style={{color:"var(--accent)",marginTop:"4px"}}>Cumpriu todas as regras</div> : null}
-                      <div style={{color:"var(--text-3)",marginTop:"4px",fontSize:"10.5px"}}>clique para apagar o registro</div>
+                      <div style={{color:"var(--text-3)",marginTop:"4px",fontSize:"10.5px"}}>clique para revisar ou editar</div>
                     </div>
                   )}
                 </div>

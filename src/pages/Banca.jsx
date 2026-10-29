@@ -3,6 +3,7 @@ import { CountUp, Sparkline, Modal } from "../components/ui";
 import { listaCarteiras, mercadoAtivo, carteira, bancaCarteira, totalSaques, listaSaques, totalDepositos, listaDepositos, curvaCarteira, carteiraDoSaque } from "../lib/banca";
 import { TIPOS_CONTA } from "../lib/contas";
 import { alfa } from "../lib/cor.js";
+import { numDigitado, soNumero, paraCampo } from "../lib/numeros";
 
 function hojeISO() {
   const d = new Date();
@@ -72,7 +73,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
 
   async function registrarSaque() {
     const dep = saque.tipo === "deposito";
-    const valor = parseFloat(String(saque.valor).replace(",", "."));
+    const valor = numDigitado(saque.valor);
     const cart = carteira(config, saque.cart);
     if (!cart) { setErroSaque(dep ? "Escolha para onde vai o depósito." : "Escolha de onde sai o saque."); return; }
     if (!valor || valor <= 0) { setErroSaque("Informe um valor maior que zero."); return; }
@@ -96,8 +97,8 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
   async function salvarEdicao() {
     const nc = { ...config };
     activeBancos.forEach(([tipo, meta]) => {
-      const v = parseFloat(inputs[tipo]);
-      if (!isNaN(v)) nc[meta.key] = v;
+      const v = numDigitado(inputs[tipo]);
+      if (v !== null && v >= 0) nc[meta.key] = v;
     });
     await saveConfig(nc);
     setEditando(false);
@@ -105,8 +106,9 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
   }
 
   async function criarBanca() {
-    if (!novoTipo || !novoValor) return;
-    await saveConfig({ ...config, [BANCOS_META[novoTipo].key]: parseFloat(novoValor), bancasExcluidas: (config?.bancasExcluidas || []).filter(x => x !== novoTipo) });
+    const valorNovo = numDigitado(novoValor);
+    if (!novoTipo || valorNovo === null || valorNovo < 0) return;
+    await saveConfig({ ...config, [BANCOS_META[novoTipo].key]: valorNovo, bancasExcluidas: (config?.bancasExcluidas || []).filter(x => x !== novoTipo) });
     setShowCriar(false); setNovoTipo(""); setNovoValor("");
     setMsg("✓ Banca criada!"); setTimeout(() => setMsg(""), 2500);
   }
@@ -155,7 +157,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
           )}
           <button onClick={() => {
             const init = {};
-            activeBancos.forEach(([tipo, meta]) => { init[tipo] = String(getBancaInicial(meta)); });
+            activeBancos.forEach(([tipo, meta]) => { init[tipo] = paraCampo(getBancaInicial(meta)); });
             setInputs(init);
             setEditando(!editando);
           }} style={{ background:"color-mix(in srgb, var(--ink) 4%, transparent)", border:"1px solid var(--line-strong)", borderRadius:"8px", padding:"8px 16px", color:"var(--text-soft)", fontSize:"12px", fontWeight:"600", cursor:"pointer", fontFamily:"var(--font-sans)" }}>
@@ -185,7 +187,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                 <label style={{ color:"var(--text-mute)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
                   Capital inicial ({BANCOS_META[novoTipo].moeda})
                 </label>
-                <input type="number" value={novoValor} onChange={e => setNovoValor(e.target.value)}
+                <input type="text" inputMode="decimal" value={novoValor} onChange={e => setNovoValor(soNumero(e.target.value, { negativo:false }))}
                   placeholder={BANCOS_META[novoTipo].key==="bancaCripto"?"Ex: 500":"Ex: 1000"}
                   style={{ ...inp, borderColor:alfa(BANCOS_META[novoTipo].cor,"44") }} autoFocus/>
               </div>
@@ -214,7 +216,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                 <label style={{ color:"var(--text-mute)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>
                   {meta.label} ({meta.moeda})
                 </label>
-                <input type="number" value={inputs[tipo]||""} onChange={e => setInputs(p => ({ ...p, [tipo]:e.target.value }))} style={inp} placeholder={"Ex: "+getBancaInicial(meta)}/>
+                <input type="text" inputMode="decimal" value={inputs[tipo]||""} onChange={e => setInputs(p => ({ ...p, [tipo]:soNumero(e.target.value, { negativo:false }) }))} style={inp} placeholder={"Ex: "+getBancaInicial(meta)}/>
               </div>
             ))}
           </div>
@@ -383,7 +385,7 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginTop:"16px" }}>
               <div>
                 <p style={{ ...kpiLabel, marginBottom:"8px" }}>Valor ({carteira(config, saque.cart)?.moeda})</p>
-                <input type="number" min="0" step="0.01" value={saque.valor} autoFocus onChange={e => setSaque(p => ({ ...p, valor:e.target.value }))} placeholder="0,00" style={{ ...inp, border:"1px solid var(--line-strong)" }}/>
+                <input type="text" inputMode="decimal" value={saque.valor} autoFocus onChange={e => setSaque(p => ({ ...p, valor:soNumero(e.target.value, { negativo:false }) }))} placeholder="0,00" style={{ ...inp, border:"1px solid var(--line-strong)" }}/>
               </div>
               <div>
                 <p style={{ ...kpiLabel, marginBottom:"8px" }}>Data</p>

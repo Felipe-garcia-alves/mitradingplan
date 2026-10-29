@@ -8,17 +8,9 @@ import { decodificarArquivo, lerArquivo, jaRegistrada } from "../lib/importar";
 import { custosDaConta, custoPorContrato, comDesconto, semDesconto, recalcularCustos, carteirasB3DoDia, resumoCustos, valorZeragem, semTaxa, r2 } from "../lib/custos";
 import { Check } from "../components/ContaModal";
 import { tradeNaCarteira } from "../lib/banca";
+import { numDigitado, soNumero } from "../lib/numeros";
 
 const fmtR = v => Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-// Número digitado com vírgula ou ponto: "150,50" → 150.5 · "1.234,50" → 1234.5 · "" ou "-" → null
-// (campos são texto: input type=number zera o valor quando o teclado em português usa vírgula)
-const numDigitado = v => {
-  let s = String(v ?? "").trim();
-  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
-  const n = parseFloat(s);
-  return isNaN(n) ? null : n;
-};
-const soNumero = (v, inteiro) => inteiro ? v.replace(/\D/g, "") : v.replace(/[^\d.,-]/g, "").replace(/(?!^)-/g, "");
 // Etiqueta "custos" de uma operação com desconto (bruto no title)
 function TagCustos({ t }) {
   if (!t.descontaCustos) return null;
@@ -280,7 +272,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     });
   }
   function digitarNumero(k, v) {
-    v = soNumero(v, k === "contratos");
+    v = soNumero(v, { inteiro: k === "contratos" });
     setAvisoNovo("");
     setNovoTrade(p => {
       const novo = { ...p, [k]: v };
@@ -914,7 +906,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                                 <Select value={ed.ativo||""} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,ativo:v}}))} style={{...inpE,width:"118px"}} popWidth={190} placeholder="Ativo"
                                   options={[{value:"",label:"Sem ativo"}, ...[...new Set([...(ed.ativo?[ed.ativo]:[]), ...opcoesDeAtivo(entries, ed.mercado)])].map(a=>({value:a,label:a,hint:rotuloAtivo(ed.mercado,a)}))]}/>
                                 <input type="text" inputMode="decimal" placeholder={ed.mercado==="B3"?"R$":"$"} title={ed.descontar?"Resultado bruto (os custos são descontados)":"Resultado"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:soNumero(e.target.value)}}))} style={{...inpE,width:"90px"}}/>
-                                <input type="text" inputMode="numeric" placeholder="Lotes" value={ed.contratos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,contratos:soNumero(e.target.value,true)}}))} style={{...inpE,width:"70px"}}/>
+                                <input type="text" inputMode="numeric" placeholder="Lotes" value={ed.contratos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,contratos:soNumero(e.target.value, { inteiro:true })}}))} style={{...inpE,width:"70px"}}/>
                                 <div onClick={()=>setEditingTrade(p=>({...p,data:{...p.data,descontar:!p.data.descontar}}))} style={{display:"flex",alignItems:"center",gap:"7px",cursor:"pointer",userSelect:"none"}}>
                                   <Check marcado={ed.descontar}/><span style={{color:"var(--text-2)",fontSize:"12px"}}>Descontar custos</span>
                                 </div>
