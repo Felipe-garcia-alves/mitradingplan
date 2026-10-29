@@ -10,6 +10,15 @@ import { Check } from "../components/ContaModal";
 import { tradeNaCarteira } from "../lib/banca";
 
 const fmtR = v => Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+// Número digitado com vírgula ou ponto: "150,50" → 150.5 · "1.234,50" → 1234.5 · "" ou "-" → null
+// (campos são texto: input type=number zera o valor quando o teclado em português usa vírgula)
+const numDigitado = v => {
+  let s = String(v ?? "").trim();
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+};
+const soNumero = (v, inteiro) => inteiro ? v.replace(/\D/g, "") : v.replace(/[^\d.,-]/g, "").replace(/(?!^)-/g, "");
 // Etiqueta "custos" de uma operação com desconto (bruto no title)
 function TagCustos({ t }) {
   if (!t.descontaCustos) return null;
@@ -99,6 +108,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
   const [selectedDate, setSelectedDate] = useState(today);
   const [diaModal,    setDiaModal]    = useState(null); // dia escolhido dentro dela
   const [msg,        setMsg]        = useState("");
+  const [avisoNovo,  setAvisoNovo]  = useState(""); // validação do "Adicionar", mostrada ao lado do botão
   const [emocoes,    setEmocoes]    = useState([]);
   const [observacao, setObservacao] = useState("");
   const [trades,     setTrades]     = useState([]);
@@ -122,7 +132,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
     const el = composerRef.current;
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.querySelector("input[type=number]")?.focus({ preventScroll: true });
+      el.querySelector(".mtp-campo input")?.focus({ preventScroll: true });
     }
     onFocouNovoTrade?.();
   }, [focarNovoTrade, today, onFocouNovoTrade]);
@@ -209,8 +219,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       let updated = { ...semDesconto(t), mercado: data.mercado, tipo: data.tipo, estrategia: data.estrategia || "", observacao: data.observacao || "", conta: data.conta || contaDoTrade(t) };
       const ativoEd = normalizarAtivo(data.ativo);
       if (ativoEd) updated.ativo = ativoEd; else delete updated.ativo;
-      if (data.pontos !== "") updated.pontos = parseFloat(data.pontos); else delete updated.pontos;
-      if (data.resultado !== "") updated.resultado = parseFloat(data.resultado); else delete updated.resultado;
+      const pontosEd = numDigitado(data.pontos), resultadoEd = numDigitado(data.resultado);
+      if (pontosEd !== null) updated.pontos = pontosEd; else delete updated.pontos;
+      if (resultadoEd !== null) updated.resultado = resultadoEd; else delete updated.resultado;
       updated.contratos = data.contratos !== "" ? parseInt(data.contratos) : null;
       // com desconto, o resultado digitado é o bruto; mantém a taxa da época se nada mudou
       if (data.descontar && typeof updated.resultado === "number") {
@@ -259,22 +270,25 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
   // LOSS sempre negativo, WIN sempre positivo (aceita o prejuízo digitado sem sinal)
   function comSinal(v) {
-    const n = Math.abs(parseFloat(String(v).replace(",", ".")));
+    const n = Math.abs(numDigitado(v));
     return novoTrade.tipo === "LOSS" ? -n : n;
   }
   function trocarTipo(t) {
     setNovoTrade(p => {
-      const ajusta = v => { const n = parseFloat(v); if (v === "" || isNaN(n) || n === 0) return v; return (t === "LOSS") === (n < 0) ? v : String(-n); };
+      const ajusta = v => { const n = numDigitado(v); if (!n) return v; return (t === "LOSS") === (n < 0) ? v : (n < 0 ? v.trim().slice(1) : "-" + v.trim()); };
       return { ...p, tipo:t, resultado:ajusta(p.resultado), pontos:ajusta(p.pontos) };
     });
   }
   function digitarNumero(k, v) {
+    v = soNumero(v, k === "contratos");
+    setAvisoNovo("");
     setNovoTrade(p => {
       const novo = { ...p, [k]: v };
-      if (k !== "contratos" && parseFloat(v) < 0) novo.tipo = "LOSS";
+      if (k !== "contratos" && v.startsWith("-")) novo.tipo = "LOSS";
       return novo;
     });
   }
+  function avisarNovo(t) { setAvisoNovo(t); setTimeout(()=>setAvisoNovo(""), 4000); }
   function escolherEstrategia(n) {
     const sug = sugerirExecucao(n);
     setNovoTrade(p => ({ ...p, estrategia:n, qualidade: sug || p.qualidade }));
@@ -282,8 +296,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
   function addTrade() {
     if (!novoTrade.resultado && !novoTrade.pontos) return;
-    if (novoTrade.descontar && novoTrade.resultado === "") { setMsg("Informe o resultado em dinheiro para descontar os custos."); setTimeout(()=>setMsg(""), 3500); return; }
-    if (novoTrade.descontar && !(parseInt(novoTrade.contratos) > 0)) { setMsg("Informe os lotes para calcular os custos."); setTimeout(()=>setMsg(""), 3500); return; }
+    if ((novoTrade.resultado !== "" && numDigitado(novoTrade.resultado) === null) || (novoTrade.pontos !== "" && numDigitado(novoTrade.pontos) === null)) { avisarNovo("Número inválido — use só algarismos e vírgula (ex.: 150,50)."); return; }
+    if (novoTrade.descontar && novoTrade.resultado === "") { avisarNovo("Informe o resultado em dinheiro para descontar os custos (ou desmarque \"Descontar custos\")."); return; }
+    if (novoTrade.descontar && !(parseInt(novoTrade.contratos) > 0)) { avisarNovo("Informe os lotes para calcular os custos (ou desmarque \"Descontar custos\")."); return; }
     let t = {
       id: Date.now(),
       mercado: novoTrade.mercado,
@@ -354,9 +369,9 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
 
   async function abrirArquivoImportacao(file) {
     if (!file) return;
-    const { conta, operacoes, erro, plataforma, moeda } = lerArquivo(decodificarArquivo(await file.arrayBuffer()));
+    const { conta, operacoes, erro, plataforma, moeda, repetidas } = lerArquivo(decodificarArquivo(await file.arrayBuffer()));
     if (erro) { avisarImport(erro); return; }
-    setImportacao({ nome: file.name, conta, operacoes, plataforma, moeda });
+    setImportacao({ nome: file.name, conta, operacoes, plataforma, moeda, repetidas });
   }
 
   // diasInfo: { "2026-10-16": { emocoes:[], observacao:"" } } — o que foi marcado para cada dia na prévia
@@ -578,12 +593,12 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               {k:"contratos", l:"Lotes",  ph:"1"},
             ].map(c=>{
               const v = novoTrade[c.k];
-              const n = parseFloat(v);
-              const cor = c.k==="contratos" || v==="" || isNaN(n) ? "var(--text)" : (n<0 || novoTrade.tipo==="LOSS") ? "var(--neg)" : "var(--accent)";
+              const n = numDigitado(v);
+              const cor = c.k==="contratos" || n===null ? "var(--text)" : (n<0 || novoTrade.tipo==="LOSS") ? "var(--neg)" : "var(--accent)";
               return (
                 <label key={c.k} className="mtp-campo">
                   <span>{c.l}</span>
-                  <input type="number" inputMode="decimal" placeholder={c.ph} value={v} min={c.k==="contratos"?"1":undefined}
+                  <input type="text" inputMode={c.k==="contratos"?"numeric":"decimal"} autoComplete="off" placeholder={c.ph} value={v}
                     onChange={e=>digitarNumero(c.k, e.target.value)}
                     style={{color:cor,fontSize:c.grande?"22px":"18px"}}/>
                 </label>
@@ -596,7 +611,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
             const cfg = custosDaConta(config, novoTrade.conta);
             const n = parseInt(novoTrade.contratos) || 0;
             const custo = r2(n * r2(custoPorContrato(cfg, normalizarAtivo(novoTrade.ativo))));
-            const bruto = novoTrade.resultado !== "" && !isNaN(parseFloat(novoTrade.resultado)) ? comSinal(novoTrade.resultado) : null;
+            const bruto = numDigitado(novoTrade.resultado) !== null ? comSinal(novoTrade.resultado) : null;
             const m = novoTrade.mercado==="B3" ? "R$ " : "$ ";
             return (
               <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap",marginTop:"14px"}}>
@@ -675,6 +690,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
               Adicionar <span style={{opacity:.6,fontSize:"11px",fontFamily:"var(--font-mono)"}}>↵</span>
             </button>
           </div>
+          {avisoNovo && <p style={{margin:"10px 0 0",color:"var(--neg-soft)",fontSize:"13px",fontWeight:"600"}}>{avisoNovo}</p>}
 
           {pendingImages.length > 0 && (
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginTop:"12px"}}>
@@ -894,11 +910,11 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
                               <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center",marginBottom:"8px"}}>
                                 <Select value={ed.tipo} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,tipo:v}}))} style={{...inpE,width:"100px"}} options={[{value:"WIN",label:"WIN",cor:"var(--accent)"},{value:"LOSS",label:"LOSS",cor:"var(--neg)"}]}/>
                                 <Select value={ed.mercado} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,mercado:v}}))} style={{...inpE,width:"118px"}} popWidth={150} options={[{value:"B3",label:"B3",cor:"var(--accent)"},{value:"Forex",label:"Forex",cor:"var(--warn)"},{value:"Cripto",label:"Cripto",cor:"#a78bfa"},{value:"Americano",label:"Americano",cor:"#60a5fa"}]}/>
-                                <input type="number" placeholder="Pontos" value={ed.pontos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,pontos:e.target.value}}))} style={{...inpE,width:"90px"}}/>
+                                <input type="text" inputMode="decimal" placeholder="Pontos" value={ed.pontos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,pontos:soNumero(e.target.value)}}))} style={{...inpE,width:"90px"}}/>
                                 <Select value={ed.ativo||""} onChange={v=>setEditingTrade(p=>({...p,data:{...p.data,ativo:v}}))} style={{...inpE,width:"118px"}} popWidth={190} placeholder="Ativo"
                                   options={[{value:"",label:"Sem ativo"}, ...[...new Set([...(ed.ativo?[ed.ativo]:[]), ...opcoesDeAtivo(entries, ed.mercado)])].map(a=>({value:a,label:a,hint:rotuloAtivo(ed.mercado,a)}))]}/>
-                                <input type="number" placeholder={ed.mercado==="B3"?"R$":"$"} title={ed.descontar?"Resultado bruto (os custos são descontados)":"Resultado"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:e.target.value}}))} style={{...inpE,width:"90px"}}/>
-                                <input type="number" min="1" placeholder="Lotes" value={ed.contratos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,contratos:e.target.value}}))} style={{...inpE,width:"70px"}}/>
+                                <input type="text" inputMode="decimal" placeholder={ed.mercado==="B3"?"R$":"$"} title={ed.descontar?"Resultado bruto (os custos são descontados)":"Resultado"} value={ed.resultado} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,resultado:soNumero(e.target.value)}}))} style={{...inpE,width:"90px"}}/>
+                                <input type="text" inputMode="numeric" placeholder="Lotes" value={ed.contratos} onChange={e=>setEditingTrade(p=>({...p,data:{...p.data,contratos:soNumero(e.target.value,true)}}))} style={{...inpE,width:"70px"}}/>
                                 <div onClick={()=>setEditingTrade(p=>({...p,data:{...p.data,descontar:!p.data.descontar}}))} style={{display:"flex",alignItems:"center",gap:"7px",cursor:"pointer",userSelect:"none"}}>
                                   <Check marcado={ed.descontar}/><span style={{color:"var(--text-2)",fontSize:"12px"}}>Descontar custos</span>
                                 </div>
@@ -1168,6 +1184,7 @@ function ImportarOperacoes({ importacao, entries, contas, contaInicial, config, 
             <p style={{ margin:"6px 0 0", color:"var(--text-3)", fontSize:"12.5px", lineHeight:1.6, wordBreak:"break-word" }}>
               {importacao.nome}{importacao.conta && <> · conta {importacao.conta}</>} · {ops.length} {ops.length === 1 ? "operação" : "operações"}
               {duplicadas > 0 && <> · <span style={{ color:"var(--warn)" }}>{duplicadas} já {duplicadas === 1 ? "registrada" : "registradas"}</span></>}
+              {importacao.repetidas > 0 && <> · <span style={{ color:"var(--warn)" }}>{importacao.repetidas} {importacao.repetidas === 1 ? "linha repetida no arquivo foi ignorada" : "linhas repetidas no arquivo foram ignoradas"}</span></>}
             </p>
           </div>
           {contas.length > 1 && (

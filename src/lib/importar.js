@@ -45,7 +45,7 @@ function chave(s) {
   return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9.%() ]/gi, "").toLowerCase().trim();
 }
 
-// Retorna { conta, operacoes: [{ data, horario, abertura, ativo, codigo, lado, contratos, pontos, resultado, tipo }], erro }
+// Retorna { conta, operacoes: [{ data, horario, abertura, ativo, codigo, lado, contratos, pontos, resultado, tipo }], erro, repetidas }
 export function lerOperacoes(texto) {
   const linhas = String(texto || "").trimStart().split(/\r?\n/);
   const conta = (linhas.find(l => /^\s*conta\s*:/i.test(l)) || "").split(":")[1]?.trim() || "";
@@ -55,13 +55,18 @@ export function lerOperacoes(texto) {
   const cab = linhas[iCab].split(";").map(chave);
   const col = (...nomes) => { for (const n of nomes) { const i = cab.indexOf(n); if (i >= 0) return i; } return -1; };
   const C = {
-    ativo: col("ativo"), abertura: col("abertura"), qtdC: col("qtd compra"), qtdV: col("qtd venda"), lado: col("lado"),
+    ativo: col("ativo"), abertura: col("abertura"), fechamento: col("fechamento"),
+    qtdC: col("qtd compra"), qtdV: col("qtd venda"), lado: col("lado"),
     pc: col("preco compra"), pv: col("preco venda"),
     res: col("res. operacao", "res. intervalo bruto", "resultado"),
   };
   if (C.ativo < 0 || C.abertura < 0 || C.res < 0)
     return { conta, operacoes: [], erro: "O arquivo não tem as colunas esperadas (Ativo, Abertura e Res. Operação)." };
 
+  // O Profit às vezes repete a mesma operação em duas linhas (só muda "Médio", TET vem "-").
+  // Mesma abertura e fechamento até o segundo, com mesmas quantidades, preços e resultado = cópia.
+  const vistas = new Set();
+  let repetidas = 0;
   const operacoes = [];
   for (const linha of linhas.slice(iCab + 1)) {
     const c = linha.split(";");
@@ -69,6 +74,10 @@ export function lerOperacoes(texto) {
     const m = (c[C.abertura] || "").trim().match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
     const resultado = numeroBR(c[C.res]);
     if (!m || resultado === null) continue;
+    const id = [C.ativo, C.abertura, C.fechamento, C.qtdC, C.qtdV, C.lado, C.pc, C.pv, C.res]
+      .map(i => (c[i] || "").trim().toUpperCase()).join(";");
+    if (vistas.has(id)) { repetidas++; continue; }
+    vistas.add(id);
     const [, dd, mm, aaaa, hh, mi, ss = "00"] = m;
     const pc = numeroBR(c[C.pc]), pv = numeroBR(c[C.pv]);
     const qtd = numeroBR(c[C.qtdC]) ?? numeroBR(c[C.qtdV]);
@@ -89,7 +98,7 @@ export function lerOperacoes(texto) {
     });
   }
   if (!operacoes.length) return { conta, operacoes, erro: "Nenhuma operação encontrada no arquivo." };
-  return { conta, operacoes, erro: "", plataforma: "B3", moeda: "R$" };
+  return { conta, operacoes, erro: "", plataforma: "B3", moeda: "R$", repetidas };
 }
 
 // ── MetaTrader 5 ────────────────────────────────────────────────
