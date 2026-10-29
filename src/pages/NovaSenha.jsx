@@ -4,7 +4,7 @@ import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 
 export default function NovaSenha() {
-  const { concluirRecovery, cancelarRecovery } = useAuth();
+  const { concluirRecovery, cancelarRecovery, convite } = useAuth();
   const [senha,     setSenha]     = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [erro,      setErro]      = useState("");
@@ -51,7 +51,8 @@ export default function NovaSenha() {
         </div>
 
         <div style={{background:"var(--panel)",border:"1px solid var(--line)",borderRadius:"16px",padding:"32px"}}>
-          <p style={{margin:"0 0 20px",color:"var(--text)",fontSize:"15px",fontWeight:"700"}}>Definir nova senha</p>
+          <p style={{margin:convite?"0 0 6px":"0 0 20px",color:"var(--text)",fontSize:"15px",fontWeight:"700"}}>{convite ? "Bem-vindo! Crie sua senha" : "Definir nova senha"}</p>
+          {convite && <p style={{margin:"0 0 20px",color:"var(--text-3)",fontSize:"13px",lineHeight:1.5}}>Seu acesso ao Mi Trading Plan está pronto. Escolha a senha que vai usar para entrar.</p>}
 
           {erro && (
             <div style={{background:"color-mix(in srgb, var(--neg) 10%, transparent)",border:"1px solid color-mix(in srgb, var(--neg) 20%, transparent)",borderRadius:"8px",padding:"10px 14px",color:"var(--neg-soft)",fontSize:"13px",marginBottom:"16px"}}>
@@ -70,7 +71,7 @@ export default function NovaSenha() {
           </div>
 
           <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"13px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"14px",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,fontFamily:"var(--font-sans)",marginBottom:"16px"}}>
-            {loading?"Aguarde...":"Salvar nova senha"}
+            {loading?"Aguarde...":convite?"Criar senha e entrar":"Salvar nova senha"}
           </button>
 
           <div style={{display:"flex",justifyContent:"center"}}>

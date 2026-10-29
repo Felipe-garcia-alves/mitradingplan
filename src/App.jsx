@@ -285,9 +285,10 @@ function AppInterno() {
     if (!uid) return;
     async function load() {
       setLoading(true);
+      let userData = null;
       try {
-        const { data: userData } = await supabase
-          .from("usuarios").select("*").eq("id", uid).single();
+        ({ data: userData } = await supabase
+          .from("usuarios").select("*").eq("id", uid).single());
         if (userData) {
           setNomeUsuario(userData.nome||"");
           setPerfil({ papel:userData.papel||"trader", status:userData.status_assinatura||"ativa", ate:userData.assinatura_ate||null });
@@ -316,6 +317,7 @@ function AppInterno() {
       } catch(e){ console.error("load estrategias:",e); }
 
       // Carrega diário
+      let semDiario = false;
       try {
         const { data: diario } = await supabase
           .from("diario").select("*").eq("usuario_id", uid);
@@ -323,8 +325,13 @@ function AppInterno() {
           const d={};
           diario.forEach(row=>{ d[row.data_key]=row.dados; });
           setEntries(d);
+          semDiario = diario.length === 0;
         }
       } catch(e){ console.error("load diario:",e); }
+
+      // Cliente criado pelo admin já nasce com perfil (trigger), então o "novo usuário"
+      // acima não pega ele: mostra a apresentação a quem ainda não fez e não registrou nada.
+      if (userData && userData.papel !== "admin" && !userData.config?.onboardingFeito && semDiario) setOnboarding(true);
 
       setLoading(false);
     }

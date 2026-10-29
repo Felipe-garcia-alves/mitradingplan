@@ -7,10 +7,17 @@ const AuthContext = createContext(null);
 // sobreviver a um F5 na tela de nova senha: o PASSWORD_RECOVERY só dispara uma
 // vez, quando o supabase-js consome o link, e a sessão de recovery é uma sessão
 // completa — sem a marca, o refresh cairia no app logado sem trocar a senha.
+// Valor "1" = esqueci a senha; "convite" = conta criada pelo admin, ainda sem senha.
 const MARCA_RECOVERY = "mtp:password-recovery";
-function lerMarca()   { try { return sessionStorage.getItem(MARCA_RECOVERY) === "1"; } catch { return false; } }
-function gravarMarca(){ try { sessionStorage.setItem(MARCA_RECOVERY, "1"); } catch { /* storage indisponível */ } }
+function marca()      { try { return sessionStorage.getItem(MARCA_RECOVERY); } catch { return null; } }
+function lerMarca()   { return !!marca(); }
+function gravarMarca(v = "1"){ try { if (marca() !== "convite") sessionStorage.setItem(MARCA_RECOVERY, v); } catch { /* storage indisponível */ } }
 function limparMarca(){ try { sessionStorage.removeItem(MARCA_RECOVERY); } catch { /* storage indisponível */ } }
+
+// Link de convite: o Supabase volta com #...&type=invite e só dispara SIGNED_IN
+// (sem PASSWORD_RECOVERY). Lido antes do supabase-js limpar a URL, para o cliente
+// cair em "Crie sua senha" e não no app logado sem senha.
+if (/[#&]type=invite(&|$)/.test(window.location.hash)) gravarMarca("convite");
 
 // O PASSWORD_RECOVERY é disparado num setTimeout(0) agendado durante a
 // inicialização. Registrar no import do módulo garante que o evento não se perde
@@ -66,7 +73,7 @@ export function AuthProvider({ children }) {
   const cancelarRecovery = () => { limparMarca(); setRecovery(false); return supabase.auth.signOut(); };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, recovery, concluirRecovery, cancelarRecovery, erroLink }}>
+    <AuthContext.Provider value={{ user, loading, logout, recovery, convite: recovery && marca() === "convite", concluirRecovery, cancelarRecovery, erroLink }}>
       {!loading && children}
     </AuthContext.Provider>
   );
@@ -74,6 +81,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) return { user: null, loading: true, logout: () => {}, recovery: false, concluirRecovery: () => {}, cancelarRecovery: () => {}, erroLink: "" };
+  if (!ctx) return { user: null, loading: true, logout: () => {}, recovery: false, convite: false, concluirRecovery: () => {}, cancelarRecovery: () => {}, erroLink: "" };
   return ctx;
 }

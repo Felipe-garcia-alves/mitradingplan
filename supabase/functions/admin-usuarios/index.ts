@@ -6,7 +6,9 @@
 //
 // Ações (POST JSON { acao, ... }):
 //   listar                                   -> { usuarios: [...] }
-//   criar     { nome, email, senha, plano, status_assinatura, assinatura_ate }
+//   criar     { nome, email, senha?, convite?, redirect?, plano, status_assinatura, assinatura_ate }
+//             convite = true: o cliente recebe e-mail (SMTP do Auth) para criar a própria senha
+//   link_senha { id, redirect } -> manda e-mail para o cliente criar/redefinir a senha
 //   atualizar { id, plano?, status_assinatura?, assinatura_ate? }
 //   senha     { id, senha }
 //   excluir   { id }   -> apaga fotos, perfil (diário e estratégias vão junto) e a conta
@@ -20,6 +22,12 @@ const CORS = {
 const STATUS = ["teste", "ativa", "suspensa", "cancelada"];
 const DATA_RE = /^\d{4}-\d{2}-\d{2}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// para onde o link do e-mail leva: só o app (https) ou o localhost em teste
+const destino = (v: unknown) => {
+  const url = String(v ?? "");
+  return /^https:\/\/[^\s]+$|^http:\/\/localhost(:\d+)?(\/.*)?$/.test(url) ? url : undefined;
+};
 
 const resp = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -67,15 +75,17 @@ Deno.serve(async (req) => {
         const plano = String(body.plano ?? "mensal").trim() || "mensal";
         const status = String(body.status_assinatura ?? "ativa");
         const ate = body.assinatura_ate ? String(body.assinatura_ate) : null;
+        const convite = body.convite === true;
         if (!nome) return resp({ erro: "Informe o nome." }, 400);
         if (!EMAIL_RE.test(email)) return resp({ erro: "E-mail inválido." }, 400);
-        if (senha.length < 8) return resp({ erro: "A senha precisa de pelo menos 8 caracteres." }, 400);
+        if (!convite && senha.length < 8) return resp({ erro: "A senha precisa de pelo menos 8 caracteres." }, 400);
         if (!STATUS.includes(status)) return resp({ erro: "Status inválido." }, 400);
         if (ate && !DATA_RE.test(ate)) return resp({ erro: "Data de vencimento inválida." }, 400);
 
-        const { data: novo, error } = await db.auth.admin.createUser({
-          email, password: senha, email_confirm: true, user_metadata: { nome },
-        });
+        // convite: o Auth cria a conta e manda o e-mail; o cliente define a senha pelo link
+        const { data: novo, error } = convite
+          ? await db.auth.admin.inviteUserByEmail(email, { data: { nome }, redirectTo: destino(body.redirect) })
+          : await db.auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: { nome } });
         if (error) {
           const msg = /already|registered|exists|duplicate/i.test(error.message) ? "Já existe uma conta com esse e-mail." : error.message;
           return resp({ erro: msg }, 400);
@@ -117,6 +127,16 @@ Deno.serve(async (req) => {
         const { error } = await db.auth.admin.updateUserById(id, { password: senha });
         if (error) return resp({ erro: error.message }, 400);
         return resp({ ok: true });
+      }
+
+      case "link_senha": {
+        const id = String(body.id ?? "");
+        if (!id) return resp({ erro: "Usuário não informado." }, 400);
+        const { data: alvo, error: getErr } = await db.auth.admin.getUserById(id);
+        if (getErr || !alvo?.user?.email) return resp({ erro: "Usuário não encontrado." }, 404);
+        const { error } = await db.auth.resetPasswordForEmail(alvo.user.email, { redirectTo: destino(body.redirect) });
+        if (error) return resp({ erro: /rate|limit/i.test(error.message) ? "Muitos e-mails em pouco tempo. Aguarde um minuto e tente de novo." : error.message }, 400);
+        return resp({ ok: true, email: alvo.user.email });
       }
 
       case "excluir": {

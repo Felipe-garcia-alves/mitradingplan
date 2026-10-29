@@ -187,7 +187,8 @@ function Campo({ label, children }) {
 }
 
 function NovoUsuario({ api, onClose, onCriado }) {
-  const [f, setF] = useState({ nome:"", email:"", senha:gerarSenha(), plano:"mensal", ate:maisDias(null, 30) });
+  // convite: o cliente recebe e-mail e cria a própria senha; senão o admin define e repassa
+  const [f, setF] = useState({ nome:"", email:"", convite:true, senha:gerarSenha(), plano:"mensal", ate:maisDias(null, 30) });
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   const enviando = useRef(false); // trava o duplo clique (o estado só desabilita o botão no próximo render)
@@ -197,14 +198,15 @@ function NovoUsuario({ api, onClose, onCriado }) {
   }
 
   async function criar() {
-    const regra = validarSenha(f.senha);
+    const regra = f.convite ? null : validarSenha(f.senha);
     if (regra) { setErro(regra); return; }
     if (enviando.current) return;
     enviando.current = true;
     setErro(""); setSalvando(true);
     try {
-      await api({ acao:"criar", nome:f.nome, email:f.email, senha:f.senha, plano:f.plano, status_assinatura:PLANOS[f.plano].status, assinatura_ate: f.ate || null });
-      onCriado({ nome:f.nome, email:f.email.trim().toLowerCase(), senha:f.senha, ate:f.ate });
+      await api({ acao:"criar", nome:f.nome, email:f.email, convite:f.convite, redirect:window.location.origin,
+        senha:f.convite ? undefined : f.senha, plano:f.plano, status_assinatura:PLANOS[f.plano].status, assinatura_ate: f.ate || null });
+      onCriado({ nome:f.nome, email:f.email.trim().toLowerCase(), senha:f.convite ? null : f.senha, ate:f.ate });
     } catch (e) { setErro(e.message); }
     enviando.current = false;
     setSalvando(false);
@@ -215,16 +217,24 @@ function NovoUsuario({ api, onClose, onCriado }) {
       <div style={{padding:"24px 26px",display:"flex",flexDirection:"column",gap:"16px"}}>
         <div>
           <p style={{margin:0,color:"var(--text)",fontSize:"18px",fontWeight:"800"}}>Novo usuário</p>
-          <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12.5px"}}>A conta já nasce confirmada. Envie o e-mail e a senha ao cliente.</p>
+          <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12.5px"}}>{f.convite ? "O cliente recebe um e-mail para criar a própria senha." : "A conta já nasce confirmada. Envie o e-mail e a senha ao cliente."}</p>
         </div>
         <Campo label="Nome"><input style={inp} value={f.nome} autoFocus onChange={e=>setF(x=>({...x,nome:e.target.value}))} placeholder="Nome do cliente"/></Campo>
         <Campo label="E-mail"><input style={inp} type="email" value={f.email} onChange={e=>setF(x=>({...x,email:e.target.value}))} placeholder="cliente@email.com"/></Campo>
-        <Campo label={"Senha temporária · "+REGRA_SENHA.toLowerCase()}>
-          <div style={{display:"flex",gap:"8px"}}>
-            <input style={{...inp,fontFamily:"var(--font-mono)"}} value={f.senha} onChange={e=>setF(x=>({...x,senha:e.target.value}))}/>
-            <button onClick={()=>setF(x=>({...x,senha:gerarSenha()}))} style={{...btnSec,padding:"0 14px"}}>Gerar</button>
+        <Campo label="Acesso">
+          <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+            <button onClick={()=>setF(x=>({...x,convite:true}))} className={"mtp-pill"+(f.convite?" active":"")}>✉️ Convite por e-mail</button>
+            <button onClick={()=>setF(x=>({...x,convite:false}))} className={"mtp-pill"+(!f.convite?" active":"")}>Eu defino a senha</button>
           </div>
         </Campo>
+        {!f.convite && (
+          <Campo label={"Senha temporária · "+REGRA_SENHA.toLowerCase()}>
+            <div style={{display:"flex",gap:"8px"}}>
+              <input style={{...inp,fontFamily:"var(--font-mono)"}} value={f.senha} onChange={e=>setF(x=>({...x,senha:e.target.value}))}/>
+              <button onClick={()=>setF(x=>({...x,senha:gerarSenha()}))} style={{...btnSec,padding:"0 14px"}}>Gerar</button>
+            </div>
+          </Campo>
+        )}
         <Campo label="Plano">
           <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
             {Object.entries(PLANOS).map(([k,p])=>(
@@ -238,7 +248,7 @@ function NovoUsuario({ api, onClose, onCriado }) {
         </Campo>
         {erro && <p style={{margin:0,color:"var(--neg-soft)",fontSize:"12.5px"}}>{erro}</p>}
         <div style={{display:"flex",gap:"10px",marginTop:"4px"}}>
-          <button onClick={criar} disabled={salvando} style={{flex:1,background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:salvando?"wait":"pointer"}}>{salvando?"Criando...":"Criar usuário"}</button>
+          <button onClick={criar} disabled={salvando} style={{flex:1,background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:salvando?"wait":"pointer"}}>{salvando?"Criando...":f.convite?"Criar e enviar convite":"Criar usuário"}</button>
           <button onClick={onClose} style={{...btnSec,padding:"12px 16px",fontSize:"13px"}}>Cancelar</button>
         </div>
       </div>
@@ -246,7 +256,28 @@ function NovoUsuario({ api, onClose, onCriado }) {
   );
 }
 
-// Mensagem com o acesso. O app não manda e-mail sozinho: abre o e-mail ou o WhatsApp
+// Convite ou link de senha enviados pelo Supabase (SMTP do Gmail configurado no Auth)
+function ConviteEnviado({ email, titulo = "Convite enviado", onClose }) {
+  return (
+    <Modal onClose={onClose} width={440}>
+      <div style={{padding:"24px 26px",display:"flex",flexDirection:"column",gap:"14px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+          <div style={{width:"40px",height:"40px",borderRadius:"12px",background:"color-mix(in srgb, var(--accent) 12%, transparent)",border:"1px solid color-mix(in srgb, var(--accent) 26.7%, transparent)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px"}}>✉️</div>
+          <div>
+            <p style={{margin:0,color:"var(--text)",fontSize:"17px",fontWeight:"800"}}>{titulo}</p>
+            <p style={{margin:0,color:"var(--text-3)",fontSize:"12px"}}>para <b style={{color:"var(--text-2)"}}>{email}</b></p>
+          </div>
+        </div>
+        <p style={{margin:0,color:"var(--text-2)",fontSize:"13px",lineHeight:1.6}}>
+          O cliente vai receber um e-mail com um link para criar a senha e entrar. Se não aparecer em alguns minutos, peça para olhar a caixa de spam.
+        </p>
+        <button onClick={onClose} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:"pointer"}}>Ok</button>
+      </div>
+    </Modal>
+  );
+}
+
+// Mensagem com o acesso quando o admin define a senha: abre o e-mail ou o WhatsApp
 // do admin já com o texto pronto, ou copia para colar onde quiser.
 function mensagemAcesso({ nome, email, senha }, nova = false) {
   return nova
@@ -267,6 +298,7 @@ function EnviarAcesso({ email, texto }) {
 
 function Credenciais({ dados, onClose }) {
   const [copiado, setCopiado] = useState(false);
+  if (!dados.senha) return <ConviteEnviado email={dados.email} onClose={onClose}/>;
   const texto = mensagemAcesso(dados);
   async function copiar() {
     try { await navigator.clipboard.writeText(texto); setCopiado(true); setTimeout(()=>setCopiado(false),2000); } catch { /* sem permissão de clipboard */ }
@@ -337,6 +369,8 @@ function TrocarSenha({ api, usuario, onClose }) {
   const [senha, setSenha] = useState(gerarSenha());
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState(false);
+  const [linkEnviado, setLinkEnviado] = useState(false);
+  const [enviandoLink, setEnviandoLink] = useState(false);
   async function salvar() {
     const regra = validarSenha(senha);
     if (regra) { setErro(regra); return; }
@@ -344,6 +378,14 @@ function TrocarSenha({ api, usuario, onClose }) {
     try { await api({ acao:"senha", id:usuario.id, senha }); setOk(true); }
     catch (e) { setErro(e.message); }
   }
+  async function mandarLink() {
+    if (enviandoLink) return;
+    setErro(""); setEnviandoLink(true);
+    try { await api({ acao:"link_senha", id:usuario.id, redirect:window.location.origin }); setLinkEnviado(true); }
+    catch (e) { setErro(e.message); }
+    setEnviandoLink(false);
+  }
+  if (linkEnviado) return <ConviteEnviado email={usuario.email} titulo="Link enviado" onClose={onClose}/>;
   return (
     <Modal onClose={onClose} width={440}>
       <div style={{padding:"24px 26px",display:"flex",flexDirection:"column",gap:"14px"}}>
@@ -351,6 +393,13 @@ function TrocarSenha({ api, usuario, onClose }) {
           <p style={{margin:0,color:"var(--text)",fontSize:"17px",fontWeight:"800"}}>Redefinir senha</p>
           <p style={{margin:"4px 0 0",color:"var(--text-3)",fontSize:"12.5px"}}>{usuario.nome || usuario.email}</p>
         </div>
+        {!ok && <>
+          <button onClick={mandarLink} disabled={enviandoLink} style={{background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:enviandoLink?"wait":"pointer"}}>
+            {enviandoLink ? "Enviando..." : "✉️ Mandar link por e-mail"}
+          </button>
+          <p style={{margin:"-6px 0 0",color:"var(--text-3)",fontSize:"11.5px"}}>Ele recebe um e-mail e cria a senha sozinho. Serve também para reenviar o convite.</p>
+          <p style={{...kpiLabel,margin:"6px 0 0"}}>Ou defina você mesmo</p>
+        </>}
         <div style={{display:"flex",gap:"8px"}}>
           <input style={{...inp,fontFamily:"var(--font-mono)"}} value={senha} onChange={e=>setSenha(e.target.value)} disabled={ok}/>
           {!ok && <button onClick={()=>setSenha(gerarSenha())} style={{...btnSec,padding:"0 14px"}}>Gerar</button>}
@@ -359,7 +408,7 @@ function TrocarSenha({ api, usuario, onClose }) {
         {ok && <p style={{margin:0,color:"var(--accent)",fontSize:"12.5px"}}>✓ Senha alterada. Envie a nova senha ao cliente.</p>}
         {ok && <EnviarAcesso email={usuario.email} texto={mensagemAcesso({ nome:usuario.nome, email:usuario.email, senha }, true)}/>}
         <div style={{display:"flex",gap:"10px"}}>
-          {!ok && <button onClick={salvar} style={{flex:1,background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:"pointer"}}>Salvar nova senha</button>}
+          {!ok && <button onClick={salvar} style={{...btnSec,flex:1,padding:"12px",fontSize:"13px"}}>Salvar esta senha</button>}
           <button onClick={onClose} style={{...btnSec,padding:"12px 16px",fontSize:"13px",flex:ok?1:"none"}}>{ok?"Fechar":"Cancelar"}</button>
         </div>
       </div>

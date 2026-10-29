@@ -36,7 +36,7 @@ export default function Onboarding({ nomeUsuario, onComplete, saveConfig, saveEs
   async function finalizar() {
     setSalvando(true);
     // Salva config com bancas dos mercados ativos
-    const cfg = {};
+    const cfg = { onboardingFeito: true }; // não mostra a apresentação de novo
     mercadosAtivos.forEach(id => { cfg[id] = numDigitado(bancas[id]) || 0; });
     await saveConfig(cfg);
     // Cria estratégia se digitou nome
