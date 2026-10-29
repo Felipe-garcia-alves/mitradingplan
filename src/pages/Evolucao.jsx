@@ -18,20 +18,51 @@ function fmtBRL(v) {
   return (v<0?"-":"+")+"R$ "+a.toLocaleString("pt-BR",opts);
 }
 
-// Grade que fecha as linhas: 4 cards = 4 colunas, 6 = 3+3, 8 = 4+4; sobra fica centralizada
-function colunasPara(n, max = 4) {
+// Grade que fecha as linhas: até 5 cards numa linha só, 6 = 3+3, 7 = 4+3, 8 = 4+4;
+// a última linha estica os cards para ocupar a largura toda
+function colunasPara(n, max = 5) {
   if (n <= max) return n;
-  for (let c = max; c >= 3; c--) if (n % c === 0) return c;
-  return max;
+  return Math.ceil(n / Math.ceil(n / max));
 }
-function GradeEquilibrada({ n, gap = 14, mobile, children }) {
+function GradeEquilibrada({ n, gap = "var(--evo-gap, 14px)", mobile, children }) {
   const cols = mobile ? Math.min(2, n) : colunasPara(n);
   return (
-    <div className="mtp-grade-eq" style={{ "--cols": cols, "--gap": gap+"px" }}>
+    <div className="mtp-grade-eq" style={{ "--cols": cols, "--gap": gap }}>
       {children}
     </div>
   );
 }
+function Chevron() {
+  return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>;
+}
+// Abre/fecha uma seção; começa recolhida e lembra a escolha neste navegador
+function useAberto(id) {
+  const chave = "mtp-aberto-" + id;
+  const [aberto, setAberto] = useState(() => { try { return localStorage.getItem(chave) === "1"; } catch { return false; } });
+  const alternar = () => { const v = !aberto; setAberto(v); try { localStorage.setItem(chave, v ? "1" : "0"); } catch { /* sem storage */ } };
+  return [aberto, alternar];
+}
+// Barra clicável com o resumo; o conteúdo desliza para baixo ao abrir (sem pulo na página)
+function Recolhivel({ id, titulo, hint, resumo, style, children }) {
+  const [aberto, alternar] = useAberto(id);
+  return (
+    <div style={style}>
+      <button type="button" className="mtp-recolhe" onClick={alternar} aria-expanded={aberto}>
+        <span className="mtp-section-title">{titulo}</span>
+        <span className="mtp-recolhe-resumo">{aberto ? <span className="mtp-section-hint">{hint}</span> : resumo}</span>
+        <span className="mtp-recolhe-acao">{aberto ? "recolher" : "abrir"} <Chevron/></span>
+      </button>
+      <div className={"mtp-recolhe-corpo"+(aberto?" aberto":"")} inert={!aberto}>
+        <div>{children}</div>
+      </div>
+    </div>
+  );
+}
+function Chip({ cor, children }) {
+  return <span className="mtp-recolhe-chip" style={{color:cor,background:alfa(cor,"14"),borderColor:alfa(cor,"33")}}>{children}</span>;
+}
+const brl0 = v => (v<0?"-":"+")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{maximumFractionDigits:0});
+
 // data local (toISOString é UTC e vira o dia às 21h em Brasília)
 function dayKey(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function parseDate(s) { const [y,m,d]=s.split("-"); return new Date(+y,+m-1,+d); }
@@ -46,7 +77,7 @@ function DateFilter({ inicio, fim, onChange }) {
     <div style={{position:"relative"}}>
       <style>{`input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }`}</style>
       {open && <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:99}}/>}
-      <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"color-mix(in srgb, var(--accent) 8%, transparent)":"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid "+(open?"color-mix(in srgb, var(--accent) 26.7%, transparent)":"var(--line-strong)"),borderRadius:"20px",padding:"8px 16px",color:open?"var(--accent)":"var(--text-soft)",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)",transition:"all 0.2s"}}>
+      <button onClick={()=>{ setEditInicio(inicio); setEditFim(fim); setOpen(!open); }} style={{display:"flex",alignItems:"center",gap:"8px",background:open?"color-mix(in srgb, var(--accent) 8%, transparent)":"color-mix(in srgb, var(--ink) 4%, transparent)",border:"1px solid "+(open?"color-mix(in srgb, var(--accent) 26.7%, transparent)":"var(--line-strong)"),borderRadius:"20px",padding:"8px 16px",color:open?"var(--accent)":"var(--text-soft)",fontSize:"13px",cursor:"pointer",fontFamily:"var(--font-sans)",transition:"all 0.2s"}}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         {fmt(inicio)} até {fmt(fim)}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -224,6 +255,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const [filtroEsts,    setFiltroEsts]    = useState([]);
   const [filtroAtivos,  setFiltroAtivos]  = useState([]);
   const [verTodosAtivos, setVerTodosAtivos] = useState(false);
+  const [periodoAntes, setPeriodoAntes] = useState(null); // [inicio, fim] antes de escolher um trecho na curva
   const isMobile = window.innerWidth < 768;
 
   const noPeriodo = useMemo(() => {
@@ -349,6 +381,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   const losses       = allTrades.length - wins;
   const wrColor      = winRate>=60?"var(--accent)":winRate>=40?"var(--warn-2)":"var(--neg)";
   const profitFactor = totPerda<0 ? totGanho/Math.abs(totPerda) : null;
+  const expectativa  = allTrades.length>0 ? (totGanho+totPerda)/allTrades.length : null;
 
   // Max drawdown: maior recuo do pico da curva de capital no período
   let pico = 0, maxDD = 0, picoNoDD = 0, iPico = 0, ddDe = 0, ddAte = 0;
@@ -362,11 +395,11 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   let streakVerde = 0;
   for (let i=dailyBars.length-1; i>=0; i--) { if (dailyBars[i].val>0) streakVerde++; else break; }
 
-  const kpiCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px",position:"relative",overflow:"hidden",minWidth:0,minHeight:"132px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:"8px"};
-  const kpiLabel = {margin:0,color:"var(--text-3)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.2px"};
-  const kpiValue = {margin:0,fontSize:isMobile?"20px":"clamp(17px,1.55vw,25px)",fontWeight:"700",fontFamily:"var(--font-mono)",letterSpacing:"-0.5px",lineHeight:1.15,whiteSpace:"nowrap"};
-  const kpiSub   = {margin:0,color:"var(--text-3)",fontSize:"11.5px"};
-  const chartCard= {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"18px 20px 12px"};
+  const kpiCard  = {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad)",position:"relative",overflow:"hidden",minWidth:0,minHeight:"144px",display:"flex",flexDirection:"column",gap:"14px"};
+  const kpiLabel = {margin:0,color:"var(--text-3)",fontSize:"10px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1.6px",lineHeight:1.3};
+  const kpiValue = {margin:0,fontSize:isMobile?"21px":"clamp(19px,1.65vw,27px)",fontWeight:"700",fontFamily:"var(--font-mono)",letterSpacing:"-0.5px",lineHeight:1.15,whiteSpace:"nowrap"};
+  const kpiSub   = {margin:"auto 0 0",color:"var(--text-3)",fontSize:"11px",fontFamily:"var(--font-mono)",lineHeight:1.4};
+  const chartCard= {background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad) var(--evo-pad) 12px"};
 
   const colors = ["var(--accent)","var(--warn-2)","#a78bfa","#f472b6","var(--accent)","var(--neg)","#60a5fa"];
   const nomesEst = Object.keys(estratStats);
@@ -395,21 +428,21 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
   return (
     <div className="mtp-evo" style={{fontFamily:"var(--font-sans)"}}>
       {/* Conta + filtros */}
-      <div style={{marginBottom:"32px"}}>
+      <div style={{marginBottom:"24px"}}>
         <FiltrosBarra config={config} saveConfig={saveConfig}
           conta={filtroConta} setConta={setFiltroConta}
           mercado={filtroMercado} setMercado={setFiltroMercado}
           estrategiasSel={filtroEsts} setEstrategiasSel={setFiltroEsts}
           estrategias={estrategiasNoPeriodo}
           ativosSel={filtroAtivos} setAtivosSel={setFiltroAtivos} ativos={ativosNoPeriodo}
-          direita={<DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); }}/>}/>
+          direita={<DateFilter inicio={inicio} fim={fim} onChange={(i,f)=>{ setInicio(i); setFim(f); setPeriodoAntes(null); }}/>}/>
       </div>
 
       {/* LINHA 1: Alerta full width */}
       <AlertasInteligentes trades={allTrades} entries={filtered} winRate={winRate} diasOp={diasOp}/>
 
       {/* LINHA 2: KPIs — Disciplina primeiro */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(5,minmax(0,1fr))",gap:"14px",marginBottom:"20px",marginTop:"32px"}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(5,minmax(0,1fr))",gap:"var(--evo-linha) var(--evo-gap)",marginBottom:"var(--evo-linha)"}}>
         {/* Disciplina */}
         <div onClick={()=>setPagina&&setPagina("regras")} style={{...kpiCard,cursor:setPagina?"pointer":"default"}}>
           <p style={kpiLabel}>Disciplina</p>
@@ -443,12 +476,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         <div onClick={()=>alternar("winrate","Operações do período",allTrades,{sub:wins+" WIN · "+losses+" LOSS"})} style={{...kpiCard,cursor:"pointer"}}>
           <p style={kpiLabel}>Win Rate</p>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-            <div>
-              <p style={{...kpiValue,color:winRate===null?"var(--text-3)":wrColor}}>
-                {winRate!==null ? <CountUp value={winRate} format={v=>Math.round(v)+"%"}/> : "—"}
-              </p>
-              <p style={{margin:"2px 0 0",color:"var(--text-3)",fontSize:"11px"}}>taxa de acerto</p>
-            </div>
+            <p style={{...kpiValue,color:winRate===null?"var(--text-3)":wrColor}}>
+              {winRate!==null ? <CountUp value={winRate} format={v=>Math.round(v)+"%"}/> : "—"}
+            </p>
             <Ring pct={winRate} color={winRate===null?"var(--line)":wrColor} size={50}/>
           </div>
           <p style={{...kpiSub,fontFamily:"var(--font-mono)"}}>
@@ -496,25 +526,29 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         })()}
 
         {/* Max Drawdown */}
-        <div onClick={maxDD>0?abrirDD:undefined} style={{...kpiCard,cursor:maxDD>0?"pointer":"default"}}>
+        <div onClick={maxDD>0?abrirDD:undefined} style={{...kpiCard,cursor:maxDD>0?"pointer":"default",gridColumn:isMobile?"1 / -1":undefined}}>
           <p style={kpiLabel}>Max Drawdown</p>
           <p style={{...kpiValue,color:maxDD>0?"var(--neg)":"var(--text-2)"}}>
             <CountUp value={-maxDD} format={v=>v<-0.005?fmtBRL(v):"R$ 0,00"}/>
           </p>
-          <p style={kpiSub}>{ddPct!==null ? ddPct.toFixed(1)+"% do pico" : "sem recuo no período"}</p>
+          <p style={kpiSub}>{maxDD>0 ? (ddPct!==null ? ddPct.toFixed(1)+"% do pico · " : "do pico · ")+(ddDe>0 ? fmtDiaCurto(capitalPoints[ddDe].d) : "início")+" a "+fmtDiaCurto(capitalPoints[ddAte].d) : "sem recuo no período"}</p>
         </div>
       </div>
 
       {/* LINHA 3: Curva de Capital + Resultado Diário */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:"14px",marginBottom:"14px"}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:"var(--evo-linha) var(--evo-gap)",marginBottom:"var(--evo-linha)"}}>
         <div style={chartCard}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"12px",gap:"8px"}}>
             <p className="mtp-card-title">Curva de Capital</p>
+            {periodoAntes
+              ? <button type="button" className="mtp-ctx-ghost" style={{padding:"4px 10px",marginLeft:"auto"}} onClick={()=>{ setInicio(periodoAntes[0]); setFim(periodoAntes[1]); setPeriodoAntes(null); }}>← voltar ao período anterior</button>
+              : <span className="mtp-section-hint" style={{marginLeft:"auto"}}>arraste na curva para escolher um trecho</span>}
             <p style={{margin:0,color:totalResult>=0?"var(--pos)":"var(--neg)",fontSize:"14px",fontWeight:"700",fontFamily:"var(--font-mono)"}}>
               R$ {totalResult>=0?"+":""}{totalResult.toLocaleString("pt-BR",{minimumFractionDigits:2})}
             </p>
           </div>
-          <CapitalChart points={capitalPoints}/>
+          <CapitalChart points={capitalPoints} height={isMobile?220:270}
+            onSelect={(de,ate)=>{ if(!periodoAntes) setPeriodoAntes([inicio,fim]); setInicio(de); setFim(ate); }}/>
         </div>
         <div style={chartCard}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"12px",gap:"8px"}}>
@@ -523,13 +557,41 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               <span style={{color:"var(--pos)"}}>{dailyBars.filter(b=>b.val>0).length}</span> / <span style={{color:"var(--neg)"}}>{dailyBars.filter(b=>b.val<0).length}</span> dias
             </p>
           </div>
-          <DailyBars bars={dailyBars} onBarClick={b=>abrirDia(b.d)}/>
+          <DailyBars bars={dailyBars} height={isMobile?220:270} onBarClick={b=>abrirDia(b.d)}/>
         </div>
       </div>
 
+      {/* Faixa de métricas complementares: rótulo à esquerda, valor à direita */}
+      {allTrades.length > 0 && (
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(5,minmax(0,1fr))",gap:"var(--evo-linha) var(--evo-gap)",marginBottom:"var(--evo-linha)"}}>
+          {[
+            {abrir:()=>mostrar("venc","Operações vencedoras",ganhos,{cor:"var(--accent)",sub:sub(ganhos.length)+" · média R$ "+mediaVenc.toFixed(2),ordem:"maior"}),label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),num:mediaVenc,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"var(--accent)"},
+            {abrir:()=>mostrar("perd","Operações perdedoras",perdas,{cor:"var(--neg)",sub:sub(perdas.length)+" · média R$ "+mediaPerd.toFixed(2),ordem:"menor"}),label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),num:mediaPerd,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"var(--neg)"},
+            {label:"Risco × Retorno",sub:"razão média",val:rr+":1",num:mediaPerd>0?mediaVenc/mediaPerd:null,fmtN:v=>v.toFixed(2)+":1",color:parseFloat(rr)>=1.5?"var(--accent)":parseFloat(rr)>=1?"var(--warn-2)":"var(--neg)"},
+            {abrir:()=>mostrar("expec","Operações do período",allTrades,{sub:sub(allTrades.length)+" · média R$ "+(expectativa??0).toFixed(2)}),label:"Expectativa",sub:"resultado médio por trade",val:"—",num:expectativa,fmtN:v=>(v<0?"-":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:expectativa>0?"var(--accent)":expectativa<0?"var(--neg)":"var(--text-2)"},
+            {label:"Profit Factor",sub:"ganho / perda total",val:profitFactor!==null?profitFactor.toFixed(2):"—",num:profitFactor,fmtN:v=>v.toFixed(2),color:profitFactor>=1.5?"var(--warn)":profitFactor>=1?"var(--warn-2)":"var(--neg)"},
+          ].map((s,i)=>(
+            <div key={i} onClick={s.abrir} title={s.sub} className="mtp-faixa-metrica" style={{cursor:s.abrir?"pointer":"default",gridColumn:isMobile&&i===4?"1 / -1":undefined}}>
+              <p style={kpiLabel}>{s.label}</p>
+              <p style={{margin:0,color:s.color,fontSize:isMobile?"16px":"clamp(15px,1.25vw,19px)",fontWeight:"700",fontFamily:"var(--font-mono)",whiteSpace:"nowrap"}}>{s.num!=null&&isFinite(s.num) ? <CountUp value={s.num} format={s.fmtN}/> : s.val}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* LINHA 3b: Origem do Ganho + Origem da Perda */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:"14px",marginBottom:"36px"}}>
-        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px"}}>
+      {(()=>{
+        const topG = Object.entries(gByEst).sort(([,a],[,b])=>b-a)[0];
+        const topP = Object.entries(pByEst).sort(([,a],[,b])=>a-b)[0];
+        return (
+      <Recolhivel id="origem" titulo="Origem do Ganho e da Perda" hint="por estratégia"
+        resumo={<>
+          {topG && <span>mais ganha: <b style={{color:"var(--text-2)"}}>{nomeAtual[topG[0]]||topG[0]}</b> <Chip cor="var(--accent)">{brl0(topG[1])}</Chip></span>}
+          {topP && <span>mais perde: <b style={{color:"var(--text-2)"}}>{nomeAtual[topP[0]]||topP[0]}</b> <Chip cor="var(--neg)">{brl0(topP[1])}</Chip></span>}
+          {!topG && !topP && <span>sem operações no período</span>}
+        </>}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:"var(--evo-gap)"}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad)"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             <p style={{margin:0,color:"var(--accent)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem do Ganho</p>
@@ -556,7 +618,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           })}
           {Object.keys(gByEst).length===0&&<p style={{color:"var(--text-4)",fontSize:"12px"}}>Nenhum ganho</p>}
         </div>
-        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px"}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad)"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--neg)" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
             <p style={{margin:0,color:"var(--neg)",fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px"}}>Origem da Perda</p>
@@ -584,6 +646,9 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           {Object.keys(pByEst).length===0&&<p style={{color:"var(--text-4)",fontSize:"12px"}}>Nenhuma perda</p>}
         </div>
       </div>
+      </Recolhivel>
+        );
+      })()}
 
       {/* Onde você ganha e perde: por mercado e por ativo */}
       {allTrades.length > 0 && (() => {
@@ -605,7 +670,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
           const wr = Math.round(g.wins / g.ops * 100);
           const pos = g.res >= 0;
           return (
-            <div className="mtp-click-row" onClick={onClick} style={{ display:"grid", gridTemplateColumns:"minmax(0,1.3fr) minmax(0,1fr) auto", alignItems:"center", gap:"14px", paddingTop:"10px", paddingBottom:"10px", borderBottom:"1px solid var(--line)" }}>
+            <div className="mtp-click-row" onClick={onClick} style={{ display:"grid", gridTemplateColumns:"minmax(0,1.3fr) minmax(0,1fr) auto", alignItems:"center", gap:"var(--evo-gap)", paddingTop:"10px", paddingBottom:"10px", borderBottom:"1px solid var(--line)" }}>
               <div style={{ display:"flex", alignItems:"center", gap:"10px", minWidth:0 }}>
                 <i className="mtp-dot" style={{ background:cor }}/>
                 <div style={{ minWidth:0 }}>
@@ -626,18 +691,18 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         const maxM = Math.max(1, ...porMercado.map(([,g]) => Math.abs(g.res)));
         const maxA = Math.max(1, ...porAtivo.map(([,g]) => Math.abs(g.res)));
         return (
-          <div style={{marginBottom:"36px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+          <div style={{marginTop:"var(--evo-secao)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"var(--evo-gap)"}}>
               <p className="mtp-section-title">Onde você ganha e perde</p>
               <span className="mtp-section-hint">por mercado e por ativo</span>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1.3fr",gap:"14px"}}>
-              <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px 6px"}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1.3fr",gap:"var(--evo-gap)"}}>
+              <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad) var(--evo-pad) 6px"}}>
                 <p className="mtp-card-title" style={{marginBottom:"6px"}}>Por mercado</p>
                 {porMercado.map(([k,g]) => <Linha key={k} rot={k} g={g} cor={COR_M[k]||"var(--text-mute)"} maxAbs={maxM}
                   onClick={()=>{ const ops=allTrades.filter(t=>(t.mercado||"B3")===k); mostrar("mer:"+k, k, ops, {cor:COR_M[k], sub:sub(ops.length)+" no período"}); }}/>)}
               </div>
-              <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px 6px"}}>
+              <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad) var(--evo-pad) 6px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"6px"}}>
                   <p className="mtp-card-title">Por ativo</p>
                   {porAtivo.length > 7 && <button onClick={()=>setVerTodosAtivos(!verTodosAtivos)} className="mtp-ctx-ghost" style={{padding:"4px 8px"}}>{verTodosAtivos ? "ver menos" : "ver todos ("+porAtivo.length+")"}</button>}
@@ -658,8 +723,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
 
       {/* LINHA 4: Métricas por Estratégia full width */}
       {Object.keys(estratStats).length > 0 && (
-        <div style={{marginBottom:"36px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+        <div style={{marginTop:"var(--evo-secao)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"var(--evo-gap)"}}>
             <p className="mtp-section-title">Métricas por Estratégia</p>
             <span className="mtp-section-hint">clique para ver operações</span>
           </div>
@@ -671,7 +736,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
               const isSelected = painel?.chave === "est:"+n;
               return (
                 <div key={n} onClick={()=>isSelected?setPainel(null):abrirEst(n)}
-                  style={{background:"var(--card)",border:"1px solid "+(isSelected?alfa(cor,"66"):"var(--line)"),borderRadius:"14px",padding:"18px",cursor:"pointer",...(isSelected?{boxShadow:"0 0 0 1px "+alfa(cor,"33")}:{})}}
+                  style={{background:"var(--card)",border:"1px solid "+(isSelected?alfa(cor,"66"):"var(--line)"),borderRadius:"var(--evo-raio)",padding:"var(--evo-pad)",cursor:"pointer",...(isSelected?{boxShadow:"0 0 0 1px "+alfa(cor,"33")}:{})}}
                   onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor=alfa(cor,"44");}}}
                   onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor="var(--line)";}}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
@@ -701,34 +766,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         </div>
       )}
 
-      {/* LINHA 5: Métricas Complementares */}
-      {allTrades.length > 0 && (
-        <div style={{marginBottom:"36px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
-          <p className="mtp-section-title">Métricas Complementares</p>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:"14px"}}>
-          {[
-            {abrir:()=>mostrar("venc","Operações vencedoras",ganhos,{cor:"var(--accent)",sub:sub(ganhos.length)+" · média R$ "+mediaVenc.toFixed(2),ordem:"maior"}),label:"Média Vencedora",sub:"por trade",val:"R$ "+mediaVenc.toFixed(2),num:mediaVenc,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"var(--accent)",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>},
-            {abrir:()=>mostrar("perd","Operações perdedoras",perdas,{cor:"var(--neg)",sub:sub(perdas.length)+" · média R$ "+mediaPerd.toFixed(2),ordem:"menor"}),label:"Média Perdedora",sub:"por trade",val:"R$ "+mediaPerd.toFixed(2),num:mediaPerd,fmtN:v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),color:"var(--neg)",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--neg)" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>},
-            {label:"Risco × Retorno",sub:"razão média",val:rr+":1",num:mediaPerd>0?mediaVenc/mediaPerd:null,fmtN:v=>v.toFixed(2)+":1",color:parseFloat(rr)>=1.5?"var(--accent)":parseFloat(rr)>=1?"var(--warn-2)":"var(--neg)",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>},
-            {label:"Profit Factor",sub:"ganho / perda total",val:profitFactor!==null?profitFactor.toFixed(2):"—",num:profitFactor,fmtN:v=>v.toFixed(2),color:profitFactor>=1.5?"var(--warn)":profitFactor>=1?"var(--warn-2)":"var(--neg)",icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>},
-          ].map((s,i)=>(
-            <div key={i} onClick={s.abrir} style={{...kpiCard,minHeight:"112px",cursor:s.abrir?"pointer":"default"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}}>
-                <p style={kpiLabel}>{s.label}</p>
-                <div style={{width:"28px",height:"28px",borderRadius:"8px",background:alfa(s.color,"18"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:s.color}}>{s.icon}</div>
-              </div>
-              <p style={{...kpiValue,fontSize:isMobile?"19px":"clamp(17px,1.4vw,22px)",color:s.color}}>{s.num!=null&&isFinite(s.num) ? <CountUp value={s.num} format={s.fmtN}/> : s.val}</p>
-              <p style={kpiSub}>{s.sub}</p>
-            </div>
-          ))}
-        </div>
-        </div>
-      )}
-
       {filtered.length === 0 && (
-        <div style={{textAlign:"center",padding:"60px 20px",background:"var(--card)",border:"1px solid var(--line)",borderRadius:"14px",marginBottom:"36px"}}>
+        <div style={{textAlign:"center",padding:"60px 20px",background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",marginTop:"var(--evo-gap)"}}>
           <p style={{color:"var(--text-soft)",fontSize:"14px",margin:0}}>Nenhum registro no período selecionado.</p>
           <p style={{color:"var(--text-5)",fontSize:"12px",margin:"6px 0 0"}}>Registre operações no Diário para ver as métricas.</p>
         </div>
@@ -763,77 +802,73 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         const horaList = Object.entries(horarioStats).sort(([a],[b])=>a.localeCompare(b));
         const maxHora = Math.max(1, ...horaList.map(([,s])=>Math.abs(s.resultado)));
 
-        const blocos = [];
-        if (emList.length > 0) blocos.push(
-          <div key="emo" style={{display:"flex",flexDirection:"column",minWidth:0}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",gap:"10px"}}>
-              <p className="mtp-section-title">Emoção × Resultado</p>
-              <span className="mtp-section-hint">impacto no seu trading</span>
-            </div>
-            <div style={{flex:1,background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px"}}>
-              {emList.map(([em,s])=>{
-                const cor = EMOCAO_COLORS[em]||"var(--text-mute)";
-                const avgWR = s.winRates.length>0 ? Math.round(s.winRates.reduce((a,b)=>a+b,0)/s.winRates.length) : null;
-                const barW = Math.round((Math.abs(s.resultado)/maxEm)*100);
-                const pos = s.resultado >= 0;
-                const nd = s.dias.length;
-                return (
-                  <div key={em} className="mtp-click-row" style={{display:"flex",alignItems:"center",gap:"12px"}}
-                    onClick={()=>{ const dias=new Set(s.dias); const ops=allTrades.filter(t=>dias.has(t._date)); mostrar("emo:"+em, em, ops, {cor, sub:nd+" dia"+(nd!==1?"s":"")+" com essa emoção · "+sub(ops.length)}); }}>
-                    <div style={{width:"96px",flexShrink:0}}>
-                      <span style={{fontSize:"12.5px",fontWeight:"700",color:cor}}>{em}</span>
-                      <p style={{margin:0,color:"var(--text-4)",fontSize:"10.5px"}}>{nd} dia{nd!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
+        const melhorEm = emList[0], piorEm = emList[emList.length-1];
+        return (<>
+          {emList.length > 0 && (
+            <Recolhivel id="emocao" style={{marginTop:"var(--evo-secao)"}} titulo="Emoção × Resultado" hint="impacto no seu trading"
+              resumo={<>
+                <span>melhor: <b style={{color:EMOCAO_COLORS[melhorEm[0]]||"var(--text-2)"}}>{melhorEm[0]}</b> <Chip cor={melhorEm[1].resultado>=0?"var(--accent)":"var(--neg)"}>{brl0(melhorEm[1].resultado)}</Chip></span>
+                {emList.length > 1 && <span>pior: <b style={{color:EMOCAO_COLORS[piorEm[0]]||"var(--text-2)"}}>{piorEm[0]}</b> <Chip cor={piorEm[1].resultado>=0?"var(--accent)":"var(--neg)"}>{brl0(piorEm[1].resultado)}</Chip></span>}
+              </>}>
+              <div style={{flex:1,background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"11px var(--evo-pad)"}}>
+                {emList.map(([em,s])=>{
+                  const cor = EMOCAO_COLORS[em]||"var(--text-mute)";
+                  const avgWR = s.winRates.length>0 ? Math.round(s.winRates.reduce((a,b)=>a+b,0)/s.winRates.length) : null;
+                  const barW = Math.round((Math.abs(s.resultado)/maxEm)*100);
+                  const pos = s.resultado >= 0;
+                  const nd = s.dias.length;
+                  return (
+                    <div key={em} className="mtp-click-row" style={{display:"flex",alignItems:"center",gap:"12px"}}
+                      onClick={()=>{ const dias=new Set(s.dias); const ops=allTrades.filter(t=>dias.has(t._date)); mostrar("emo:"+em, em, ops, {cor, sub:nd+" dia"+(nd!==1?"s":"")+" com essa emoção · "+sub(ops.length)}); }}>
+                      <div style={{width:"96px",flexShrink:0}}>
+                        <span style={{fontSize:"12.5px",fontWeight:"700",color:cor}}>{em}</span>
+                        <p style={{margin:0,color:"var(--text-4)",fontSize:"10.5px"}}>{nd} dia{nd!==1?"s":""}{avgWR!==null?" · "+avgWR+"% wr":""}</p>
+                      </div>
+                      <div style={{flex:1,height:"4px",background:"var(--line)",borderRadius:"2px",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:barW+"%",background:pos?"var(--accent)":"var(--neg)",borderRadius:"4px",transition:"width 0.3s"}}/>
+                      </div>
+                      <span style={{width:"78px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"var(--accent)":"var(--neg)",flexShrink:0}}>
+                        {pos?"+":""}R$ {s.resultado.toFixed(0)}
+                      </span>
                     </div>
-                    <div style={{flex:1,height:"4px",background:"var(--line)",borderRadius:"2px",overflow:"hidden"}}>
-                      <div style={{height:"100%",width:barW+"%",background:pos?"var(--accent)":"var(--neg)",borderRadius:"4px",transition:"width 0.3s"}}/>
+                  );
+                })}
+              </div>
+            </Recolhivel>
+          )}
+          {horaList.length > 0 && (
+            <div style={{marginTop:"var(--evo-secao)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"var(--evo-gap)",gap:"10px"}}>
+                <p className="mtp-section-title">Performance por Horário</p>
+                <span className="mtp-section-hint">pelas operações com horário</span>
+              </div>
+              <div style={{flex:1,background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"11px var(--evo-pad)"}}>
+                {horaList.map(([hora,s])=>{
+                  const wr = Math.round((s.wins/s.total)*100);
+                  const pos = s.resultado >= 0;
+                  const barW = Math.round((Math.abs(s.resultado)/maxHora)*100);
+                  const cor = wr>=60?"var(--accent)":wr>=40?"var(--warn-2)":"var(--neg)";
+                  return (
+                    <div key={hora} className="mtp-click-row" style={{display:"flex",alignItems:"center",gap:"12px"}}
+                      onClick={()=>{ const ops=comHorario.filter(t=>t.horario.slice(0,2)+"h"===hora); mostrar("hora:"+hora, "Operações das "+hora, ops, {sub:sub(ops.length)+" · "+wr+"% de acerto"}); }}>
+                      <span style={{width:"36px",color:"var(--text-soft)",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700",flexShrink:0}}>{hora}</span>
+                      <div style={{width:"44px",textAlign:"center",flexShrink:0}}>
+                        <span style={{fontSize:"11.5px",fontWeight:"700",color:cor}}>{wr}%</span>
+                        <p style={{margin:0,color:"var(--text-4)",fontSize:"10px"}}>{s.total} ops</p>
+                      </div>
+                      <div style={{flex:1,height:"4px",background:"var(--line)",borderRadius:"2px",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:barW+"%",background:pos?"var(--accent)":"var(--neg)",borderRadius:"4px"}}/>
+                      </div>
+                      <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"var(--accent)":"var(--neg)",flexShrink:0}}>
+                        {pos?"+":""}R$ {s.resultado.toFixed(0)}
+                      </span>
                     </div>
-                    <span style={{width:"78px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"var(--accent)":"var(--neg)",flexShrink:0}}>
-                      {pos?"+":""}R$ {s.resultado.toFixed(0)}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-        if (horaList.length > 0) blocos.push(
-          <div key="hora" style={{display:"flex",flexDirection:"column",minWidth:0}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",gap:"10px"}}>
-              <p className="mtp-section-title">Performance por Horário</p>
-              <span className="mtp-section-hint">pelas operações com horário</span>
-            </div>
-            <div style={{flex:1,background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"14px 20px"}}>
-              {horaList.map(([hora,s])=>{
-                const wr = Math.round((s.wins/s.total)*100);
-                const pos = s.resultado >= 0;
-                const barW = Math.round((Math.abs(s.resultado)/maxHora)*100);
-                const cor = wr>=60?"var(--accent)":wr>=40?"var(--warn-2)":"var(--neg)";
-                return (
-                  <div key={hora} className="mtp-click-row" style={{display:"flex",alignItems:"center",gap:"12px"}}
-                    onClick={()=>{ const ops=comHorario.filter(t=>t.horario.slice(0,2)+"h"===hora); mostrar("hora:"+hora, "Operações das "+hora, ops, {sub:sub(ops.length)+" · "+wr+"% de acerto"}); }}>
-                    <span style={{width:"36px",color:"var(--text-soft)",fontSize:"12px",fontFamily:"var(--font-mono)",fontWeight:"700",flexShrink:0}}>{hora}</span>
-                    <div style={{width:"44px",textAlign:"center",flexShrink:0}}>
-                      <span style={{fontSize:"11.5px",fontWeight:"700",color:cor}}>{wr}%</span>
-                      <p style={{margin:0,color:"var(--text-4)",fontSize:"10px"}}>{s.total} ops</p>
-                    </div>
-                    <div style={{flex:1,height:"4px",background:"var(--line)",borderRadius:"2px",overflow:"hidden"}}>
-                      <div style={{height:"100%",width:barW+"%",background:pos?"var(--accent)":"var(--neg)",borderRadius:"4px"}}/>
-                    </div>
-                    <span style={{width:"72px",textAlign:"right",fontSize:"12px",fontWeight:"700",fontFamily:"var(--font-mono)",color:pos?"var(--accent)":"var(--neg)",flexShrink:0}}>
-                      {pos?"+":""}R$ {s.resultado.toFixed(0)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-        if (blocos.length === 0) return null;
-        return (
-          <div style={{display:"grid",gridTemplateColumns:isMobile||blocos.length===1?"1fr":"1fr 1fr",gap:"14px",marginBottom:"36px",alignItems:"stretch"}}>
-            {blocos}
-          </div>
-        );
+          )}
+        </>);
       })()}
 
       {/* ── SEÇÃO: CURVA DE CAPITAL POR ESTRATÉGIA ── */}
@@ -869,12 +904,12 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         const xLabels = allDates.filter((_,i)=>i===0||i===allDates.length-1||i%step===0);
 
         return (
-          <div style={{marginBottom:"36px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+          <div style={{marginTop:"var(--evo-secao)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"var(--evo-gap)"}}>
               <p className="mtp-section-title">Curva de Capital por Estratégia</p>
               <span className="mtp-section-hint">resultado acumulado R$</span>
             </div>
-            <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"20px 20px 14px"}}>
+            <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad) var(--evo-pad) 12px"}}>
               <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block",marginBottom:"14px"}}>
                 {yTicks.map(({v,y},i)=>(
                   <g key={i}>
@@ -939,8 +974,8 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
         if (entries2.length === 0) return null;
         const colors2 = ["var(--accent)","var(--warn-2)","#a78bfa","#f472b6","var(--accent)","var(--neg)","#60a5fa"];
         return (
-          <div style={{marginBottom:"36px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+          <div style={{marginTop:"var(--evo-secao)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"var(--evo-gap)"}}>
               <p className="mtp-section-title">Sequências WIN/LOSS por Estratégia</p>
               <span className="mtp-section-hint">detecta fases de cada setup</span>
             </div>
@@ -950,7 +985,7 @@ export default function Evolucao({ entries, compliance, estrategias, setPagina, 
                 const streakColor = s.curType==="WIN"?"var(--accent)":"var(--neg)";
                 const alert = s.curLoss >= 3 || (s.curType==="LOSS" && s.curStreak>=2);
                 return (
-                  <div key={n} style={{background:"var(--card)",border:"1px solid "+(alert?"color-mix(in srgb, var(--neg) 20%, transparent)":"var(--line)"),borderRadius:"14px",padding:"16px",cursor:"pointer"}}
+                  <div key={n} style={{background:"var(--card)",border:"1px solid "+(alert?"color-mix(in srgb, var(--neg) 20%, transparent)":"var(--line)"),borderRadius:"var(--evo-raio)",padding:"var(--evo-pad)",cursor:"pointer"}}
                     onClick={()=>abrirEst(n)}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px"}}>
                       <div style={{padding:"3px 7px",borderRadius:"5px",background:alfa(cor,"22"),border:"1px solid "+alfa(cor,"33")}}>
@@ -1105,16 +1140,25 @@ function AlertasInteligentes({ trades, entries, winRate, diasOp }) {
 
   const cores = { critico:"var(--neg)", aviso:"var(--warn-2)", ok:"var(--accent)" };
 
+  const visiveis = alertas.slice(0,5);
+  const conta = tipo => visiveis.filter(a=>a.tipo===tipo).length;
+  const nCrit = conta("critico"), nAviso = conta("aviso");
+
   return (
-    <div style={{flex:1,background:"var(--card)",border:"1px solid var(--line)",borderRadius:"16px",padding:"16px 18px",minWidth:"240px",marginBottom:"36px"}}>
-      <p style={{margin:"0 0 12px",color:"var(--text-3)",fontSize:"10px",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:"700"}}>Alertas Inteligentes</p>
-      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-        {alertas.slice(0,5).map((a,i)=>(
+    <Recolhivel id="alertas" style={{marginBottom:"var(--evo-linha)"}} titulo="Alertas Inteligentes" hint={visiveis.length+" alerta"+(visiveis.length!==1?"s":"")}
+      resumo={<>
+        {nCrit > 0 && <Chip cor={cores.critico}>{nCrit} crítico{nCrit!==1?"s":""}</Chip>}
+        {nAviso > 0 && <Chip cor={cores.aviso}>{nAviso} aviso{nAviso!==1?"s":""}</Chip>}
+        {nCrit + nAviso === 0 && <Chip cor={cores.ok}>tudo em ordem</Chip>}
+        <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0,flex:"1 1 160px"}}>{visiveis[0].msg}</span>
+      </>}>
+      <div style={{background:"var(--card)",border:"1px solid var(--line)",borderRadius:"var(--evo-raio)",padding:"var(--evo-pad)",display:"flex",flexDirection:"column",gap:"8px"}}>
+        {visiveis.map((a,i)=>(
           <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"8px",padding:"9px 12px",borderRadius:"8px",background:alfa(cores[a.tipo],"0d"),border:"1px solid "+alfa(cores[a.tipo],"33")}}>
             <p style={{margin:0,color:"var(--text)",fontSize:"13px",lineHeight:"1.6"}}>{a.msg}</p>
           </div>
         ))}
       </div>
-    </div>
+    </Recolhivel>
   );
 }

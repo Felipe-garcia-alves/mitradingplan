@@ -125,9 +125,11 @@ function Tip({ x, y, children }) {
 const AX = { fill:"var(--text-4)", fontSize:10, fontFamily:"var(--font-mono)" };
 
 // ── Curva de capital com eixos e tooltip ─────────────────────────
-export function CapitalChart({ points, height=210 }) {
+// onSelect(de, ate): arrastar na curva escolhe um trecho (dias de "de" até "ate")
+export function CapitalChart({ points, height=210, onSelect }) {
   const [ref, w] = useWidth();
   const [hover, setHover] = useState(null);
+  const [arraste, setArraste] = useState(null); // { a, b } índices do início e do fim do arraste
   const id = useId();
   const PL=56, PR=12, PT=12, PB=26, H=height;
 
@@ -148,17 +150,37 @@ export function CapitalChart({ points, height=210 }) {
   const area = path+` L${x(n-1).toFixed(1)},${y(0).toFixed(1)} L${PL},${y(0).toFixed(1)} Z`;
   const labelIdx = spacedIdx(n, x, 56);
 
-  const onMove = e => {
+  const indice = e => {
     const r = e.currentTarget.getBoundingClientRect();
-    const i = Math.round(((e.clientX-r.left-PL)/iw)*(n-1));
-    setHover(Math.max(0, Math.min(n-1, i)));
+    return Math.max(0, Math.min(n-1, Math.round(((e.clientX-r.left-PL)/iw)*(n-1))));
   };
-  const hp = hover!=null ? points[hover] : null;
+  const onMove = e => {
+    const i = indice(e);
+    setHover(i);
+    if (arraste) setArraste({ ...arraste, b:i });
+  };
+  const onDown = e => {
+    if (!onSelect || e.button > 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const i = indice(e);
+    setArraste({ a:i, b:i });
+  };
+  const onUp = () => {
+    if (!arraste) return;
+    const a = Math.min(arraste.a, arraste.b), b = Math.max(arraste.a, arraste.b);
+    setArraste(null);
+    // o ponto "a" é o fechamento do dia anterior ao trecho: o trecho começa no seguinte
+    if (b > a) onSelect(points[a+1].d, points[b].d);
+  };
+  const sa = arraste && arraste.a!==arraste.b ? Math.min(arraste.a, arraste.b) : null;
+  const sb = sa!=null ? Math.max(arraste.a, arraste.b) : null;
+  const hp = hover!=null && sa==null ? points[hover] : null;
 
   return (
     <div ref={ref} style={{position:"relative",width:"100%",height:H}}>
       {w>0 && (
-        <svg width={w} height={H} style={{display:"block",cursor:"crosshair"}} onMouseMove={onMove} onMouseLeave={()=>setHover(null)}>
+        <svg width={w} height={H} style={{display:"block",cursor:onSelect?"col-resize":"crosshair",touchAction:onSelect?"pan-y":"auto",userSelect:"none"}}
+          onPointerMove={onMove} onPointerLeave={()=>{ if(!arraste) setHover(null); }} onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={()=>setArraste(null)}>
           <defs>
             <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={cor} stopOpacity="0.30"/>
@@ -180,8 +202,23 @@ export function CapitalChart({ points, height=210 }) {
             <line x1={x(hover)} x2={x(hover)} y1={PT} y2={H-PB} stroke="color-mix(in srgb, var(--ink) 18.8%, transparent)" strokeDasharray="3,3"/>
             <circle cx={x(hover)} cy={y(hp.val)} r="4.5" fill={cor} stroke="var(--bg)" strokeWidth="2"/>
           </>}
+          {sa!=null && <>
+            <rect x={x(sa)} y={PT} width={x(sb)-x(sa)} height={H-PT-PB} fill="color-mix(in srgb, var(--ink) 6%, transparent)" stroke="color-mix(in srgb, var(--ink) 18%, transparent)" strokeDasharray="3,3"/>
+            <circle cx={x(sa)} cy={y(vals[sa])} r="4" fill={cor} stroke="var(--bg)" strokeWidth="2"/>
+            <circle cx={x(sb)} cy={y(vals[sb])} r="4" fill={cor} stroke="var(--bg)" strokeWidth="2"/>
+          </>}
         </svg>
       )}
+      {sa!=null && (()=>{
+        const dv = vals[sb]-vals[sa];
+        return (
+          <Tip x={(x(sa)+x(sb))/2} y={PT+8}>
+            <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{fmtDia(points[sa+1].d)} → {fmtDia(points[sb].d)} · {sb-sa} dia{sb-sa!==1?"s":""}</div>
+            <div style={{color:dv>=0?"var(--accent)":"var(--neg)",fontWeight:700}}>{dv>=0?"+":""}R$ {dv.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            <div style={{color:"var(--text-4)",fontSize:"10px"}}>solte para filtrar</div>
+          </Tip>
+        );
+      })()}
       {hp && (
         <Tip x={x(hover)} y={y(hp.val)}>
           <div style={{color:"var(--text-3)",fontSize:"10.5px",marginBottom:"2px"}}>{fmtDia(hp.d)}</div>
