@@ -1,5 +1,5 @@
 // Mi Trading Plan - gestão de usuários e assinaturas (só admin)
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../supabase";
 import { CountUp, Modal } from "../components/ui";
 import { gerarSenha, validarSenha, REGRA_SENHA } from "../lib/senha";
@@ -56,6 +56,7 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
   const [novoAberto, setNovoAberto] = useState(false);
   const [criado,   setCriado]   = useState(null);   // credenciais para repassar ao cliente
   const [senhaDe,  setSenhaDe]  = useState(null);   // usuário com troca de senha aberta
+  const [excluirDe, setExcluirDe] = useState(null); // usuário com a confirmação de exclusão aberta
   const [ocupado,  setOcupado]  = useState("");
 
   const carregar = useCallback(async () => {
@@ -126,7 +127,7 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
           const dias = diasAte(u.assinatura_ate);
           const admin = u.papel==="admin";
           return (
-            <div key={u.id} style={{display:"grid",gridTemplateColumns:"minmax(0,2fr) 130px 210px 250px",alignItems:"center",gap:"16px",padding:"14px 20px",borderBottom:i<filtrados.length-1?"1px solid var(--line)":"none"}}>
+            <div key={u.id} style={{display:"grid",gridTemplateColumns:"minmax(0,2fr) 130px 210px 300px",alignItems:"center",gap:"16px",padding:"14px 20px",borderBottom:i<filtrados.length-1?"1px solid var(--line)":"none"}}>
               <div style={{display:"flex",alignItems:"center",gap:"12px",minWidth:0}}>
                 <div style={{width:"36px",height:"36px",borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,"+alfa(cor,"33")+","+alfa(cor,"0d")+")",border:"1px solid "+alfa(cor,"55"),display:"flex",alignItems:"center",justifyContent:"center",color:cor,fontWeight:"800",fontSize:"14px"}}>{(u.nome||u.email||"?")[0].toUpperCase()}</div>
                 <div style={{minWidth:0}}>
@@ -157,6 +158,7 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
                   )}
                 </>}
                 <button style={btnSec} onClick={()=>setSenhaDe(u)}>Senha</button>
+                {!admin && <button style={{...btnSec,color:"var(--neg-soft)",borderColor:"color-mix(in srgb, var(--neg) 20%, transparent)"}} disabled={!!ocupado} onClick={()=>setExcluirDe(u)}>Excluir</button>}
               </div>
             </div>
           );
@@ -170,6 +172,7 @@ export default function Usuarios({ onVoltar, api = chamarAdmin }) {
       {novoAberto && <NovoUsuario api={api} onClose={()=>setNovoAberto(false)} onCriado={c=>{ setNovoAberto(false); setCriado(c); carregar(); }}/>}
       {criado && <Credenciais dados={criado} onClose={()=>setCriado(null)}/>}
       {senhaDe && <TrocarSenha api={api} usuario={senhaDe} onClose={()=>setSenhaDe(null)}/>}
+      {excluirDe && <ExcluirUsuario api={api} usuario={excluirDe} onClose={()=>setExcluirDe(null)} onExcluido={()=>{ setExcluirDe(null); carregar(); }}/>}
     </div>
   );
 }
@@ -187,6 +190,7 @@ function NovoUsuario({ api, onClose, onCriado }) {
   const [f, setF] = useState({ nome:"", email:"", senha:gerarSenha(), plano:"mensal", ate:maisDias(null, 30) });
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const enviando = useRef(false); // trava o duplo clique (o estado só desabilita o botão no próximo render)
 
   function escolherPlano(p) {
     setF(x => ({ ...x, plano:p, ate: PLANOS[p].dias ? maisDias(null, PLANOS[p].dias) : "" }));
@@ -195,11 +199,14 @@ function NovoUsuario({ api, onClose, onCriado }) {
   async function criar() {
     const regra = validarSenha(f.senha);
     if (regra) { setErro(regra); return; }
+    if (enviando.current) return;
+    enviando.current = true;
     setErro(""); setSalvando(true);
     try {
       await api({ acao:"criar", nome:f.nome, email:f.email, senha:f.senha, plano:f.plano, status_assinatura:PLANOS[f.plano].status, assinatura_ate: f.ate || null });
       onCriado({ nome:f.nome, email:f.email.trim().toLowerCase(), senha:f.senha, ate:f.ate });
     } catch (e) { setErro(e.message); }
+    enviando.current = false;
     setSalvando(false);
   }
 
@@ -239,9 +246,28 @@ function NovoUsuario({ api, onClose, onCriado }) {
   );
 }
 
+// Mensagem com o acesso. O app não manda e-mail sozinho: abre o e-mail ou o WhatsApp
+// do admin já com o texto pronto, ou copia para colar onde quiser.
+function mensagemAcesso({ nome, email, senha }, nova = false) {
+  return nova
+    ? `Olá ${nome||""}! Sua senha do Mi Trading Plan foi redefinida.\n\nLink: ${window.location.origin}\nE-mail: ${email}\nNova senha: ${senha}\n\nRecomendo trocar a senha ao entrar (Configurações > Alterar senha).`
+    : `Olá ${nome}! Seu acesso ao Mi Trading Plan está pronto.\n\nLink: ${window.location.origin}\nE-mail: ${email}\nSenha: ${senha}\n\nRecomendo trocar a senha no primeiro acesso (Configurações > Alterar senha).`;
+}
+
+function EnviarAcesso({ email, texto }) {
+  const assunto = "Seu acesso ao Mi Trading Plan";
+  const link = { ...btnSec, flex:1, padding:"10px", fontSize:"12.5px", textAlign:"center", textDecoration:"none" };
+  return (
+    <div style={{display:"flex",gap:"8px"}}>
+      <a style={link} href={"mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent(assunto)+"&body="+encodeURIComponent(texto)}>✉️ Enviar por e-mail</a>
+      <a style={link} href={"https://wa.me/?text="+encodeURIComponent(texto)} target="_blank" rel="noreferrer">💬 Enviar no WhatsApp</a>
+    </div>
+  );
+}
+
 function Credenciais({ dados, onClose }) {
   const [copiado, setCopiado] = useState(false);
-  const texto = `Olá ${dados.nome}! Seu acesso ao Mi Trading Plan está pronto.\n\nLink: ${window.location.origin}\nE-mail: ${dados.email}\nSenha: ${dados.senha}\n\nRecomendo trocar a senha no primeiro acesso (Configurações > Alterar senha).`;
+  const texto = mensagemAcesso(dados);
   async function copiar() {
     try { await navigator.clipboard.writeText(texto); setCopiado(true); setTimeout(()=>setCopiado(false),2000); } catch { /* sem permissão de clipboard */ }
   }
@@ -258,9 +284,49 @@ function Credenciais({ dados, onClose }) {
           </div>
         </div>
         <pre style={{margin:0,padding:"14px 16px",borderRadius:"12px",background:"rgba(0,0,0,0.3)",border:"1px solid var(--line)",color:"var(--text-2)",fontSize:"12.5px",lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"var(--font-mono)"}}>{texto}</pre>
+        <EnviarAcesso email={dados.email} texto={texto}/>
         <div style={{display:"flex",gap:"10px"}}>
           <button onClick={copiar} style={{flex:1,background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:"pointer"}}>{copiado?"✓ Copiado":"Copiar mensagem"}</button>
           <button onClick={onClose} style={{...btnSec,padding:"12px 16px",fontSize:"13px"}}>Fechar</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// Exclusão definitiva: pede o e-mail digitado para não apagar ninguém por engano
+function ExcluirUsuario({ api, usuario, onClose, onExcluido }) {
+  const [digitado, setDigitado] = useState("");
+  const [erro, setErro] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
+  const confere = digitado.trim().toLowerCase() === (usuario.email||"").toLowerCase();
+  async function excluir() {
+    if (!confere || excluindo) return;
+    setErro(""); setExcluindo(true);
+    try { await api({ acao:"excluir", id:usuario.id }); onExcluido(); }
+    catch (e) { setErro(e.message); setExcluindo(false); }
+  }
+  return (
+    <Modal onClose={onClose} width={460}>
+      <div style={{padding:"24px 26px",display:"flex",flexDirection:"column",gap:"14px"}}>
+        <div>
+          <p style={{margin:0,color:"var(--neg-soft)",fontSize:"17px",fontWeight:"800"}}>Excluir {usuario.nome || usuario.email}?</p>
+          <p style={{margin:"6px 0 0",color:"var(--text-3)",fontSize:"12.5px",lineHeight:1.6}}>
+            Apaga a conta e tudo o que é dela: diário, estratégias, disciplina e fotos. Não dá para desfazer.
+            Se a ideia é só bloquear o acesso, use <b style={{color:"var(--text-2)"}}>Suspender</b>.
+          </p>
+        </div>
+        <div>
+          <p style={{...kpiLabel,marginBottom:"8px"}}>Digite o e-mail para confirmar</p>
+          <input style={inp} value={digitado} onChange={e=>setDigitado(e.target.value)} placeholder={usuario.email} autoFocus/>
+        </div>
+        {erro && <p style={{margin:0,color:"var(--neg-soft)",fontSize:"12.5px"}}>{erro}</p>}
+        <div style={{display:"flex",gap:"10px"}}>
+          <button onClick={excluir} disabled={!confere || excluindo}
+            style={{flex:1,background:confere?"var(--neg)":"color-mix(in srgb, var(--neg) 20%, transparent)",color:confere?"#fff":"var(--neg-soft)",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:confere&&!excluindo?"pointer":"not-allowed"}}>
+            {excluindo ? "Excluindo..." : "Excluir definitivamente"}
+          </button>
+          <button onClick={onClose} style={{...btnSec,padding:"12px 16px",fontSize:"13px"}}>Cancelar</button>
         </div>
       </div>
     </Modal>
@@ -291,6 +357,7 @@ function TrocarSenha({ api, usuario, onClose }) {
         </div>
         {erro && <p style={{margin:0,color:"var(--neg-soft)",fontSize:"12.5px"}}>{erro}</p>}
         {ok && <p style={{margin:0,color:"var(--accent)",fontSize:"12.5px"}}>✓ Senha alterada. Envie a nova senha ao cliente.</p>}
+        {ok && <EnviarAcesso email={usuario.email} texto={mensagemAcesso({ nome:usuario.nome, email:usuario.email, senha }, true)}/>}
         <div style={{display:"flex",gap:"10px"}}>
           {!ok && <button onClick={salvar} style={{flex:1,background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",border:"none",borderRadius:"10px",padding:"12px",fontWeight:"800",fontSize:"13px",cursor:"pointer"}}>Salvar nova senha</button>}
           <button onClick={onClose} style={{...btnSec,padding:"12px 16px",fontSize:"13px",flex:ok?1:"none"}}>{ok?"Fechar":"Cancelar"}</button>

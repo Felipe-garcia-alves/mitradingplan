@@ -9,6 +9,7 @@
 //   criar     { nome, email, senha, plano, status_assinatura, assinatura_ate }
 //   atualizar { id, plano?, status_assinatura?, assinatura_ate? }
 //   senha     { id, senha }
+//   excluir   { id }   -> apaga fotos, perfil (diário e estratégias vão junto) e a conta
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const CORS = {
@@ -76,7 +77,7 @@ Deno.serve(async (req) => {
           email, password: senha, email_confirm: true, user_metadata: { nome },
         });
         if (error) {
-          const msg = /already|registered|exists/i.test(error.message) ? "Já existe uma conta com esse e-mail." : error.message;
+          const msg = /already|registered|exists|duplicate/i.test(error.message) ? "Já existe uma conta com esse e-mail." : error.message;
           return resp({ erro: msg }, 400);
         }
         // a trigger handle_new_user cria o perfil; completa com os dados da assinatura
@@ -116,6 +117,32 @@ Deno.serve(async (req) => {
         const { error } = await db.auth.admin.updateUserById(id, { password: senha });
         if (error) return resp({ erro: error.message }, 400);
         return resp({ ok: true });
+      }
+
+      case "excluir": {
+        const id = String(body.id ?? "");
+        if (!id) return resp({ erro: "Usuário não informado." }, 400);
+        if (id === eu.id) return resp({ erro: "Você não pode excluir a sua própria conta." }, 400);
+        const { data: alvo } = await db.from("usuarios").select("papel").eq("id", id).maybeSingle();
+        if (alvo?.papel === "admin") return resp({ erro: "Não é possível excluir um administrador." }, 400);
+
+        // fotos: o bucket guarda em <id>/<pasta>/<arquivo> (pasta = dia do diário ou "estrategias")
+        const bucket = db.storage.from("diario-imagens");
+        const { data: pastas } = await bucket.list(id, { limit: 1000 });
+        const arquivos: string[] = [];
+        for (const p of pastas ?? []) {
+          if (p.id) { arquivos.push(`${id}/${p.name}`); continue; } // arquivo solto na raiz
+          const { data: dentro } = await bucket.list(`${id}/${p.name}`, { limit: 1000 });
+          for (const a of dentro ?? []) arquivos.push(`${id}/${p.name}/${a.name}`);
+        }
+        for (let i = 0; i < arquivos.length; i += 100) await bucket.remove(arquivos.slice(i, i + 100));
+
+        // perfil: diário e estratégias saem junto (ON DELETE CASCADE)
+        const { error: delErr } = await db.from("usuarios").delete().eq("id", id);
+        if (delErr) throw delErr;
+        const { error } = await db.auth.admin.deleteUser(id);
+        if (error && !/not.?found/i.test(error.message)) return resp({ erro: error.message }, 400);
+        return resp({ ok: true, fotos: arquivos.length });
       }
 
       default:
