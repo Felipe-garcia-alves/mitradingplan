@@ -443,10 +443,10 @@ function AppInterno() {
     switch(pagina){
       case "evolucao":    return <Evolucao entries={entries} compliance={compliance} estrategias={estrategias} setPagina={setPagina} config={config} saveConfig={saveConfig}/>;
       case "macro":       return <Macro isAdmin={perfil.papel==="admin"}/>;
-      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} uid={uid} config={config} setPagina={setPagina} focarNovoTrade={focarNovoTrade} onFocouNovoTrade={()=>setFocarNovoTrade(false)}/>;
-      case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} config={config}/>;
+      case "diario":      return <Diario entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} saveEstrategia={saveEstrategia} uid={uid} config={config} setPagina={setPagina} focarNovoTrade={focarNovoTrade} onFocouNovoTrade={()=>setFocarNovoTrade(false)}/>;
+      case "historico":   return <Historico entries={entries} saveEntry={saveEntry} deleteEntry={deleteEntry} estrategias={estrategias} saveEstrategia={saveEstrategia} config={config}/>;
       case "revisao":     return <Suspense fallback={<Spinner/>}><Revisao entries={entries} saveEntry={saveEntry} estrategias={estrategias} uid={uid} config={config} saveConfig={saveConfig}/></Suspense>;
-      case "estrategias": return <Estrategias estrategias={estrategias} entries={entries} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia}/>;
+      case "estrategias": return <Estrategias estrategias={estrategias} entries={entries} saveEstrategia={saveEstrategia} deleteEstrategia={deleteEstrategia} uid={uid}/>;
       case "banca":       return <Suspense fallback={<Spinner/>}><Banca entries={entries} config={config} saveConfig={saveConfig} setPagina={setPagina}/></Suspense>;
       case "regras":      return <Suspense fallback={<Spinner/>}><Regras regras={regras} saveRegras={saveRegras} compliance={compliance} saveCompliance={saveComplianceData} entries={entries} setPagina={setPagina}/></Suspense>;
       case "crescimento": return <Suspense fallback={<Spinner/>}><Crescimento entries={entries} config={config}/></Suspense>;
@@ -490,7 +490,7 @@ function AppInterno() {
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"var(--font-sans)"}}>
       {(!isMobile||sidebarOpen)&&<Sidebar pagina={pagina} setPagina={p=>{setPagina(p);setSidebarOpen(false);}} nomeUsuario={nomeUsuario} mobile={isMobile} onClose={()=>setSidebarOpen(false)} compliance={compliance} pendentesRevisao={pendentesRevisao}
         entries={entries} fixa={sidebarFixa} setFixa={setSidebarFixa} onNovoTrade={()=>{setPagina("diario");setSidebarOpen(false);setFocarNovoTrade(true);}}/>}
-      <main style={{marginLeft:isMobile?"0":sidebarFixa?"272px":"104px",transition:"margin-left .28s cubic-bezier(.2,.8,.2,1)",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}
+      <main style={{marginLeft:isMobile?"0":sidebarFixa?"272px":"92px",transition:"margin-left .28s cubic-bezier(.2,.8,.2,1)",flex:1,minHeight:"100vh",display:"flex",flexDirection:"column"}}
         onTouchStart={e=>{if(isMobile)window._swipeX=e.touches[0].clientX;}}
         onTouchEnd={e=>{if(isMobile&&window._swipeX&&(window._swipeX-e.changedTouches[0].clientX)>60){setSidebarOpen(false);window._swipeX=null;}}}>
         <div className="mtp-topbar" style={{position:"sticky",top:0,zIndex:100,padding:isMobile?"10px 14px":"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>

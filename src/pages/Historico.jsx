@@ -7,6 +7,7 @@ import { recalcularCustos } from "../lib/custos";
 import { ImageViewer, ImagemSegura } from "../components/ImageEditor";
 import { vereditoDo } from "../lib/revisao";
 import { alfa } from "../lib/cor.js";
+import { acaoExemplo } from "../lib/exemplos";
 
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const EMOCAO_COLORS = {"Focado":"var(--accent)","Confiante":"#0099ff","Neutro":"var(--text-mute)","Atento":"#a78bfa","Cauteloso":"var(--warn-2)","Ansioso":"#f87171","Impaciente":"#fb923c","Frustrado":"#ef4444","Eufórico":"#f472b6","Medo":"#6b7280","Cansado":"#9ca3af","Revanche":"#dc2626","Compulsivo":"#d946ef"};
@@ -15,7 +16,7 @@ const EMOCOES_LIST = ["Focado","Confiante","Neutro","Atento","Cauteloso","Ansios
 function dayKey(y,m,d) { return y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0"); }
 function formatDateLong(s) { const p=s.split("-"); const d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString("pt-BR",{day:"numeric",month:"long",weekday:"long"}); }
 
-export default function Historico({ entries, saveEntry, deleteEntry, estrategias, config }) {
+export default function Historico({ entries, saveEntry, deleteEntry, estrategias, saveEstrategia, config }) {
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -313,7 +314,7 @@ export default function Historico({ entries, saveEntry, deleteEntry, estrategias
         </div>
       )}
 
-      {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)}/>}
+      {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)} acao={acaoExemplo(viewerImg, { entries, estrategias, saveEstrategia })}/>}
     </div>
   );
 }

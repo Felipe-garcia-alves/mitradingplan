@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CountUp, Ring, Sparkline, CapitalChart, Modal, Select } from "../components/ui";
+import { uploadTradeImage, deleteTradeImage, ImagemSegura, ImageViewer } from "../components/ImageEditor";
 import { alfa } from "../lib/cor.js";
+import { dadosDe } from "../lib/exemplos";
 
 const CORES = ["var(--accent)","var(--warn)","#a78bfa","#f472b6","#60a5fa","var(--accent)","#fb923c"];
 
@@ -39,7 +41,70 @@ function statsDe(nome, entries) {
   return st;
 }
 
-export default function Estrategias({ estrategias, entries, saveEstrategia, deleteEstrategia }) {
+// Galeria do playbook: prints "de livro" enviados aqui e fotos dos trades marcadas com ★
+function Exemplos({ est, uid, saveEstrategia }) {
+  const [enviando, setEnviando] = useState(false);
+  const [ver, setVer] = useState(null);
+  const arquivo = useRef(null);
+  const fotos = est.fotos || [];
+  const salvarFotos = novas => saveEstrategia(est.id, { ...dadosDe(est), fotos: novas });
+
+  async function enviar(files) {
+    if (!files?.length || !uid) return;
+    setEnviando(true);
+    try {
+      const novas = [];
+      for (const file of files) novas.push({ url: await uploadTradeImage(file, uid, "estrategias", "exemplo"), origem: "upload", criadoEm: new Date().toISOString() });
+      await salvarFotos([...fotos, ...novas]);
+    } catch (e) { console.error(e); window.alert("Não foi possível enviar a imagem."); }
+    setEnviando(false);
+    if (arquivo.current) arquivo.current.value = "";
+  }
+  async function remover(foto) {
+    const msg = foto.origem === "upload" ? "Remover este print da estratégia?" : "Tirar esta foto dos exemplos? Ela continua no trade.";
+    if (!window.confirm(msg)) return;
+    await salvarFotos(fotos.filter(x => x.url !== foto.url));
+    if (foto.origem === "upload") await deleteTradeImage(foto.url); // a do trade continua sendo do trade
+  }
+
+  const grupos = [
+    { origem: "upload", titulo: "De livro", dica: "o setup perfeito, como modelo" },
+    { origem: "trade",  titulo: "Dos seus trades", dica: "marcadas com ★ no Diário e no Histórico" },
+  ].map(g => ({ ...g, fotos: fotos.filter(x => (x.origem || "upload") === g.origem) })).filter(g => g.fotos.length);
+
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"12px"}}>
+        <p style={{...kpiLabel,margin:0}}>Exemplos da estratégia</p>
+        <button onClick={()=>arquivo.current?.click()} disabled={enviando} className="mtp-ctx-ghost" style={{padding:"6px 12px"}}>
+          {enviando ? "Enviando…" : "+ Adicionar print"}
+        </button>
+        <input ref={arquivo} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden onChange={e=>enviar([...e.target.files])}/>
+      </div>
+      {grupos.length === 0 ? (
+        <button onClick={()=>arquivo.current?.click()} className="mtp-exemplo-vazio">
+          Suba prints do setup de livro, ou abra uma foto de trade no Diário ou no Histórico e toque em ★ para trazê-la para cá.
+        </button>
+      ) : grupos.map(g => (
+        <div key={g.origem} style={{marginBottom:"14px"}}>
+          <p style={{margin:"0 0 8px",color:"var(--text-3)",fontSize:"12px"}}><b style={{color:"var(--text-2)"}}>{g.titulo}</b> · {g.dica}</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:"10px"}}>
+            {g.fotos.map(foto => (
+              <div key={foto.url} className="mtp-exemplo" onClick={()=>setVer(foto.url)}>
+                <ImagemSegura url={foto.url} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+                {foto.dia && <span className="mtp-exemplo-dia">{foto.dia.slice(8)+"/"+foto.dia.slice(5,7)+"/"+foto.dia.slice(2,4)}</span>}
+                <button className="mtp-exemplo-tirar" onClick={e=>{ e.stopPropagation(); remover(foto); }} aria-label="Remover" title="Remover">×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      {ver && <ImageViewer url={ver} onClose={()=>setVer(null)}/>}
+    </div>
+  );
+}
+
+export default function Estrategias({ estrategias, entries, saveEstrategia, deleteEstrategia, uid }) {
   const [modo,  setModo]  = useState("lista");
   const [abertaId, setAbertaId] = useState(null);
   const [editId,setEditId]= useState(null);
@@ -51,7 +116,8 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
 
   async function salvar() {
     if (!form.nome.trim()) { setMsg("Digite o nome da estratégia."); return; }
-    const data = {...form, atualizadoEm: new Date().toISOString()};
+    const atual = editId ? (estrategias||[]).find(e=>e.id===editId) : null;
+    const data = {...dadosDe(atual), ...form, atualizadoEm: new Date().toISOString()};
     if (!editId) data.criadoEm = new Date().toISOString();
     await saveEstrategia(editId, data);
     setMsg("✓ Salvo!"); setTimeout(()=>setMsg(""),2500);
@@ -178,6 +244,7 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
                         {[est.mercado, est.timeframe].filter(Boolean).map(t=>(
                           <span key={t} style={chip}>{t}</span>
                         ))}
+                        {(est.fotos||[]).length>0 && <span style={{...chip,color:"var(--warn)"}}>★ {est.fotos.length} exemplo{est.fotos.length!==1?"s":""}</span>}
                       </div>
                     </div>
                   </div>
@@ -287,6 +354,8 @@ export default function Estrategias({ estrategias, entries, saveEstrategia, dele
               {!aberta.descricao && !aberta.regrasEntrada && !aberta.regrasesSaida && (
                 <p style={{margin:0,color:"var(--text-3)",fontSize:"13px"}}>Nenhuma característica documentada ainda. Clique em Editar para descrever o setup.</p>
               )}
+
+              <Exemplos est={aberta} uid={uid} saveEstrategia={saveEstrategia}/>
 
               <div style={{display:"flex",justifyContent:"space-between",gap:"10px",paddingTop:"4px"}}>
                 <button onClick={async()=>{ const id=aberta.id; if(window.confirm("Excluir esta estratégia?")){ setAbertaId(null); await deleteEstrategia(id); } }}

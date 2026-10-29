@@ -6,12 +6,8 @@
    ══════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg:          #050907;
-  --bg-elev:     #08100c;
-  --surface:     #0c1411;
-  --surface-2:   #121c18;
-  --line:        #1a2621;
-  --line-strong: #24342d;
+  --bg:          #0e1217;
+  --bg-elev:     #12171d;
 
   /* textos, do mais forte ao mais apagado */
   --text:        #eef4f1;
@@ -36,23 +32,65 @@
      glass: fundo dos painéis de vidro (sidebar, topbar, menus) */
   --ink:         #ffffff;
   --shade:       #000000;
-  --glass:       #080e0b;
+  --glass:       #11161c;
 
-  --font-sans: "Inter", "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Fundo da página (data-fundo troca) — padrão: grafite azulado */
+  --brilho-topo:  rgba(46,230,160,0.07);
+  --brilho-meio:  rgba(120,150,190,0.05);
 
-  --radius: 16px;
-  --ease: cubic-bezier(.2,.8,.2,1);
-
-  /* Card padrão: vidro escuro com leve brilho verde no topo */
+  /* Cards, painéis e bordas (data-cards troca) — padrão: vidro verde */
+  --surface: #14251e; --surface-2: #1a2e25; --line: #243a30; --line-strong: #2f4a3e;
   --card:
     linear-gradient(180deg, rgba(46,230,160,0.035) 0%, rgba(46,230,160,0) 40%),
-    linear-gradient(160deg, #0f1814 0%, #0a110e 100%);
-
-  /* Painel estático (formulários, containers grandes) */
+    linear-gradient(160deg, #172b22 0%, #11211a 100%);
   --panel:
     linear-gradient(180deg, rgba(46,230,160,0.025) 0%, rgba(46,230,160,0) 30%),
-    linear-gradient(160deg, #0e1713 0%, #0a100d 100%);
+    linear-gradient(160deg, #162920 0%, #10201a 100%);
+  --vidro-1: #1d3a2e; --vidro-2: #172f25; --vidro-3: #12261e;
+  --vidro-luz: rgba(150,255,210,0.06); --vidro-filete: rgba(170,255,220,0.14);
+}
+
+/* ── Aparência do tema escuro (Configurações → Aparência) ─────────
+   Fundo e cards são escolhas separadas: data-fundo troca só a página,
+   data-cards troca cards, painéis e bordas. Os padrões estão no :root. */
+/* fundo: Grafite neutro */
+:root:not([data-theme="light"])[data-fundo="grafite"] {
+  --bg: #111214; --bg-elev: #151619; --glass: #141518;
+  --brilho-topo: rgba(46,230,160,0.06); --brilho-meio: rgba(255,255,255,0.025);
+}
+/* fundo: Azul-marinho */
+:root:not([data-theme="light"])[data-fundo="marinho"] {
+  --bg: #0b1220; --bg-elev: #0f172a; --glass: #0e1626;
+  --brilho-topo: rgba(46,230,160,0.06); --brilho-meio: rgba(70,120,255,0.07);
+}
+/* fundo: Verde floresta */
+:root:not([data-theme="light"])[data-fundo="floresta"] {
+  --bg: #0b1813; --bg-elev: #0f1e18; --glass: #0d1a15;
+  --brilho-topo: rgba(46,230,160,0.16); --brilho-meio: rgba(46,230,160,0.06);
+}
+/* cards: Grafite */
+:root:not([data-theme="light"])[data-cards="grafite"] {
+  --surface: #161c23; --surface-2: #1b222a; --line: #242c35; --line-strong: #313b46;
+  --card:
+    linear-gradient(180deg, rgba(46,230,160,0.035) 0%, rgba(46,230,160,0) 40%),
+    linear-gradient(160deg, #18202a 0%, #131920 100%);
+  --panel:
+    linear-gradient(180deg, rgba(46,230,160,0.025) 0%, rgba(46,230,160,0) 30%),
+    linear-gradient(160deg, #171e27 0%, #12181f 100%);
+  --vidro-1: #222b36; --vidro-2: #1c242e; --vidro-3: #171e27;
+  --vidro-luz: rgba(210,230,255,0.05); --vidro-filete: rgba(220,235,255,0.12);
+}
+/* cards: Azul */
+:root:not([data-theme="light"])[data-cards="azul"] {
+  --surface: #131c2e; --surface-2: #182338; --line: #21304a; --line-strong: #2c3d5c;
+  --card:
+    linear-gradient(180deg, rgba(46,230,160,0.035) 0%, rgba(46,230,160,0) 40%),
+    linear-gradient(160deg, #162036 0%, #111a2b 100%);
+  --panel:
+    linear-gradient(180deg, rgba(46,230,160,0.025) 0%, rgba(46,230,160,0) 30%),
+    linear-gradient(160deg, #152035 0%, #10192a 100%);
+  --vidro-1: #1d2a45; --vidro-2: #18233a; --vidro-3: #131d31;
+  --vidro-luz: rgba(200,220,255,0.05); --vidro-filete: rgba(200,220,255,0.13);
 }
 
 /* ── Tema claro ──────────────────────────────────────────────────
@@ -105,9 +143,10 @@ body {
   margin: 0;
   background-color: var(--bg);
   background-image:
-    radial-gradient(1200px 600px at 85% -10%, rgba(46,230,160,0.10), transparent 60%),
+    radial-gradient(1200px 650px at 80% -10%, var(--brilho-topo), transparent 62%),
+    radial-gradient(1000px 700px at 35% 45%, var(--brilho-meio), transparent 70%),
     radial-gradient(900px 500px at -10% 110%, color-mix(in srgb, var(--accent-2) 6%, transparent), transparent 60%),
-    radial-gradient(700px 400px at 40% 40%, rgba(46,230,160,0.03), transparent 70%);
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,0.32) 100%);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-sans);
@@ -303,7 +342,7 @@ button:not(:disabled):active { transform: scale(0.97); }
    por cima do conteúdo, sem empurrar a página. Os ícones não mudam
    de lugar ao abrir — só os textos aparecem. */
 .mtp-rail {
-  width: 72px;
+  width: 60px;
   overflow: hidden;
   /* flutuante: solta das bordas da tela, cantos arredondados */
   border: 1px solid var(--line);
@@ -343,7 +382,9 @@ button:not(:disabled):active { transform: scale(0.97); }
     radial-gradient(140% 38% at 0% 0%, rgba(255,255,255,0.16), transparent 62%),
     linear-gradient(125deg, transparent 30%, rgba(255,255,255,0.05) 42%, transparent 54%),
     linear-gradient(180deg, rgba(46,230,160,0.07) 0%, rgba(255,255,255,0.025) 45%, rgba(0,194,255,0.05) 100%),
-    rgba(10,18,15,0.45);
+    color-mix(in srgb, var(--glass) 94%, transparent);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.32),
     inset 1px 0 0 rgba(255,255,255,0.10),
@@ -413,7 +454,7 @@ button:not(:disabled):active { transform: scale(0.97); }
 /* fixa já está ao lado do conteúdo: não precisa da sombra de "por cima" */
 .mtp-rail.fixa:hover { transition-delay: 0s; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent), 0 18px 50px -20px color-mix(in srgb, var(--shade) 80%, transparent); }
 
-.mtp-rail .mtp-nav-item { padding-left: 15px; white-space: nowrap; }
+.mtp-rail .mtp-nav-item { padding-left: 12px; white-space: nowrap; }
 
 .mtp-rail .mtp-nav-label,
 .mtp-rail .mtp-nav-badge,
@@ -910,19 +951,19 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
     0 34px 70px -34px color-mix(in srgb, var(--accent) 14%, transparent);
   animation: mtpFloat 8s ease-in-out infinite;
 }
-/* Tema escuro: o card vira um vidro esmeralda mais claro que o fundo, com filete de luz
+/* Tema escuro: o card vira um vidro (verde por padrão) mais claro que o fundo, com filete de luz
    no topo e sombra funda + halo verde embaixo — é o contraste que faz ele "levitar" */
 :root:not([data-theme="light"]) :is(.mtp-evo [style*="var(--card)"], .mtp-evo .mtp-faixa-metrica, .mtp-evo .mtp-recolhe) {
   --card:
     radial-gradient(420px circle at var(--mx, -500px) var(--my, -500px), rgba(46,230,160,0.08), transparent 45%),
-    linear-gradient(180deg, rgba(150,255,210,0.06) 0%, rgba(150,255,210,0) 28%),
-    linear-gradient(160deg, #14271f 0%, #0f1e18 45%, #0b1612 100%);
+    linear-gradient(180deg, var(--vidro-luz) 0%, transparent 28%),
+    linear-gradient(160deg, var(--vidro-1) 0%, var(--vidro-2) 45%, var(--vidro-3) 100%);
   box-shadow:
-    inset 0 1px 0 0 rgba(170,255,220,0.14),
+    inset 0 1px 0 0 var(--vidro-filete),
     inset 0 0 0 1px rgba(46,230,160,0.05),
     0 2px 6px rgba(0,0,0,0.45),
     0 24px 44px -16px rgba(0,0,0,0.85),
-    0 44px 80px -36px rgba(46,230,160,0.22);
+    0 44px 80px -36px rgba(46,230,160,0.2);
 }
 :root:not([data-theme="light"]) :is(.mtp-evo [style*="var(--card)"], .mtp-evo .mtp-faixa-metrica, .mtp-evo .mtp-recolhe):hover {
   box-shadow:
@@ -1070,7 +1111,7 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
    em telas baixas. Os espaços antes de cada seção crescem junto.
    Logo, ações e rodapé ainda têm degraus: média (até 960px) e
    notebook (até 790px). */
-.mtp-rail .mtp-brand { padding: 32px 16px 0; margin-bottom: 36px; }
+.mtp-rail .mtp-brand { padding: 32px 9px 0; margin-bottom: 36px; }
 .mtp-acoes { padding: 0 12px; display: flex; flex-direction: column; gap: 8px; }
 .mtp-sidebar .mtp-nav { padding: 12px; }
 .mtp-nav-secoes { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; }
@@ -1120,3 +1161,28 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
   .mtp-rodape { padding: 4px 12px; }
   .mtp-rodape .mtp-nav-item { padding-top: 4px; padding-bottom: 4px; }
 }
+
+/* ── Trilho fino (60px): ícones centralizados com 8px de borda ── */
+.mtp-rail.mtp-sidebar :is(.mtp-acoes, .mtp-nav, .mtp-rodape) { padding-left: 8px; padding-right: 8px; }
+
+/* ── Estratégias: galeria de exemplos ── */
+.mtp-exemplo { position: relative; height: 104px; border-radius: 10px; overflow: hidden; cursor: zoom-in; border: 1px solid var(--line); background: color-mix(in srgb, var(--ink) 3%, transparent); transition: transform .2s var(--ease), border-color .2s var(--ease); }
+.mtp-exemplo:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.mtp-exemplo-dia { position: absolute; left: 6px; bottom: 6px; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,0.65); color: #fff; font-size: 10.5px; font-family: var(--font-mono); }
+.mtp-exemplo-tirar { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; min-height: 0; padding: 0; border: 0; border-radius: 50%; background: rgba(0,0,0,0.7); color: #fff; font-size: 15px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .15s; }
+.mtp-exemplo:hover .mtp-exemplo-tirar, .mtp-exemplo-tirar:focus-visible { opacity: 1; }
+.mtp-exemplo-tirar:hover { background: var(--neg); }
+@media (hover: none) { .mtp-exemplo-tirar { opacity: 1; } }
+.mtp-exemplo-vazio { width: 100%; padding: 22px 18px; border: 1px dashed var(--line-strong); border-radius: 12px; background: none; color: var(--text-3); font-size: 13px; line-height: 1.6; font-family: var(--font-sans); cursor: pointer; text-align: center; }
+.mtp-exemplo-vazio:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--text-2); }
+
+/* Configurações → Aparência: cards sem flutuar */
+:root[data-flutuar="nao"] :is(.mtp-evo [style*="var(--card)"], .mtp-evo .mtp-faixa-metrica, .mtp-evo .mtp-recolhe) { animation: none; }
+
+/* Configurações → Aparência: amostras de fundo */
+.mtp-fundo-opcao { display: flex; flex-direction: column; gap: 10px; padding: 10px; border-radius: 14px; border: 1px solid var(--line); background: color-mix(in srgb, var(--ink) 2%, transparent); color: var(--text); font-family: var(--font-sans); text-align: left; cursor: pointer; min-width: 0; }
+.mtp-fundo-opcao:hover { border-color: var(--line-strong); filter: none; }
+.mtp-fundo-opcao.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 8px 24px -12px color-mix(in srgb, var(--accent) 60%, transparent); }
+.mtp-fundo-opcao:disabled { opacity: .45; cursor: not-allowed; }
+.mtp-fundo-amostra { position: relative; height: 74px; border-radius: 10px; overflow: hidden; }
+.mtp-fundo-amostra i { position: absolute; border-radius: 7px; }

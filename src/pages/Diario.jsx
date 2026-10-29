@@ -21,6 +21,7 @@ import ImageEditor, { uploadTradeImage, ImageThumb, ImageViewer, ImagemSegura } 
 import { fonteDoEditor, enviarFoto, trocarFotoAnotada, semFoto, arquivosDoTrade, apagarArquivos } from "../lib/fotos";
 import { segundaDe } from "../lib/revisao";
 import { alfa } from "../lib/cor.js";
+import { acaoExemplo } from "../lib/exemplos";
 
 function todayKey() {
   const d = new Date();
@@ -94,7 +95,7 @@ function EstrelasInput({ value, onChange }) {
   );
 }
 
-export default function Diario({ entries, saveEntry, deleteEntry, estrategias, uid, config, setPagina, focarNovoTrade, onFocouNovoTrade }) {
+export default function Diario({ entries, saveEntry, deleteEntry, estrategias, saveEstrategia, uid, config, setPagina, focarNovoTrade, onFocouNovoTrade }) {
   const contas = listaContas(config);
   const today    = todayKey();
   const [selectedDate, setSelectedDate] = useState(today);
@@ -1032,7 +1033,7 @@ export default function Diario({ entries, saveEntry, deleteEntry, estrategias, u
       )}
 
       {/* Image Viewer fullscreen */}
-      {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)}/>}
+      {viewerImg && <ImageViewer url={viewerImg} onClose={()=>setViewerImg(null)} acao={acaoExemplo(viewerImg, { entries, estrategias, saveEstrategia })}/>}
       {importacao && (
         <ImportarOperacoes importacao={importacao} entries={entries} contas={contas} contaInicial={novoTrade.conta} config={config}
           estNomes={estNomes} sugerirExecucao={sugerirExecucao}

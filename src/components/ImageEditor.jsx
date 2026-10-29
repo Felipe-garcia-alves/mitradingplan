@@ -545,10 +545,19 @@ export function ImageThumb({ url, onEdit, onDelete }) {
   );
 }
 
-export function ImageViewer({ url, onClose }) {
+// acao (opcional): { rotulo, marcada, onClick } — botão de estrela embaixo da foto
+export function ImageViewer({ url, onClose, acao }) {
   return createPortal(
     <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.96)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out",padding:"16px"}}>
-      <ImagemSegura url={url} style={{maxWidth:"100%",maxHeight:"95vh",borderRadius:"10px",objectFit:"contain"}}/>
+      <ImagemSegura url={url} style={{maxWidth:"100%",maxHeight:acao?"85vh":"95vh",borderRadius:"10px",objectFit:"contain"}}/>
+      {acao && (
+        <button onClick={e=>{ e.stopPropagation(); acao.onClick(); }}
+          style={{position:"absolute",bottom:"22px",left:"50%",transform:"translateX(-50%)",display:"flex",alignItems:"center",gap:"8px",padding:"10px 18px",borderRadius:"24px",cursor:"pointer",fontSize:"13px",fontWeight:"600",fontFamily:"var(--font-sans)",whiteSpace:"nowrap",
+            background:acao.marcada?"rgba(245,185,65,0.18)":"rgba(255,255,255,0.1)",border:"1px solid "+(acao.marcada?"rgba(245,185,65,0.5)":"rgba(255,255,255,0.18)"),color:acao.marcada?"#f5b941":"#fff"}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={acao.marcada?"currentColor":"none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          {acao.rotulo}
+        </button>
+      )}
       <button style={{position:"absolute",top:"16px",right:"16px",background:"rgba(255,255,255,0.1)",border:"none",color:"#fff",borderRadius:"50%",width:"36px",height:"36px",fontSize:"18px",cursor:"pointer"}}>×</button>
     </div>,
     document.body

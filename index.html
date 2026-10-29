@@ -6,7 +6,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#050907" />
+    <meta name="theme-color" content="#0e1217" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -22,12 +22,21 @@
 
     <link rel="icon" type="image/png" href="/icons/icon-192.png" />
 
-    <!-- Tema salvo (claro/escuro), aplicado antes da página aparecer -->
+    <!-- Aparência salva (tema, fundo, cor dos cards, cards flutuando), aplicada antes da página aparecer.
+         As cores da barra repetem as de FUNDOS em src/lib/tema.js -->
     <script>
       try {
+        var h = document.documentElement;
         var t = localStorage.getItem("mtp-tema") === "light" ? "light" : "dark";
-        document.documentElement.dataset.theme = t;
-        if (t === "light") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#eef2f0");
+        var barra = { slate:"#0e1217", grafite:"#111214", marinho:"#0b1220", floresta:"#0b1813" };
+        var f = localStorage.getItem("mtp-fundo");
+        if (!barra[f]) f = "slate";
+        var c = localStorage.getItem("mtp-cards");
+        if (c === "grafite" || c === "azul") h.dataset.cards = c;
+        h.dataset.theme = t;
+        h.dataset.fundo = f;
+        if (localStorage.getItem("mtp-flutuar") === "nao") h.dataset.flutuar = "nao";
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "light" ? "#eef2f0" : barra[f]);
       } catch (e) { document.documentElement.dataset.theme = "dark"; }
     </script>
 

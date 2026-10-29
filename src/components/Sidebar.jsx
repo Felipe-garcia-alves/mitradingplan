@@ -63,7 +63,7 @@ export default function Sidebar({ pagina, setPagina, mobile, onClose, compliance
   return (
     <>
       {mobile && <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",zIndex:199}}/>}
-      {/* No desktop vira um trilho de ícones (72px) que se abre por cima do
+      {/* No desktop vira um trilho de ícones (60px) que se abre por cima do
           conteúdo ao passar o mouse; no celular continua a gaveta completa */}
       <div className={"mtp-sidebar"+(mobile?"":" mtp-rail")+(!mobile&&fixa?" fixa":"")} style={{width:mobile?"240px":undefined,height:mobile?"100vh":"calc(100vh - 24px)",display:"flex",flexDirection:"column",position:"fixed",left:mobile?0:"20px",top:mobile?0:"12px",zIndex:200,fontFamily:"var(--font-sans)"}}>
 

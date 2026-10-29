@@ -4,6 +4,67 @@ import { useAuth } from "../context/AuthContext";
 import ContasConfig from "../components/ContasConfig";
 import { Confirmar } from "../components/ui";
 import { validarSenha, erroDeSenha, REGRA_SENHA } from "../lib/senha";
+import { FUNDOS, CARDS, useAparencia, aplicarTema, aplicarFundo, aplicarCards, aplicarFlutuar } from "../lib/tema";
+
+const rotulo = { margin:"0 0 10px", color:"var(--text-2)", fontSize:"13px", fontWeight:"700" };
+
+// Tema, cor de fundo e movimento dos cards — vale para este navegador
+function Aparencia() {
+  const { tema, fundo, cards, flutuar } = useAparencia();
+  const escuro = tema !== "light";
+  // a amostra mostra a combinação: o fundo escolhido com os cards escolhidos
+  const corFundo = FUNDOS.find(f => f.id === fundo).cor;
+  const [corCard, corBorda] = CARDS.find(c => c.id === cards).cores;
+  const amostra = (bg, card, borda) => (
+    <div className="mtp-fundo-amostra" style={{ background:bg }}>
+      <i style={{ left:"10px", top:"12px", width:"58%", height:"30px", background:card, border:"1px solid "+borda }}/>
+      <i style={{ left:"18px", top:"30px", width:"30%", height:"3px", background:"#2ee6a0", borderRadius:"2px" }}/>
+      <i style={{ right:"10px", top:"12px", width:"22%", height:"30px", background:card, border:"1px solid "+borda }}/>
+      <i style={{ left:"10px", right:"10px", bottom:"10px", height:"14px", background:card, border:"1px solid "+borda }}/>
+    </div>
+  );
+  const opcao = (id, ativo, nome, desc, onClick, visual) => (
+    <button key={id} type="button" disabled={!escuro} onClick={onClick} className={"mtp-fundo-opcao"+(escuro && ativo?" on":"")}>
+      {visual}
+      <span>
+        <span style={{ display:"block", fontSize:"13px", fontWeight:"700" }}>{nome}</span>
+        <span style={{ display:"block", marginTop:"2px", color:"var(--text-3)", fontSize:"11.5px" }}>{desc}</span>
+      </span>
+    </button>
+  );
+  const so = !escuro && <span style={{ color:"var(--text-3)", fontWeight:500 }}>· só no tema escuro</span>;
+  return (
+    <div style={{ background:"var(--panel)", border:"1px solid var(--line)", borderRadius:"14px", padding:"22px", marginBottom:"16px" }}>
+      <p style={{ margin:"0 0 4px", color:"var(--text-mute)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px" }}>Aparência</p>
+      <p style={{ margin:"0 0 18px", color:"var(--text-3)", fontSize:"12.5px" }}>Escolha o visual que mais combina com você. Fica salvo neste navegador.</p>
+
+      <p style={rotulo}>Tema</p>
+      <div className="mtp-seg" style={{ marginBottom:"22px" }}>
+        {[["dark","Escuro"],["light","Claro"]].map(([v,l])=>(
+          <button key={v} type="button" onClick={()=>aplicarTema(v)} className={tema===v?"on":""} style={{ "--seg":"var(--accent)", fontFamily:"var(--font-sans)" }}>{l}</button>
+        ))}
+      </div>
+
+      <p style={rotulo}>Cor do fundo {so}</p>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:"12px", marginBottom:"22px" }}>
+        {FUNDOS.map(f => opcao(f.id, fundo===f.id, f.nome, f.desc, ()=>aplicarFundo(f.id), amostra(f.cor, corCard, corBorda)))}
+      </div>
+
+      <p style={rotulo}>Cor dos cards {so}</p>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:"12px", marginBottom:"22px" }}>
+        {CARDS.map(c => opcao(c.id, cards===c.id, c.nome, c.desc, ()=>aplicarCards(c.id), amostra(corFundo, c.cores[0], c.cores[1])))}
+      </div>
+
+      <label style={{ display:"flex", alignItems:"center", gap:"12px", cursor:"pointer" }}>
+        <input type="checkbox" checked={flutuar} onChange={e=>aplicarFlutuar(e.target.checked)} style={{ width:"18px", height:"18px", accentColor:"var(--accent)", cursor:"pointer" }}/>
+        <span>
+          <span style={{ display:"block", color:"var(--text-2)", fontSize:"13px", fontWeight:"700" }}>Cards flutuando</span>
+          <span style={{ display:"block", color:"var(--text-3)", fontSize:"12px" }}>o leve movimento dos cards na Evolução</span>
+        </span>
+      </label>
+    </div>
+  );
+}
 
 export default function Config({ config, saveConfig, nomeUsuario, setPagina, isAdmin, entries, compliance, saveCompliance }) {
   const { user, logout } = useAuth();
@@ -50,6 +111,8 @@ export default function Config({ config, saveConfig, nomeUsuario, setPagina, isA
           </div>
         </div>
       </div>
+
+      <Aparencia/>
 
       {/* Contas de trading */}
       <ContasConfig config={config} saveConfig={saveConfig} entries={entries}/>
