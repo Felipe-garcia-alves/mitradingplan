@@ -34,6 +34,12 @@
   --shade:       #000000;
   --glass:       #11161c;
 
+  --font-sans: "Inter", "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius: 16px;
+  --ease: cubic-bezier(.2,.8,.2,1);
+
   /* Fundo da página (data-fundo troca) — padrão: grafite azulado */
   --brilho-topo:  rgba(46,230,160,0.07);
   --brilho-meio:  rgba(120,150,190,0.05);
