@@ -20,13 +20,33 @@ const BANCOS_META = {
 
 const kpiLabel = { margin:0, color:"var(--text-3)", fontSize:"11px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1.2px" };
 
-function CardItem({ label, value, fmt, sub, color, pct }) {
+// pct é o % da banca; onPct (opcional) deixa trocar o % clicando nele
+function CardItem({ label, value, fmt, sub, color, pct, onPct, dica }) {
+  const [editando, setEditando] = useState(false);
+  const [txt, setTxt] = useState("");
+  const pill = { color, background:alfa(color,"15"), border:"1px solid "+alfa(color,"33"), borderRadius:"20px", padding:"1px 8px", fontSize:"10.5px", fontWeight:"700", fontFamily:"var(--font-mono)" };
+  function abrir() { setTxt(String(pct).replace(".", ",")); setEditando(true); }
+  function salvar() {
+    const v = numDigitado(txt);
+    setEditando(false);
+    if (v > 0 && v <= 100 && v !== pct) onPct(Math.round(v * 100) / 100);
+  }
   return (
     <div style={{ background:"var(--card)", border:"1px solid var(--line)", borderRadius:"16px", padding:"18px 20px", minWidth:0, display:"flex", flexDirection:"column", justifyContent:"space-between", gap:"10px", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", left:0, top:"18px", bottom:"18px", width:"3px", borderRadius:"0 3px 3px 0", background:color, boxShadow:"0 0 10px "+color }}/>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:"8px" }}>
         <p style={kpiLabel}>{label}</p>
-        <span style={{ color, background:alfa(color,"15"), border:"1px solid "+alfa(color,"33"), borderRadius:"20px", padding:"1px 8px", fontSize:"10.5px", fontWeight:"700", fontFamily:"var(--font-mono)" }}>{pct}</span>
+        {editando ? (
+          <span style={{ ...pill, display:"inline-flex", alignItems:"center", padding:"0 8px" }}>
+            <input autoFocus value={txt} inputMode="decimal" onChange={e=>setTxt(soNumero(e.target.value, { negativo:false }))}
+              onBlur={salvar} onKeyDown={e=>{ if (e.key==="Enter") salvar(); if (e.key==="Escape") setEditando(false); }}
+              style={{ width:"38px", background:"none", border:0, outline:"none", color, font:"inherit", textAlign:"right", padding:"2px 0" }}/>%
+          </span>
+        ) : onPct ? (
+          <button type="button" onClick={abrir} title={"Clique para mudar o %"+(dica ? " · "+dica : "")} className="mtp-pct-edit" style={{ ...pill, cursor:"pointer" }}>
+            {String(pct).replace(".", ",")}% <span style={{ opacity:.6 }}>✎</span>
+          </button>
+        ) : <span style={pill}>{pct}</span>}
       </div>
       <p style={{ margin:0, color, fontSize:"clamp(17px,1.5vw,22px)", fontWeight:"700", fontFamily:"var(--font-mono)", whiteSpace:"nowrap" }}><CountUp value={value} format={fmt}/></p>
       <p style={{ margin:0, color:"var(--text-3)", fontSize:"11.5px" }}>{sub}</p>
@@ -111,6 +131,14 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
     await saveConfig({ ...config, [BANCOS_META[novoTipo].key]: valorNovo, bancasExcluidas: (config?.bancasExcluidas || []).filter(x => x !== novoTipo) });
     setShowCriar(false); setNovoTipo(""); setNovoValor("");
     setMsg("✓ Banca criada!"); setTimeout(() => setMsg(""), 2500);
+  }
+
+  // % de risco/meta/stop: cada banca da Conta Principal guarda os seus em
+  // config.limitesPorMercado; cada conta extra guarda nos próprios limites
+  async function salvarLimite(cart, campo, valor) {
+    const novos = { ...cart.limites, [campo]: valor };
+    if (!cart.extra) return saveConfig({ ...config, limitesPorMercado: { ...(config?.limitesPorMercado || {}), [cart.mercado]: novos } });
+    await saveConfig({ ...config, contas: (config?.contas || []).map(c => c.id === cart.contaId ? { ...c, limites: novos } : c) });
   }
 
   async function deletarBanca(tipo) {
@@ -302,9 +330,14 @@ export default function Banca({ entries, config, saveConfig, setPagina }) {
                     {temOps ? (lucro>=0?"+":"-")+fmtV(lucro)+" em trades"+(depositado>0?" · +"+fmtV(depositado)+" depositado":"")+(sacado>0?" · -"+fmtV(sacado)+" sacado":"") : "Sem operações registradas"}
                   </p>
                 </div>
-                <CardItem label="Risco / operação" value={real*lim.risco/100} fmt={fmtV} pct={lim.risco+"%"} sub="por entrada"                    color={meta.cor}/>
-                <CardItem label="Meta diária"      value={real*lim.meta/100}  fmt={fmtV} pct={lim.meta+"%"}  sub="bateu, pode encerrar"           color={meta.cor}/>
-                <CardItem label="Stop diário"      value={real*lim.stop/100}  fmt={fmtV} pct={lim.stop+"%"}  sub="fecha o dia obrigatoriamente"  color={colStop}/>
+                {[
+                  ["risco", "Risco / operação", "por entrada",                  meta.cor],
+                  ["meta",  "Meta diária",      "bateu, pode encerrar",         meta.cor],
+                  ["stop",  "Stop diário",      "fecha o dia obrigatoriamente", colStop],
+                ].map(([campo, label, sub, cor]) => (
+                  <CardItem key={campo} label={label} value={real*lim[campo]/100} fmt={fmtV} pct={lim[campo]} sub={sub} color={cor}
+                    onPct={v=>salvarLimite(meta, campo, v)} dica={"só nesta banca"}/>
+                ))}
               </div>
             </div>
           );

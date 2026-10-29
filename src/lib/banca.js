@@ -41,7 +41,8 @@ export function listaCarteiras(config) {
       key: mk, contaId: ID_PRINCIPAL, mercado: mk, extra: false,
       label: m.label, curto: m.curto, moeda: m.moeda, cor: m.cor, sigla: m.sigla,
       inicial: typeof config?.[m.key] === "number" ? config[m.key] : m.padrao,
-      limites: lim,
+      // cada banca pode ter % próprios (config.limitesPorMercado); sem isso, vale o padrão da conta
+      limites: { ...lim, ...(config?.limitesPorMercado?.[mk] || {}) },
     }));
   const extras = listaContas(config).filter(c => c.id !== ID_PRINCIPAL).map(c => {
     const m = MERCADOS[c.mercado] || MERCADOS.B3;

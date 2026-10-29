@@ -1192,3 +1192,7 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
 .mtp-fundo-opcao:disabled { opacity: .45; cursor: not-allowed; }
 .mtp-fundo-amostra { position: relative; height: 74px; border-radius: 10px; overflow: hidden; }
 .mtp-fundo-amostra i { position: absolute; border-radius: 7px; }
+
+/* Banca: % de risco/meta/stop clicável */
+.mtp-pct-edit { min-height: 0; line-height: 1.5; font-family: var(--font-mono); }
+.mtp-pct-edit:hover { filter: brightness(1.25); }
