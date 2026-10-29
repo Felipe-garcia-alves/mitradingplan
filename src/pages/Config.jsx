@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import ContasConfig from "../components/ContasConfig";
-import { Confirmar } from "../components/ui";
+import { Confirmar, CampoSenha } from "../components/ui";
 import { validarSenha, erroDeSenha, REGRA_SENHA } from "../lib/senha";
 import { FUNDOS, CARDS, useAparencia, aplicarTema, aplicarFundo, aplicarCards, aplicarFlutuar } from "../lib/tema";
 
@@ -149,11 +149,11 @@ export default function Config({ config, saveConfig, nomeUsuario, setPagina, isA
         <div style={{ display:"flex", flexDirection:"column", gap:"12px", marginBottom:"16px" }}>
           <div>
             <label style={{ color:"var(--text-mute)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>Senha atual</label>
-            <input style={inp} type="password" value={senhaAtual} onChange={e=>setSenhaAtual(e.target.value)} placeholder="••••••••"/>
+            <CampoSenha style={inp} autoComplete="current-password" value={senhaAtual} onChange={e=>setSenhaAtual(e.target.value)} placeholder="••••••••"/>
           </div>
           <div>
             <label style={{ color:"var(--text-mute)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"1px", display:"block", marginBottom:"6px" }}>Nova senha</label>
-            <input style={inp} type="password" value={senhaNova} onChange={e=>setSenhaNova(e.target.value)} placeholder={REGRA_SENHA}/>
+            <CampoSenha style={inp} autoComplete="new-password" value={senhaNova} onChange={e=>setSenhaNova(e.target.value)} placeholder={REGRA_SENHA}/>
           </div>
         </div>
         <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>

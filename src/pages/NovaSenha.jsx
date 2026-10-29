@@ -2,6 +2,7 @@ import { useState } from "react";
 import { validarSenha, erroDeSenha } from "../lib/senha";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import { CampoSenha } from "../components/ui";
 
 export default function NovaSenha() {
   const { concluirRecovery, cancelarRecovery, convite } = useAuth();
@@ -62,12 +63,12 @@ export default function NovaSenha() {
 
           <div style={{marginBottom:"14px"}}>
             <label style={lbl}>Nova senha</label>
-            <input style={inp} type="password" autoComplete="new-password" placeholder="••••••••" value={senha} onChange={e=>setSenha(e.target.value)}/>
+            <CampoSenha style={inp} autoComplete="new-password" placeholder="••••••••" value={senha} onChange={e=>setSenha(e.target.value)}/>
           </div>
 
           <div style={{marginBottom:"22px"}}>
             <label style={lbl}>Confirmar senha</label>
-            <input style={inp} type="password" autoComplete="new-password" placeholder="••••••••" value={confirmar} onChange={e=>setConfirmar(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
+            <CampoSenha style={inp} autoComplete="new-password" placeholder="••••••••" value={confirmar} onChange={e=>setConfirmar(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
           </div>
 
           <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"13px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#2ee6a0,#1fc98a)",color:"#000",fontWeight:"700",fontSize:"14px",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,fontFamily:"var(--font-sans)",marginBottom:"16px"}}>

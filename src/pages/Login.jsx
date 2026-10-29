@@ -3,6 +3,7 @@ import { validarSenha, erroDeSenha } from "../lib/senha";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import Termos from "./Termos";
+import { CampoSenha } from "../components/ui";
 
 // Duração do teste grátis do cadastro público — manter igual à trigger handle_new_user
 const DIAS_TESTE = 15;
@@ -57,6 +58,7 @@ export default function Login() {
         "Email not confirmed":              "Confirme seu email antes de entrar.",
         "User already registered":          "Email já cadastrado.",
         "Password should be at least 6 characters": "Senha deve ter ao menos 6 caracteres.",
+        "Signups not allowed for this instance": "Novos cadastros estão fechados no momento. Fale com o suporte para receber um convite.",
       };
       setErro(msgs[e.message] || erroDeSenha(e) || e.message || "Erro ao autenticar.");
     }
@@ -136,7 +138,7 @@ export default function Login() {
           {!resetMode && (
             <div style={{marginBottom:"22px"}}>
               <label style={{color:"var(--text-mute)",fontSize:"11px",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:"6px"}}>Senha</label>
-              <input style={inp} type="password" placeholder="••••••••" value={senha} onChange={e=>setSenha(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
+              <CampoSenha style={inp} autoComplete={modo==="login"?"current-password":"new-password"} placeholder="••••••••" value={senha} onChange={e=>setSenha(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
             </div>
           )}
 
